@@ -1,0 +1,2 @@
+set max fps in editor
+t.MaxFPS 60

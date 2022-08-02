@@ -1,0 +1,314 @@
+
+
+struct F
+{
+ 	static float3 HUEtoRGB(float H){
+		float R = abs(H * 6 - 3) - 1;
+		float G = 2 - abs(H * 6 - 2);
+		float B = 2 - abs(H * 6 - 4);
+		return saturate(float3(R,G,B));
+	}
+	static float4 sphere(){
+		#include "sphere.ush"
+	}
+	
+	/*static float raySphereIntersect(vec3 r0, vec3 rd, vec3 s0, float sr) {
+		// - r0: ray origin
+		// - rd: normalized ray direction
+		// - s0: sphere center
+		// - sr: sphere radius
+		// - Returns distance from r0 to first intersecion with sphere,
+		//   or -1.0 if no intersection.
+		float a = dot(rd, rd);
+		vec3 s0_r0 = r0 - s0;
+		float b = 2.0 * dot(rd, s0_r0);
+		float c = dot(s0_r0, s0_r0) - (sr * sr);
+		if (b*b - 4.0*a*c < 0.0) {
+			return -1.0;
+		}
+		return (-b - sqrt((b*b) - 4.0*a*c))/(2.0*a);
+	}*/
+};
+
+//return F::sphere();
+
+//float3 pos = cordinate * 0.1;
+//
+
+//for
+
+if(innerDistance == -1.0f){
+	float3 color = F::HUEtoRGB((distance(hitPos,cameraPos) / 300) % 1);
+	return float4(color.x,color.y,color.z,0.5);
+}
+
+float3 rayDirection = normalize(hitPos - cameraPos) * scaleMultiplier;
+hitPos *= scaleMultiplier;
+
+/*
+float closestProjection = dot(-cameraPos,rayDirection) / dot(rayDirection, rayDirection);
+float height = distance(cameraPos + rayDirection * closestProjection, 0);
+float base = sqrt(50*50 - height*height);
+if(height > 50){
+	return 0;
+}
+float sphereIntersectionsDistance = closestProjection - base;
+float3 color2 =  F::HUEtoRGB(((cameraPos + rayDirection * sphereIntersectionsDistance) / 30 + 100).z % 1);
+return float4(color2.x,color2.y,color2.z,0.5);
+*/
+
+//float radiusSize = 1832;
+//float thetaSize = 720;
+
+// theta size including padding
+int thetaSize2 = thetaSize + 2;
+
+const float angleIndexSize = 65536;
+
+
+
+float3 rayOrigin = hitPos;
+const float boundingRadius = (radiusSize + innerDistance) /**/;
+cutoffCircles = float4(100,boundingRadius,-10,boundingRadius);
+
+// initial offset from rayOrigin to start from
+float startingDistance = 0.0;
+
+bool wasInsideBounds = false;
+
+//animationTime = 0.5;
+
+// section that bounds the rays to a region defined by a sphere with a radius of boundingRadius and the top and bottom cut off by cutoffCircles
+if(true){
+	bool inBounds = cutoffCircles.r == cutoffCircles.b || (cutoffCircles.r >= rayOrigin.z && cutoffCircles.b <= rayOrigin.z);
+	inBounds = inBounds && distance(rayOrigin, 0) <= boundingRadius;
+	if(!inBounds){
+		// the starting position is outside the bounds, move the ray in bounds or discard it if not possible
+		
+		// determine where the ray intersects the surface of the sphere
+		float a = dot(rayDirection, rayDirection);
+		//vec3 s0_r0 = r0 - s0;
+		float b = 2.0 * dot(rayDirection, rayOrigin);
+		float c = dot(rayOrigin, rayOrigin) - (boundingRadius * boundingRadius);
+		if (b*b - 4.0*a*c < 0.0) {
+			// ray does not intersect with bounding sphere
+			return 0;
+		}
+		float sphereIntersectionDistance = (-b - sqrt((b*b) - 4.0*a*c))/(2.0*a);
+		float3 sphereIntersectionLocation = rayOrigin + rayDirection * sphereIntersectionDistance;
+		
+		float intersectionDistance = sphereIntersectionDistance;
+		float3 intersectionLocation = sphereIntersectionLocation;
+		
+		// the cutoffCircles float 4 contains the values to define two circles
+		// r|x|0: top circle height  g|y|1: top circle radius  b|z|2: bottom circle height  a|w|3: bottom circle radius
+		if(cutoffCircles.r != cutoffCircles.b){ // if the values are different they are probably correctly set
+			if(intersectionLocation.z > cutoffCircles.r ||  intersectionLocation.z < cutoffCircles.b){
+				// check for intersection with top and bottom bounding cutoff circles
+				float topIntersectionDistance = dot(float3(0,0,cutoffCircles.r)-rayOrigin, float3(0,0,1))/dot(float3(0,0,1),rayDirection);
+				float3 topIntersectionLocation = rayOrigin + rayDirection * topIntersectionDistance;
+				bool topIntersection = distance((float2)topIntersectionLocation,0) < cutoffCircles.g;
+				
+				float bottomIntersectionDistance = dot(float3(0,0,cutoffCircles.b)-rayOrigin, float3(0,0,1))/dot(float3(0,0,1),rayDirection);
+				float3 bottomIntersectionLocation = rayOrigin + rayDirection * bottomIntersectionDistance;
+				bool bottomIntersection = distance((float2)bottomIntersectionLocation,0) < cutoffCircles.a;
+				
+				if(topIntersection || bottomIntersection){
+					intersectionDistance = intersectionLocation.z > cutoffCircles.r ? topIntersectionDistance : bottomIntersectionDistance;
+					intersectionLocation = intersectionLocation.z > cutoffCircles.r ? topIntersectionLocation : bottomIntersectionLocation;
+				}else{
+					// the ray did not intersect with the cutoff circles or the surface of the sphere in between them
+					return 0;
+				}
+			}
+		}else{
+			cutoffCircles = float4(boundingRadius,0,-boundingRadius,0);
+		}
+		if(intersectionDistance > 0){
+			// only move starting distance when the offset is positive to keep the volume behind the surface
+			startingDistance = intersectionDistance;
+		}
+		/*if(animationTime >= 0.9){
+			float3 color2 =  F::HUEtoRGB(((intersectionLocation) / 30 + 100).z % 1);
+			return float4(color2.x,color2.y,color2.z,0.5);
+		}*/
+	}
+	// the ray will start within the bounds
+	wasInsideBounds = true;
+}
+
+//#define STEP_SIZE 1;
+//#define MAX_DISTANCE 200;
+
+const float stepSize = 5;
+//const float maxSteps = 400;
+const float maxSteps = boundingRadius * 2 / stepSize;
+const float maxStepDistance = 4000;
+const float PI = 3.14159265f;
+const float PI2 = 3.14159265f * 2;
+const float PIH = 3.14159265f / 2;
+
+
+
+float3 color = 0;
+float alpha = 0;
+
+if(fuzz >= 1){
+	// add random noise to starting position to prevent patterns from appearing
+	startingDistance += frac(sin(dot(rayOrigin, float3(12.9898, 78.233, 29.4382)) + animationTime) * 43758.5453) * stepSize;
+}
+
+//animationTime = (1 - cos(PI2 * animationTime))/2;
+animationTime = abs(animationTime * 2 - 1);
+
+bool wasEmpty = false;
+
+const int intMode = mode;
+
+float endingDistance = startingDistance + maxStepDistance;
+float travelDistance = startingDistance;
+//for(float travelDistance = startingDistance; travelDistance <= endingDistance && alpha < 0.90; travelDistance += stepSize){
+for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
+	// travelDistance += wasEmpty * stepSize * 10;
+	travelDistance += stepSize;
+	float3 location = rayOrigin + travelDistance * rayDirection;
+	
+	if(step & 0xF == 0xF){
+		// check if ray is going out of bounds and end early
+		bool inBounds = cutoffCircles.r >= location.z && cutoffCircles.b <= location.z;
+		inBounds = inBounds && distance(location,0) <= boundingRadius;
+		if(wasInsideBounds && !inBounds){
+			break;
+		}
+		wasInsideBounds = inBounds;
+	}
+	
+	float radius = sqrt(location.x * location.x + location.y * location.y + location.z * location.z);
+	float theta = atan2(-location.y, -location.x);
+	float phi = acos(location.z / radius);
+	
+	// normalize
+	radius = radius;
+	theta = (theta / PI2 + 0.5);
+	phi = (1.0 - phi / PI);
+	
+	// convert to volume texture coordinates
+	radius = radius - innerDistance;
+	theta = theta * thetaSize + 1;
+	phi = (phi) * angleIndexSize;
+	
+	int radiusInt = radius;
+	int thetaInt = theta;
+	int phiInt = phi;
+	
+	float sweep = angleIndex[uint2(phiInt & 0xFF, phiInt >> 8)].x;
+	// integers represent the center of the band so offset by 0.5 because casting to int is a floor function
+	int sweepInt = sweep + 0.5;
+	
+	if(sweep <= 0 || radiusInt >= radiusSize){
+		continue;
+	}
+	
+	float4 localValue;
+	float3 localColor;
+	
+	
+	if(intMode == 0){
+		// get pixel value
+		
+		
+		localValue = volume[uint2(radiusInt, thetaInt + (sweepInt) * thetaSize2)];
+		
+		localColor = F::HUEtoRGB((1-localValue.a)) * 1;
+	}
+	
+	
+	if(intMode == 1){
+		// linear interpolate pixel
+		
+		sweepInt = sweep;
+		float4 localValue000 = volume[uint2(radiusInt,     thetaInt +     (sweepInt    ) * thetaSize2)];
+		float4 localValue100 = volume[uint2(radiusInt + 1, thetaInt +     (sweepInt    ) * thetaSize2)];
+		float4 localValue010 = volume[uint2(radiusInt,     thetaInt + 1 + (sweepInt    ) * thetaSize2)];
+		float4 localValue110 = volume[uint2(radiusInt + 1, thetaInt + 1 + (sweepInt    ) * thetaSize2)];
+		float4 localValue001 = volume[uint2(radiusInt,     thetaInt +     (sweepInt + 1) * thetaSize2)];
+		float4 localValue101 = volume[uint2(radiusInt + 1, thetaInt +     (sweepInt + 1) * thetaSize2)];
+		float4 localValue011 = volume[uint2(radiusInt,     thetaInt + 1 + (sweepInt + 1) * thetaSize2)];
+		float4 localValue111 = volume[uint2(radiusInt + 1, thetaInt + 1 + (sweepInt + 1) * thetaSize2)];
+		
+		float4 localValue00 = lerp(localValue000,localValue100, radius - radiusInt);
+		float4 localValue10 = lerp(localValue010,localValue110, radius - radiusInt);
+		float4 localValue01 = lerp(localValue001,localValue101, radius - radiusInt);
+		float4 localValue11 = lerp(localValue011,localValue111, radius - radiusInt);
+		
+		float4 localValue0 = lerp(localValue00,localValue10, theta - thetaInt);
+		float4 localValue1 = lerp(localValue01,localValue11, theta - thetaInt);
+		
+		localValue = lerp(localValue0,localValue1, sweep - sweepInt);
+		
+		localColor = F::HUEtoRGB((1-localValue.a)) * 1;
+	}
+	
+	
+	if(intMode == 2){
+		localValue = volume[uint2(radiusInt, thetaInt + (sweepInt) * thetaSize2)];
+		localColor = F::HUEtoRGB((distance(location,cameraPos) / 300) % 1) * 1;
+	}
+	
+	// if(localValue.a != 0 && wasEmpty != 0){
+	// 	travelDistance -= stepSize * 11;
+	// 	wasEmpty = false;
+	// 	continue;
+	// }
+	
+	//float3 localColor = localValue.a;
+	
+	//localColor = F::HUEtoRGB((distance(location,cameraPos) / 300) % 1) * 1;
+	
+	float localAlpha = animationTime < localValue.a ? localValue.a : 0;
+	//if(radiusInt < radiusSize){
+	//	localAlpha = 1;
+	//}
+	/*
+	//float3 localColor = location * 0.1;
+	float sphereDistance = saturate((30 - distance(location,0)) / 30);
+	
+	float3 localColor = F::HUEtoRGB(sphereDistance) * 0.5;
+	float3 localAlpha = sphereDistance;
+	//localAlpha = sphereDistance > 0 ? 0.7 : 0;
+	localAlpha = sphereDistance > 0 ? sphereDistance * 1.4 + 0.4 : 0;
+	
+	
+	localColor = volume[uint2(radiusInt,thetaInt + (sweepInt) * 128)];
+	
+	
+	
+	
+	localAlpha *= volume[uint2(radiusInt,thetaInt + (sweepInt) * 128)].z;
+	localAlpha = sphereDistance > animationTime && phi >= 0 ? localAlpha : 0;
+	//localAlpha = sphereDistance > animationTime && phi >= 0 ? 1 : 0;
+	
+	//localAlpha = 1;
+	
+	//localColor = float3((phiInt & 0xFF) / 256.0, (phiInt >> 8) / 256.0, 0.0);
+	//localColor = sweepInt / 8.0;
+	*/
+	
+	
+	// wasEmpty = localAlpha == 0;
+	localAlpha = (1-alpha) * localAlpha * stepSize / 100;
+	color += localColor * localAlpha;
+	alpha += localAlpha;
+	
+	//if(distance(location,0) < 30){
+	//	color = location * 0.1;
+	//	alpha = 1;
+	//	break;
+	//}
+	
+	
+}
+
+//color -= 1;
+
+return float4(color.x,color.y,color.z,alpha);

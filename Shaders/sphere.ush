@@ -1,0 +1,64 @@
+
+
+struct F
+{
+ 	static float3 HUEtoRGB(float H){
+		float R = abs(H * 6 - 3) - 1;
+		float G = 2 - abs(H * 6 - 2);
+		float B = 2 - abs(H * 6 - 4);
+		return saturate(float3(R,G,B));
+	}
+};
+
+
+
+//float3 pos = cordinate * 0.1;
+//
+
+//for
+
+float3 rayDirection = normalize(hitPos - cameraPos);
+
+//#define STEP_SIZE 1;
+//#define MAX_DISTANCE 200;
+const float stepSize = 1;
+const float maxStepDistance = 200;
+const float PI = 3.14159265f;
+const float PI2 = 3.14159265f * 2;
+
+float3 color = 0;
+float alpha = 0;
+
+animationTime = (1 - cos(PI2 * animationTime))/2;
+
+for(float travelDistance = 0.0; travelDistance <= maxStepDistance && alpha < 0.99; travelDistance += stepSize){
+	float3 location = hitPos + travelDistance * rayDirection;
+	//float3 localColor = location * 0.1;
+	float sphereDistance = saturate((30 - distance(location,0)) / 30);
+	
+	float3 localColor = F::HUEtoRGB(sphereDistance) * 0.5;
+	float3 localAlpha = sphereDistance;
+	//localAlpha = sphereDistance > 0 ? 0.7 : 0;
+	localAlpha = sphereDistance > 0 ? sphereDistance * 1.4 + 0.4 : 0;
+	
+	//float radius = sqrt(X * X + Y * Y + Z * Z)
+	//float theta = atan2(Y, X)
+	//float phi = acos(Z / radius)
+	
+	localAlpha = (1-alpha) * localAlpha * stepSize / 10;
+	
+	localAlpha = sphereDistance > animationTime ? localAlpha : 0;
+	
+	color += localColor * localAlpha;
+	alpha += localAlpha;
+	
+	//if(distance(location,0) < 30){
+	//	color = location * 0.1;
+	//	alpha = 1;
+	//	break;
+	//}
+}
+
+//color -= 1;
+
+return float4(color.x,color.y,color.z,alpha);

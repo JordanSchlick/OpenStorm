@@ -1,0 +1,12 @@
+Binaries
+Build
+DerivedDataCache
+Intermediate
+/Packaged
+/Saved
+.vs
+.vs2
+.vs3
+/OpenStorm.sln
+/Content/Data/Demo/*
+!.gitkeep
