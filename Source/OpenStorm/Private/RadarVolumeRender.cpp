@@ -83,7 +83,7 @@ void ARadarVolumeRender::BeginPlay()
 	radarMaterialInstance->SetVectorParameterValue(TEXT("Center"), this->GetActorLocation());
 
 
-	FString radarFile = FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/KMKX_20220723_235820"));
+	FString radarFile = FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/Demo/KMKX_20220723_235820"));
 	FString fullPath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarFile);
 	RadarData radarData = {};
 	const char* fileLocaition = StringCast<ANSICHAR>(*fullPath).Get();
