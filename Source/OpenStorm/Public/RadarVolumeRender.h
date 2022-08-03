@@ -4,6 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/StaticMesh.h" 
+#include "Components/StaticMeshComponent.h"
+#include "UObject/Object.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Engine/Texture2D.h"
 #include "RadarVolumeRender.generated.h"
 
 UCLASS()
@@ -25,6 +31,8 @@ public:
 	FByteBulkData* volumeImageData;
 	UTexture2D* angleIndexTexture;
 	FByteBulkData* angleIndexImageData;
+	UTexture2D* valueIndexTexture;
+	FByteBulkData* valueIndexImageData;
 	void RandomizeTexture();
 
 protected:

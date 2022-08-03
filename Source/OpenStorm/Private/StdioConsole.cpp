@@ -1,29 +1,45 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#ifdef __INTELLISENSE__
+
+
+
+//#ifdef __INTELLISENSE__
 // visual studio intelisense is stupid, this keeps windows headers out of the intellisense shit show
-#else
-
-#ifdef _WIN32
-#define _AMD64_
-#define _WIN32_WINNT_WIN10_RS1 0
-#define WIN32_LEAN_AND_MEAN 
-//#include "WinCon.h"
-//#include "winuser.h"
-#include <consoleapi3.h>
-#include <ConsoleApi.h>
-#include <libloaderapi.h>
+//#else
+//#ifdef _WIN32
+//#define _AMD64_
+//#define _WIN32_WINNT_WIN10_RS1 0
+//#define WIN32_LEAN_AND_MEAN 
+//#include <consoleapi3.h>
+//#include <ConsoleApi.h>
+//#include <libloaderapi.h>
 //#undef WIN32_LEAN_AND_MEAN
-#define SW_SHOW 5
-//__declspec(dllimport) BOOL ShowWindow(HWND hWnd, int nCmdShow);
-typedef BOOL(__stdcall* ShowWindowDef)(HWND hWnd, int nCmdShow);
-#endif
-
-#endif
-
+//#endif
+//#endif
 
 #include "StdioConsole.h"
+
+#ifdef _WIN32
+#define SW_SHOW 5
+typedef void* HANDLE;
+typedef void* HINSTANCE;
+typedef void* HWND;
+typedef int BOOL;
+extern "C" {
+	__declspec(dllimport) HWND __stdcall GetConsoleWindow();
+	__declspec(dllimport) BOOL __stdcall AllocConsole();
+	__declspec(dllimport) HINSTANCE LoadLibraryA(const char* lpLibFileName);
+	__declspec(dllimport) void* GetProcAddress(HINSTANCE hModule, const char* lpProcName);
+	typedef BOOL(__stdcall* ShowWindowDef)(HWND hWnd, int nCmdShow);
+}
+#endif
+
+
+
+
+
+#include "Components/StaticMeshComponent.h"
 
 // Sets default values
 AStdioConsole::AStdioConsole()
@@ -54,9 +70,9 @@ void AStdioConsole::Tick(float DeltaTime)
 }
 
 void AStdioConsole::ShowConsole(){
-	#ifdef __INTELLISENSE__
-	// visual studio intelisense is stupid, this keeps windows headers out of the intellisense shit show
+#ifdef __INTELLISENSE__
 #else
+#endif
 #ifdef _WIN32
 	HANDLE conHandleExisted = GetConsoleWindow();
 	if (conHandleExisted == NULL)
@@ -83,7 +99,6 @@ void AStdioConsole::ShowConsole(){
 	} else {
 		UE_LOG(LogTemp, Display, TEXT("No console handle gound"));
 	}
-#endif
 #endif
 }
 

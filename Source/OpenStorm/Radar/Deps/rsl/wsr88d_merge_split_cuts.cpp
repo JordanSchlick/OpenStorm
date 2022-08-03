@@ -1,6 +1,8 @@
 #include <math.h>
 #include "rsl.h"
 
+#include <string.h>
+
 #ifdef _WIN32
 #define strdup _strdup
 #endif

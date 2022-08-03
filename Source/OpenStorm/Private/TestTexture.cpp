@@ -4,6 +4,8 @@
 #include "TestTexture.h"
 #include "Engine/Texture2D.h"
 #include "UObject/Object.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Components/StaticMeshComponent.h"
 #include "Math/UnrealMathUtility.h"
 
 // Sets default values
@@ -45,7 +47,7 @@ void ATestTexture::BeginPlay()
 
 	//UE_LOG(LogTemp, Display, TEXT("%s"), StoredMaterial->GetName());
 
-	DynamicMaterialInst = UMaterialInstanceDynamic::Create(cubeMeshComponent->GetMaterial(0) , cubeMesh);
+	DynamicMaterialInst = UMaterialInstanceDynamic::Create(cubeMeshComponent->GetMaterial(0) , this);
 	cubeMeshComponent->SetMaterial(0, DynamicMaterialInst);
 
 

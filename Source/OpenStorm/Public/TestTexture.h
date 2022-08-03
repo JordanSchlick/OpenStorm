@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/StaticMesh.h" 
+#include "Components/StaticMeshComponent.h"
 #include "TestTexture.generated.h"
 
 UCLASS()

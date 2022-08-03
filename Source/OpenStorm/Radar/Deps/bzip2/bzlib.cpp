@@ -28,6 +28,8 @@
 	  bzBuffToBuffDecompress.  Fixed.
 */
 
+
+#include "bzlib.h"
 #include "bzlib_private.h"
 
 #ifdef _WIN32

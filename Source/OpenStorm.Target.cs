@@ -10,5 +10,13 @@ public class OpenStormTarget : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		ExtraModuleNames.AddRange( new string[] { "OpenStorm" } );
+		
+		bUseUnityBuild = false;
+		bUsePCHFiles = false;
+		
+		
+		//SourceFileWorkingSet.Provider = "None";
+		//SourceFileWorkingSet.RepositoryPath = "";
+		//SourceFileWorkingSet.GitPath = "";
 	}
 }

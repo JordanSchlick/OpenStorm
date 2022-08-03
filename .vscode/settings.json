@@ -1,0 +1,31 @@
+{
+	"files.associations": {
+		"*.ush": "hlsl",
+		"algorithm": "cpp",
+		"cmath": "cpp",
+		"cstddef": "cpp",
+		"cstdint": "cpp",
+		"cstdio": "cpp",
+		"cstdlib": "cpp",
+		"cstring": "cpp",
+		"cwchar": "cpp",
+		"exception": "cpp",
+		"initializer_list": "cpp",
+		"iosfwd": "cpp",
+		"limits": "cpp",
+		"map": "cpp",
+		"new": "cpp",
+		"stdexcept": "cpp",
+		"tuple": "cpp",
+		"type_traits": "cpp",
+		"utility": "cpp",
+		"xmemory": "cpp",
+		"xmemory0": "cpp",
+		"xstddef": "cpp",
+		"xstring": "cpp",
+		"xtr1common": "cpp",
+		"xtree": "cpp",
+		"xutility": "cpp",
+		"*.rh": "cpp"
+	}
+}

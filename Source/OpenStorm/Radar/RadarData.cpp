@@ -2,8 +2,9 @@
 #include "RadarData.h"
 #include "./Deps/rsl/rsl.h"
 
-#include "CoreMinimal.h"
-#include "Engine/Texture2D.h"
+
+//#include "CoreMinimal.h"
+//#include "Engine/Texture2D.h"
 
 #ifdef __INTELLISENSE__
 // visual studio may have a fucking meltdown if it includes c++ standard headers move them into the else block here if it happens
@@ -254,20 +255,21 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
 
 	
 	// sizes of secitions of the buffer
-	int thetaBufferSize = radiusBufferCount * 4;
+	int thetaBufferSize = radiusBufferCount;
 	int sweepBufferSize = (thetaBufferCount + 2) * thetaBufferSize;
 	int fullBufferSize = sweepBufferCount * sweepBufferSize;
 
-	uint8_t* textureBuffer = new uint8_t[fullBufferSize]();
-	int divider = (maxValue - minValue) / 256 + 1;
+	float* textureBuffer = new float[fullBufferSize]();
+	//int divider = (maxValue - minValue) / 256 + 1;
+	float divider = (maxValue - minValue);
 	for (int sweepIndex = 0; sweepIndex < sweepBufferCount; sweepIndex++) {
 		for (int theta = 0; theta < thetaBufferCount; theta++) {
 			for (int radius = 0; radius < radiusBufferCount; radius++) {
-				int value = (buffer[radius + (theta * radiusBufferCount) + (sweepIndex * radiusBufferCount * thetaBufferCount)] - minValue) / divider;
+				float value = (buffer[radius + (theta * radiusBufferCount) + (sweepIndex * radiusBufferCount * thetaBufferCount)] - minValue) / divider;
 				//if (theta == 0) {
 				//	value = 255;
 				//}
-				textureBuffer[3 + (radius * 4) + ((theta + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)] = std::max(0, value);
+				textureBuffer[(radius) + ((theta + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)] = std::max(0.0f, value);
 			}
 		}
 		// pad theta with pixels from the other side
@@ -276,7 +278,7 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
 		memcpy(
 			textureBuffer + (sweepIndex * sweepBufferSize),
 			textureBuffer + (thetaBufferCount * thetaBufferSize + (sweepIndex * sweepBufferSize)),
-			thetaBufferSize);
+			thetaBufferSize*4);
 
 		
 
@@ -284,14 +286,15 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
 		memcpy(
 			textureBuffer + (((thetaBufferCount + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)),
 			textureBuffer + (thetaBufferSize + (sweepIndex * sweepBufferSize)),
-			thetaBufferSize);
+			thetaBufferSize*4);
 
 		if (sweepIndex == 3 ) {
 			//for (int radius = 0; radius < thetaBufferSize; radius++) {
 			//	textureBuffer[(sweepIndex * sweepBufferSize) + radius] = 255;
 			//}
 			for (int radius = 0; radius < thetaBufferSize; radius++) {
-				textureBuffer[((230) * thetaBufferSize) + (sweepIndex * sweepBufferSize) + radius] = 255;
+				//textureBuffer[((230) * thetaBufferSize) + (sweepIndex * sweepBufferSize) + radius] = 255;
+				textureBuffer[((230) * thetaBufferSize) + (sweepIndex * sweepBufferSize) + radius] = 1.0f * (float)radius / (float)thetaBufferSize;
 			}
 		}
 		/*memcpy(textureBuffer + (sweepIndex * thetaRadiusBufferSize), textureBuffer + (radiusBufferCount * radiusBufferSize + sweepIndex * thetaRadiusBufferSize), radiusBufferSize);
@@ -302,8 +305,8 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
 	}
 	//for(int sweep)
 	RadarData::TextureBuffer returnValue;
-	returnValue.data.uint8Array = textureBuffer;
-	returnValue.byteSize = fullBufferSize;
+	returnValue.data = textureBuffer;
+	returnValue.byteSize = fullBufferSize * 4;
 	return returnValue;
 }
 
@@ -338,7 +341,7 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 		//rawAngleIndexImageData[i] = 0;
 	}*/
 	RadarData::TextureBuffer returnValue;
-	returnValue.data.floatArray = textureBuffer;
+	returnValue.data = textureBuffer;
 	returnValue.byteSize = 65536 * 4;
 	return returnValue;
 }

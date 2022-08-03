@@ -209,17 +209,26 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 		continue;
 	}
 	
-	float4 localValue;
-	float3 localColor;
 	
+	float3 localColor;
+	float localAlpha;
 	
 	if(intMode == 0){
 		// get pixel value
 		
 		
-		localValue = volume[uint2(radiusInt, thetaInt + (sweepInt) * thetaSize2)];
+		float localValue = volume[uint2(radiusInt, thetaInt + (sweepInt) * thetaSize2)].r;
 		
-		localColor = F::HUEtoRGB((1-localValue.a)) * 1;
+		
+		
+		// get color and alpha from valueIndex using localValue as the index
+		int mappedValueIndex = saturate((localValue - valueIndexLower) / (valueIndexUpper - valueIndexLower)) * 16383;
+		float4 localMappedValue = valueIndex[uint2(mappedValueIndex & 0x7F, mappedValueIndex >> 7)];
+		localColor = localMappedValue;
+		localAlpha = localMappedValue.a;
+		
+		//localColor = F::HUEtoRGB(1-localValue) * 1;
+		//localAlpha = saturate(localValue * 1);
 	}
 	
 	
@@ -227,14 +236,14 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 		// linear interpolate pixel
 		
 		sweepInt = sweep;
-		float4 localValue000 = volume[uint2(radiusInt,     thetaInt +     (sweepInt    ) * thetaSize2)];
-		float4 localValue100 = volume[uint2(radiusInt + 1, thetaInt +     (sweepInt    ) * thetaSize2)];
-		float4 localValue010 = volume[uint2(radiusInt,     thetaInt + 1 + (sweepInt    ) * thetaSize2)];
-		float4 localValue110 = volume[uint2(radiusInt + 1, thetaInt + 1 + (sweepInt    ) * thetaSize2)];
-		float4 localValue001 = volume[uint2(radiusInt,     thetaInt +     (sweepInt + 1) * thetaSize2)];
-		float4 localValue101 = volume[uint2(radiusInt + 1, thetaInt +     (sweepInt + 1) * thetaSize2)];
-		float4 localValue011 = volume[uint2(radiusInt,     thetaInt + 1 + (sweepInt + 1) * thetaSize2)];
-		float4 localValue111 = volume[uint2(radiusInt + 1, thetaInt + 1 + (sweepInt + 1) * thetaSize2)];
+		float4 localValue000 = volume[uint2(radiusInt,     thetaInt +     (sweepInt    ) * thetaSize2)].r;
+		float4 localValue100 = volume[uint2(radiusInt + 1, thetaInt +     (sweepInt    ) * thetaSize2)].r;
+		float4 localValue010 = volume[uint2(radiusInt,     thetaInt + 1 + (sweepInt    ) * thetaSize2)].r;
+		float4 localValue110 = volume[uint2(radiusInt + 1, thetaInt + 1 + (sweepInt    ) * thetaSize2)].r;
+		float4 localValue001 = volume[uint2(radiusInt,     thetaInt +     (sweepInt + 1) * thetaSize2)].r;
+		float4 localValue101 = volume[uint2(radiusInt + 1, thetaInt +     (sweepInt + 1) * thetaSize2)].r;
+		float4 localValue011 = volume[uint2(radiusInt,     thetaInt + 1 + (sweepInt + 1) * thetaSize2)].r;
+		float4 localValue111 = volume[uint2(radiusInt + 1, thetaInt + 1 + (sweepInt + 1) * thetaSize2)].r;
 		
 		float4 localValue00 = lerp(localValue000,localValue100, radius - radiusInt);
 		float4 localValue10 = lerp(localValue010,localValue110, radius - radiusInt);
@@ -244,15 +253,26 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 		float4 localValue0 = lerp(localValue00,localValue10, theta - thetaInt);
 		float4 localValue1 = lerp(localValue01,localValue11, theta - thetaInt);
 		
-		localValue = lerp(localValue0,localValue1, sweep - sweepInt);
+		float localValue = lerp(localValue0,localValue1, sweep - sweepInt);
 		
-		localColor = F::HUEtoRGB((1-localValue.a)) * 1;
+		//localColor = F::HUEtoRGB((1-localValue)) * 1;
+		//localAlpha = localValue;
+		
+		int mappedValueIndex = saturate((localValue - valueIndexLower) / (valueIndexUpper - valueIndexLower)) * 16383;
+		float4 localMappedValue = valueIndex[uint2(mappedValueIndex & 0x7F, mappedValueIndex >> 7)];
+		localColor = localMappedValue;
+		localAlpha = localMappedValue.a;
 	}
 	
 	
 	if(intMode == 2){
-		localValue = volume[uint2(radiusInt, thetaInt + (sweepInt) * thetaSize2)];
+		float localValue = volume[uint2(radiusInt, thetaInt + (sweepInt) * thetaSize2)].r;
+		
 		localColor = F::HUEtoRGB((distance(location,cameraPos) / 300) % 1) * 1;
+		
+		int mappedValueIndex = saturate((localValue - valueIndexLower) / (valueIndexUpper - valueIndexLower)) * 16383;
+		float4 localMappedValue = valueIndex[uint2(mappedValueIndex & 0x7F, mappedValueIndex >> 7)];
+		localAlpha = localMappedValue.a;
 	}
 	
 	// if(localValue.a != 0 && wasEmpty != 0){
@@ -265,7 +285,7 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	
 	//localColor = F::HUEtoRGB((distance(location,cameraPos) / 300) % 1) * 1;
 	
-	float localAlpha = animationTime < localValue.a ? localValue.a : 0;
+	localAlpha = animationTime < localAlpha ? localAlpha : 0;
 	//if(radiusInt < radiusSize){
 	//	localAlpha = 1;
 	//}

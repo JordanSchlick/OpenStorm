@@ -7,7 +7,8 @@
 #else
 
 #endif
-#include "CoreMinimal.h"
+//#include "CoreMinimal.h"
+#include <stdint.h>
 
 class RadarData {
 public:
@@ -48,10 +49,7 @@ public:
 	void ReadNexrad(const char* filename);
 
 	struct TextureBuffer {
-		union TextureBufferData {
-			uint8_t* uint8Array;
-			float* floatArray;
-		} data;
+		float* data;
 		int byteSize;
 	};
 

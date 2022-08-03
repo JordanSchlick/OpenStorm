@@ -61,6 +61,10 @@
  *   Cvt_time                    <- From Dan Austin
  *
  */ 
+
+
+#include "wsr88d.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,7 +78,6 @@
 #include "wsr88d_decode_ar2v.h"
 
 
-#include "wsr88d.h"
 
 static int little_endian(void)
 {

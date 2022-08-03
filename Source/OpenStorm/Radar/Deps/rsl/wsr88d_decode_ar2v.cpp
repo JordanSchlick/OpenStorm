@@ -1,3 +1,5 @@
+#include "wsr88d_decode_ar2v.h"
+
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>

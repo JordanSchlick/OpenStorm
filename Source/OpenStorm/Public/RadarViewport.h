@@ -5,8 +5,12 @@
 
 #include "RadarVolumeRender.h"
 
+#include "UObject/Object.h"
+#include "UObject/ConstructorHelpers.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Components/StaticMeshComponent.h"
 #include "RadarViewport.generated.h"
 
 UCLASS()
