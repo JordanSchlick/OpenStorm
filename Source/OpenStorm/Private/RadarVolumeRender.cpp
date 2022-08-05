@@ -144,8 +144,9 @@ void ARadarVolumeRender::BeginPlay()
 	delete[] imageBuffer.data;
 	
 
-
-	RadarColorIndexResult valueIndex = RadarColorIndex::relativeHue();
+	RadarColorIndexParams colorParams = {};
+	colorParams.fromRadarData(&radarData);
+	RadarColorIndexResult valueIndex = RadarColorIndex::relativeHue(colorParams);
 
 	float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
 	//memcpy(rawValueIndexImageData, valueIndex.data, 16384);
@@ -180,7 +181,21 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	//return;
+	/*
+	RadarColorIndexResult valueIndex = RadarColorIndex::relativeHueAcid();
+
+	float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
+	//memcpy(rawValueIndexImageData, valueIndex.data, 16384);
 	
+	memcpy(rawValueIndexImageData, valueIndex.data, valueIndex.byteSize);
+	valueIndexImageData->Unlock();
+	valueIndexTexture->UpdateResource();
+
+	delete[] valueIndex.data;
+	// set value bounds
+	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexLower"), valueIndex.lower);
+	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexUpper"), valueIndex.upper);
+	*/
 }
 
 

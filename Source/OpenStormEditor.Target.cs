@@ -27,7 +27,7 @@ public class OpenStormEditorTarget : TargetRules
 		ExtraModuleNames.AddRange( new string[] { "OpenStorm" } );
 		
 		bUseUnityBuild = false;
-		bUsePCHFiles = false;
+		//bUsePCHFiles = false;
 		
 		
 		//SourceFileWorkingSet.Provider = "None";

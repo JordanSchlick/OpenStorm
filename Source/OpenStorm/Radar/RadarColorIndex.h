@@ -5,9 +5,9 @@
 
 class RadarColorIndexParams {
 public:
-
 	float minValue = 0;
 	float maxValue = 1;
+	void fromRadarData(RadarData* radarData);
 };
 
 
@@ -27,5 +27,6 @@ public:
 // Produces buffers for 128 x 128 float4 textures which comes out to 65536 floats or 262144 bytes or 16384 pixels
 class RadarColorIndex {
 public:
-	static RadarColorIndexResult relativeHue();
+	static RadarColorIndexResult relativeHue(RadarColorIndexParams params);
+	static RadarColorIndexResult relativeHueAcid(RadarColorIndexParams params);
 };

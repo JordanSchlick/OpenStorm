@@ -120,14 +120,14 @@ void RadarData::ReadNexrad(const char* filename) {
 						int radiusSize = ray->h.nbins;
 						maxRadius = std::max(maxRadius, radiusSize);
 						for (int radius = 0; radius < radiusSize; radius++) {
-							//int value = ray->h.f(ray->range[radius]);
-							int value = ray->range[radius];
-							if (value == 131072) {
-								value = 0;
+							int value = ray->h.f(ray->range[radius]);
+							//int value = ray->range[radius];
+							if (value != 131072) {
+								minValue = value != 0 ? (value < minValue ? value : minValue) : minValue;
+								//minValue = value < minValue ? value : minValue;
+								maxValue = value > maxValue ? value : maxValue;
 							}
-							minValue = value != 0 ? (value < minValue ? value : minValue) : minValue;
-							//minValue = value < minValue ? value : minValue;
-							maxValue = value > maxValue ? value : maxValue;
+							
 						}
 					}
 				}
@@ -150,13 +150,14 @@ void RadarData::ReadNexrad(const char* filename) {
 
 
 
-			// sizes of secitions of the buffer
+			// sizes of sections of the buffer
 			int thetaBufferSize = radiusBufferCount;
 			int sweepBufferSize = thetaBufferCount * thetaBufferSize;
 			int fullBufferSize = sweepBufferCount * sweepBufferSize;
 
 			if (buffer == NULL) {
-				buffer = new float[fullBufferSize]();
+				buffer = new float[fullBufferSize];
+				std::fill(buffer, buffer+fullBufferSize, -INFINITY);
 			}
 			
 			int sweepIndex = 0;
@@ -178,10 +179,11 @@ void RadarData::ReadNexrad(const char* filename) {
 						int radiusSize = std::min(ray->h.nbins, radiusBufferCount);
 						for (int radius = 0; radius < radiusSize; radius++) {
 							//int value = (ray->range[radius] - minValue) / divider;
-							//float value = ray->h.f(ray->range[radius]);
-							float value = ray->range[radius];
+							float value = ray->h.f(ray->range[radius]);
+							//float value = ray->range[radius];
 							if (value == 131072) {
-								value = 0;
+								// value for no data
+								value = -INFINITY;
 							}
 							buffer[radius + (realTheta * thetaBufferSize) + (sweepIndex * sweepBufferSize)] = value;
 
@@ -195,7 +197,7 @@ void RadarData::ReadNexrad(const char* filename) {
 					}
 					//break;
 				}
-
+				
 
 				for (int theta = 0; theta < thetaBufferCount; theta++) {
 					if (!usedThetas[theta]) {
@@ -244,6 +246,15 @@ void RadarData::ReadNexrad(const char* filename) {
 				sweepIndex++;
 			}
 
+
+			/*
+			fprintf(stderr,"ray values:");
+			for(int radius = 0; radius < thetaBufferSize; radius++){
+				fprintf(stderr," %.10f",buffer[radius + sweepBufferSize * 2]);
+			}
+			fprintf(stderr,"\n");
+			//*/
+
 			RSL_free_radar(radar);
 		}
 	}
@@ -265,11 +276,15 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
 	for (int sweepIndex = 0; sweepIndex < sweepBufferCount; sweepIndex++) {
 		for (int theta = 0; theta < thetaBufferCount; theta++) {
 			for (int radius = 0; radius < radiusBufferCount; radius++) {
-				float value = (buffer[radius + (theta * radiusBufferCount) + (sweepIndex * radiusBufferCount * thetaBufferCount)] - minValue) / divider;
+				//float value = (buffer[radius + (theta * radiusBufferCount) + (sweepIndex * radiusBufferCount * thetaBufferCount)] - minValue) / divider;
+				//textureBuffer[(radius) + ((theta + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)] = std::max(0.0f, value);
+				
+				float value = buffer[radius + (theta * radiusBufferCount) + (sweepIndex * radiusBufferCount * thetaBufferCount)];
+				textureBuffer[(radius) + ((theta + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)] =  value;
 				//if (theta == 0) {
 				//	value = 255;
 				//}
-				textureBuffer[(radius) + ((theta + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)] = std::max(0.0f, value);
+				
 			}
 		}
 		// pad theta with pixels from the other side
@@ -324,10 +339,10 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 		int delta = endLocation - startLocation;
 		float deltaF = delta;
 		//fprintf(stderr, "delta: %i %f\n", delta, info1.elevation);
-		float firstSwwepIndex = sweepIndex - 1.0f;
+		float firstSweepIndex = sweepIndex - 1.0f;
 		for (int i = 0; i <= delta; i++) {
 			float subLocation = (float)i / deltaF;
-			textureBuffer[startLocation + i] = firstSwwepIndex + subLocation;
+			textureBuffer[startLocation + i] = firstSweepIndex + subLocation;
 		}
 	}
 
@@ -349,7 +364,7 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 	return returnValue;
 }
 
-void RadarData::Clear(){
+void RadarData::Deallocate(){
 	if(buffer != NULL){
 		delete[] buffer;
 		buffer = NULL;
@@ -362,6 +377,6 @@ void RadarData::Clear(){
 
 
 RadarData::~RadarData(){
-	RadarData::Clear();
+	RadarData::Deallocate();
 	fprintf(stderr,"freed RadarData\n");
 }
