@@ -246,6 +246,15 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 		float4 localValue011 = volume[uint2(radiusInt,     thetaInt + 1 + (sweepInt + 1) * thetaSize2)].r;
 		float4 localValue111 = volume[uint2(radiusInt + 1, thetaInt + 1 + (sweepInt + 1) * thetaSize2)].r;
 		
+		localValue000 = max(localValue000, valueIndexLower);
+		localValue100 = max(localValue100, valueIndexLower);
+		localValue010 = max(localValue010, valueIndexLower);
+		localValue110 = max(localValue110, valueIndexLower);
+		localValue001 = max(localValue001, valueIndexLower);
+		localValue101 = max(localValue101, valueIndexLower);
+		localValue011 = max(localValue011, valueIndexLower);
+		localValue111 = max(localValue111, valueIndexLower);
+		
 		float4 localValue00 = lerp(localValue000,localValue100, radius - radiusInt);
 		float4 localValue10 = lerp(localValue010,localValue110, radius - radiusInt);
 		float4 localValue01 = lerp(localValue001,localValue101, radius - radiusInt);
