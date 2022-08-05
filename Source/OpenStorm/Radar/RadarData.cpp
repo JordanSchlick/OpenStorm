@@ -316,6 +316,9 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 	for (int sweepIndex = 1; sweepIndex < sweepBufferCount; sweepIndex++) {
 		RadarData::SweepInfo info1 = sweepInfo[sweepIndex - 1];
 		RadarData::SweepInfo info2 = sweepInfo[sweepIndex];
+		if(info2.id == -1){
+			break;
+		}
 		int startLocation = info1.elevation * 32768 / 90 + 32768;
 		int endLocation = info2.elevation * 32768 / 90 + 32768;
 		int delta = endLocation - startLocation;
@@ -344,4 +347,21 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 	returnValue.data = textureBuffer;
 	returnValue.byteSize = 65536 * 4;
 	return returnValue;
+}
+
+void RadarData::Clear(){
+	if(buffer != NULL){
+		delete[] buffer;
+		buffer = NULL;
+	}
+	if(sweepInfo != NULL){
+		delete[] sweepInfo;
+		sweepInfo = NULL;
+	}
+}
+
+
+RadarData::~RadarData(){
+	RadarData::Clear();
+	fprintf(stderr,"freed RadarData\n");
 }

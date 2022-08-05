@@ -229,6 +229,7 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 		
 		//localColor = F::HUEtoRGB(1-localValue) * 1;
 		//localAlpha = saturate(localValue * 1);
+		//localAlpha = localValue * 20;
 	}
 	
 	

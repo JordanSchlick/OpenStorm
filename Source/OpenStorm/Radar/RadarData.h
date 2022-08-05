@@ -33,7 +33,7 @@ public:
 
 	struct SweepInfo {
 		float elevation = 0;
-		int id = 0;
+		int id = -1;
 		int actualRayCount = 0;
 	};
 
@@ -63,6 +63,11 @@ public:
 	// pixel 65536 is strait up, pixel 32768 is paralel with the ground, pixel 0 is strait down
 	// value 0 is no sweep, value 1.0-255.0 specify the index of the sweep, value 1.0 specifies first sweep, values inbetween intagers will interpolate sweeps
 	RadarData::TextureBuffer CreateAngleIndexBuffer();
+	
+	//frees all buffers
+	void Clear();
+	
+	~RadarData();
 };
 
 
