@@ -144,9 +144,10 @@ void ARadarVolumeRender::BeginPlay()
 	delete[] imageBuffer.data;
 	
 
-	RadarColorIndexParams colorParams = {};
+	RadarColorIndex::Params colorParams = {};
 	colorParams.fromRadarData(&radarData);
-	RadarColorIndexResult valueIndex = RadarColorIndex::relativeHue(colorParams);
+	//RadarColorIndexResult valueIndex = RadarColorIndex::relativeHue(colorParams);
+	RadarColorIndex::Result valueIndex = RadarColorIndex::reflectivityColors(colorParams);
 
 	float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
 	//memcpy(rawValueIndexImageData, valueIndex.data, 16384);
