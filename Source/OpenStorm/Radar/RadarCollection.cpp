@@ -126,6 +126,7 @@ void RadarCollection::ReadFiles() {
 	if(radarFiles.size() > 0){
 		// TODO: implement reloading files by replacing radarFiles and changing firstItemIndex and lastItemIndex to reflent the new vector
 		fprintf(stderr, "file reloading is not implemented yet\n");
+		return;
 	}
 
 	auto files = SystemAPI::readDirectory(filePath);
@@ -147,6 +148,7 @@ void RadarCollection::ReadFiles() {
 void RadarCollection::UnloadOldData() {
 	if(!allocated){
 		fprintf(stderr,"Not allocated\n");
+		return;
 	}
 	
 	int amountToRemoveBefore = cachedBefore - (cacheSizeSide - reservedCacheSize);
@@ -178,9 +180,11 @@ void RadarCollection::UnloadOldData() {
 void RadarCollection::LoadNewFiles() {
 	if(!allocated){
 		fprintf(stderr,"Not allocated\n");
+		return;
 	}
 	if(lastItemIndex < 0){
 		fprintf(stderr,"No files loaded\n");
+		return;
 	}
 	int unloadedCount = 0;
 	int loadingCount = 0;
