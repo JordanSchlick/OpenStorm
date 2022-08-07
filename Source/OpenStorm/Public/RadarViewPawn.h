@@ -1,9 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-
+#include "RadarVolumeRender.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "Camera/CameraComponent.h"
 #include "RadarViewPawn.generated.h"
 
 UCLASS()
@@ -26,4 +27,28 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+private:
+	void MoveFB(float Value);
+	void MoveLR(float Value);
+	void MoveUD(float Value);
+	void RotateLR(float Value);
+	void RotateUD(float Value);
+	
+private:
+	UPROPERTY(EditAnywhere)
+		float MoveSpeed = 2.0f;
+	UPROPERTY(EditAnywhere)
+		float RotateSpeed = 2.0f;
+	
+	UPROPERTY(VisibleAnywhere)
+		UStaticMeshComponent* meshComponent;
+	
+	UPROPERTY(EditAnywhere)
+		ARadarVolumeRender* mainVolumeRender = NULL;
+	
+	UPROPERTY(EditAnywhere)
+		UMaterialInstanceDynamic* radarMaterialInstance = NULL;
+	
+	UPROPERTY(EditAnywhere)
+		UCameraComponent * camera = NULL;
 };
