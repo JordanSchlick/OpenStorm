@@ -10,6 +10,7 @@
 //#define VERBOSE 1
 #include "../Radar/RadarData.h"
 #include "../Radar/RadarColorIndex.h"
+#include "../Radar/RadarCollection.h"
 
 
 #include "UObject/Object.h"
@@ -86,8 +87,8 @@ void ARadarVolumeRender::BeginPlay()
 
 	FString radarFile = FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/Demo/KMKX_20220723_235820"));
 	FString fullPath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarFile);
-	RadarData radarData = {};
 	const char* fileLocaition = StringCast<ANSICHAR>(*fullPath).Get();
+	RadarData radarData = {};
 	radarData.ReadNexrad(fileLocaition);
 
 	if (radarData.radiusBufferCount == 0) {
@@ -162,8 +163,19 @@ void ARadarVolumeRender::BeginPlay()
 	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexUpper"), valueIndex.upper);
 
 	
-
+	RadarCollection::Testing();
 	
+	FString radarDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("../files/dir/"));
+	FString fullradarDir = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarDir);
+	const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
+	fprintf(stderr, "path %s\n", radarDirLocaition);
+	
+	RadarCollection* radarCollection = new RadarCollection();
+	radarCollection->filePath = std::string(radarDirLocaition);
+
+	radarCollection->Allocate(12);
+	radarCollection->ReadFiles();
+	radarCollection->LoadNewFiles();
 
 	//RandomizeTexture();
 }

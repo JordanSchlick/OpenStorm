@@ -57,7 +57,7 @@ void RadarData::ReadNexrad(const char* filename) {
 						fprintf(stderr, "Ray is missing!\n");
 						continue;
 					}
-					fprintf(stderr, "======== %i\n", sweepIndex);
+					/*fprintf(stderr, "======== %i\n", sweepIndex);
 					fprintf(stderr, "sweep elev %f\n", sweep->h.elev);
 					fprintf(stderr, "sweep sweep_num %i\n", sweep->h.sweep_num);
 					fprintf(stderr, "sweep nrays %i\n", sweep->h.nrays);
@@ -73,7 +73,7 @@ void RadarData::ReadNexrad(const char* filename) {
 						fprintf(stderr, "sweep ray pixel length %i meters\n", sweep->ray[0]->h.gate_size);
 						fprintf(stderr, "sweep ray estimated length %i meters\n", sweep->ray[0]->h.gate_size * sweep->ray[0]->h.nbins + sweep->ray[0]->h.range_bin1);
 						fprintf(stderr, "sweep ray unam_rng %f meters\n", sweep->ray[0]->h.unam_rng);
-					}
+					}*/
 
 					
 
