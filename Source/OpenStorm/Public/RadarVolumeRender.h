@@ -33,6 +33,7 @@ public:
 	FByteBulkData* angleIndexImageData;
 	UTexture2D* valueIndexTexture;
 	FByteBulkData* valueIndexImageData;
+	static ARadarVolumeRender* instance;
 	void RandomizeTexture();
 
 protected:

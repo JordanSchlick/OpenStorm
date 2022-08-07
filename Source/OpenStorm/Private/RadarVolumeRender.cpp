@@ -23,7 +23,7 @@ inline int modulo(int i, int n) {
 }
 
 
-
+ARadarVolumeRender *ARadarVolumeRender::instance = NULL;
 // Sets default values
 ARadarVolumeRender::ARadarVolumeRender()
 {
@@ -48,6 +48,7 @@ ARadarVolumeRender::ARadarVolumeRender()
 	// Set as root component
 	RootComponent = cubeMeshComponent;
 
+	instance = this;
 }
 
 
