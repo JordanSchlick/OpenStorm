@@ -179,7 +179,7 @@ void RadarCollection::LoadNewFiles() {
 	if(!allocated){
 		fprintf(stderr,"Not allocated\n");
 	}
-	if(lastItemIndex == -1){
+	if(lastItemIndex < 0){
 		fprintf(stderr,"No files loaded\n");
 	}
 	int unloadedCount = 0;
