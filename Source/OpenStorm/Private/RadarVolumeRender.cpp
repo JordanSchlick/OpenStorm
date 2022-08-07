@@ -49,6 +49,8 @@ ARadarVolumeRender::ARadarVolumeRender()
 	// Set as root component
 	RootComponent = cubeMeshComponent;
 
+	SetActorEnableCollision(false);
+
 	instance = this;
 }
 

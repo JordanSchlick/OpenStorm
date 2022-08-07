@@ -28,7 +28,7 @@ ARadarViewPawn::ARadarViewPawn()
 	camera->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	meshComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	
-
+	SetActorEnableCollision(false);
 }
 
 // Called when the game starts or when spawned
