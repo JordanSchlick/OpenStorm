@@ -285,7 +285,10 @@ Wsr88d_file *wsr88d_open(char *filename)
 	//}
 	wf->fptr = fopen(filename, "r");
 
-	if (wf->fptr == NULL) return NULL;
+	if (wf->fptr == NULL){
+		fprintf(stderr,"failed open file\n");
+		return NULL;
+	}
 
 	// first check how the data are compressed by reading first few of magic bytes
 	char hdrplus4[28];
@@ -294,11 +297,11 @@ Wsr88d_file *wsr88d_open(char *filename)
 	fpos_t pos;
 	fgetpos(wf->fptr, &pos);
 	if (fread(hdrplus4, sizeof(hdrplus4), 1, wf->fptr) != 1) {
-		 fprintf(stderr,"failed to read first 28 bytes of Wsr88d file");
+		 fprintf(stderr,"failed to read first 28 bytes of Wsr88d file\n");
 		 return NULL;
 	}
 	if (fread(bzmagic, sizeof(bzmagic), 1, wf->fptr) != 1) {
-		 fprintf(stderr,"failed to read bzip magic bytes from Wsr88d file");
+		 fprintf(stderr,"failed to read bzip magic bytes from Wsr88d file\n");
 		 return NULL;
 	}
 	// test for bzip2 magic.
@@ -340,12 +343,15 @@ Wsr88d_file *wsr88d_open(char *filename)
 	if(ar2v6bzip){
 		 wf->fptr = uncompress_pipe_ar2v(wf->fptr);
 	}
-	else{
-		 wf->fptr = uncompress_pipe(wf->fptr);
+	//else{
+	//	 wf->fptr = uncompress_pipe(wf->fptr);
+	//}
+
+
+	if(wf->fptr == NULL){
+		fprintf(stderr,"failed open file for decoding\n");
+		return NULL;
 	}
-
-
-
 
 	#define NEW_BUFSIZ 16384
 	setvbuf(wf->fptr,NULL,_IOFBF,(size_t)NEW_BUFSIZ); /* Faster i/o? */

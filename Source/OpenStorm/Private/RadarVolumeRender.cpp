@@ -89,6 +89,7 @@ void ARadarVolumeRender::BeginPlay()
 
 
 	FString radarFile = FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/Demo/KMKX_20220723_235820"));
+	//FString radarFile = FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/Demo/KTLX20130531_231434_V06"));
 	FString fullPath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarFile);
 	const char* fileLocaition = StringCast<ANSICHAR>(*fullPath).Get();
 	RadarData radarData = {};

@@ -51,7 +51,8 @@ void ARadarViewPawn::Tick(float DeltaTime)
 			}
 		}
 	}
-
+	meshComponent->SetRelativeLocation(camera->GetRelativeLocation());
+	meshComponent->SetRelativeRotation(camera->GetRelativeRotation());
 }
 
 // Called to bind functionality to input

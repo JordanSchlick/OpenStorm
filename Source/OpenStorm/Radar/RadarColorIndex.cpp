@@ -158,6 +158,14 @@ RadarColorIndex::Result RadarColorIndex::reflectivityColors(RadarColorIndex::Par
 	
 	for (int i = 0; i < 16384; i++) {
 		float value = (i / 16383.0f);
+		if(valueToIndex(l,u,60) <= i && i < valueToIndex(l,u,70)){
+			//purple
+			value *= 1.5;
+		}
+		if(valueToIndex(l,u,70) <= i && i < valueToIndex(l,u,80)){
+			//white
+			value *= 2;
+		}
 		result.data[i * 4 + 3] = value;
 	}
 	return result;
