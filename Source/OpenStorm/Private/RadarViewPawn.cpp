@@ -35,6 +35,7 @@ ARadarViewPawn::ARadarViewPawn()
 void ARadarViewPawn::BeginPlay()
 {
 	Super::BeginPlay();
+	meshComponent->SetRelativeScale3D(FVector3d(0.25, 2, 2));
 	mainVolumeRender = ARadarVolumeRender::instance;
 }
 
