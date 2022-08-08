@@ -40,9 +40,9 @@ void ARadarViewPawn::BeginPlay()
 }
 
 // Called every frame
-void ARadarViewPawn::Tick(float DeltaTime)
+void ARadarViewPawn::Tick(float deltaTime)
 {
-	Super::Tick(DeltaTime);
+	Super::Tick(deltaTime);
 	if (radarMaterialInstance == NULL) {
 		if (mainVolumeRender != NULL) {
 			if (mainVolumeRender->radarMaterialInstance != NULL) {
@@ -53,6 +53,18 @@ void ARadarViewPawn::Tick(float DeltaTime)
 	}
 	meshComponent->SetRelativeLocation(camera->GetRelativeLocation());
 	meshComponent->SetRelativeRotation(camera->GetRelativeRotation());
+
+	FVector location = GetActorLocation();
+	location += camera->GetForwardVector() * forwardMovement * deltaTime * moveSpeed;
+	location += camera->GetRightVector() * sidewaysMovement * deltaTime * moveSpeed;
+	location.Z += verticalMovement * deltaTime * moveSpeed;
+	SetActorLocation(location);
+
+	FRotator rotation = GetActorRotation();
+	rotation.Pitch = FMath::Clamp(rotation.Pitch + verticalRotation * deltaTime * rotateSpeed, -89.0f, 89.0f);
+	rotation.Yaw += horizontalRotation * deltaTime * rotateSpeed;
+	rotation.Roll = 0;
+	SetActorRotation(rotation);
 }
 
 // Called to bind functionality to input
@@ -70,38 +82,43 @@ void ARadarViewPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void ARadarViewPawn::MoveFB(float value)
 {
-	auto Location = GetActorLocation();
-	Location += GetActorForwardVector() * value * MoveSpeed;
-	SetActorLocation(Location);
+	forwardMovement = value;
+	// auto Location = GetActorLocation();
+	// Location += camera->GetForwardVector() * value * MoveSpeed;
+	// SetActorLocation(Location);
 }
 
 void ARadarViewPawn::MoveLR(float value)
 {
-	auto Location = GetActorLocation();
-	Location += GetActorRightVector() * value * MoveSpeed;
-	SetActorLocation(Location);
+	sidewaysMovement = value;
+	// auto Location = GetActorLocation();
+	// Location += camera->GetRightVector() * value * MoveSpeed;
+	// SetActorLocation(Location);
 }
 
 void ARadarViewPawn::MoveUD(float value)
 {
-	auto Location = GetActorLocation();
-	Location.Z += value * MoveSpeed;
-	SetActorLocation(Location);
+	verticalMovement = value;
+	// auto Location = GetActorLocation();
+	// Location.Z += value * MoveSpeed;
+	// SetActorLocation(Location);
 }
 
-void ARadarViewPawn::RotateUD(float Value)
+void ARadarViewPawn::RotateUD(float value)
 {
-	auto Rotation = GetActorRotation();
-	Rotation.Pitch = FMath::Clamp(Rotation.Pitch + Value * RotateSpeed, -89.0f, 89.0f);
-	Rotation.Roll = 0;
-	SetActorRotation(Rotation);
+	verticalRotation = value;
+	// auto Rotation = GetActorRotation();
+	// Rotation.Pitch = FMath::Clamp(Rotation.Pitch + value * RotateSpeed, -89.0f, 89.0f);
+	// Rotation.Roll = 0;
+	// SetActorRotation(Rotation);
 }
 
-void ARadarViewPawn::RotateLR(float Value)
+void ARadarViewPawn::RotateLR(float value)
 {
-	auto Rotation = GetActorRotation();
-	Rotation.Yaw += Value * RotateSpeed;
-	SetActorRotation(Rotation);
+	horizontalRotation = value;
+	// auto Rotation = GetActorRotation();
+	// Rotation.Yaw += Value * RotateSpeed;
+	// SetActorRotation(Rotation);
 }
 
 
