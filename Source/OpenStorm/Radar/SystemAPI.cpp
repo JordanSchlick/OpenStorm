@@ -11,6 +11,22 @@
 #include <string>
 #include <vector>
 
+
+#ifdef UE_GAME
+//void __cdecl std::_Xbad_function_call() {
+    // for #include <functional>
+    // this symbol is missing in unreal for some reason
+//}
+//void __cdecl std::_Xlength_error(char const*) {
+    // for #include <map>
+    // this symbol is missing in unreal for some reason
+//}
+
+
+#ifdef _WIN32
+#endif
+
+
 double SystemAPI::currentTime() {
 	return FPlatformTime::Seconds();
 }
@@ -41,3 +57,5 @@ std::vector<std::string> SystemAPI::readDirectory(std::string path) {
     closedir(dirFd);
 #endif*/
 }
+
+#endif

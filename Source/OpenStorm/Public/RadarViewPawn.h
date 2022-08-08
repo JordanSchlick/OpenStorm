@@ -28,6 +28,12 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+	float forwardMovement = 0;
+	float sidewaysMovement = 0;
+	float verticalMovement = 0;
+	float verticalRotation = 0;
+	float horizontalRotation = 0;
+
 	void MoveFB(float Value);
 	void MoveLR(float Value);
 	void MoveUD(float Value);
@@ -36,9 +42,9 @@ private:
 	
 private:
 	UPROPERTY(EditAnywhere)
-		float MoveSpeed = 2.0f;
+		float moveSpeed = 300.0f;
 	UPROPERTY(EditAnywhere)
-		float RotateSpeed = 2.0f;
+		float rotateSpeed = 100.0f;
 	
 	UPROPERTY(VisibleAnywhere)
 		UStaticMeshComponent* meshComponent;

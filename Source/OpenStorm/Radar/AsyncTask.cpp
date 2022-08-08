@@ -7,11 +7,7 @@
 #include <functional>
 
 
-#ifdef _WIN32
-void __cdecl std::_Xbad_function_call() {
-	// this symbol is missing in unreal for some reason
-}
-#endif
+
 
 
 class FUnrealAsyncTask : public FNonAbandonableTask {

@@ -22,11 +22,7 @@ inline int modulo(int i, int n) {
 	return (i % n + n) % n;
 }
 
-#ifdef _WIN32
-void __cdecl std::_Xlength_error(char const*) {
-	// this symbol is missing in unreal for some reason
-}
-#endif
+
 
 void RadarData::ReadNexrad(const char* filename) {
 

@@ -166,6 +166,7 @@ RadarColorIndex::Result RadarColorIndex::reflectivityColors(RadarColorIndex::Par
 			//white
 			value *= 2;
 		}
+		value *= 2;
 		result.data[i * 4 + 3] = value;
 	}
 	return result;
