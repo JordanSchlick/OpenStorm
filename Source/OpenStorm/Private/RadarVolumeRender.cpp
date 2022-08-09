@@ -271,5 +271,8 @@ ARadarVolumeRender::~ARadarVolumeRender()
 	if(radarCollection != NULL){
 		delete radarCollection;
 	}
+	if(instance == this){
+		instance = NULL;
+	}
 }
 

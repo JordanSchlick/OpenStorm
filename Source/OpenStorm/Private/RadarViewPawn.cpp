@@ -61,8 +61,10 @@ void ARadarViewPawn::Tick(float deltaTime)
 	SetActorLocation(location);
 
 	FRotator rotation = GetActorRotation();
-	rotation.Pitch = FMath::Clamp(rotation.Pitch + verticalRotation * deltaTime * rotateSpeed, -89.0f, 89.0f);
-	rotation.Yaw += horizontalRotation * deltaTime * rotateSpeed;
+	rotation.Pitch = FMath::Clamp(rotation.Pitch + (verticalRotation * deltaTime + verticalRotationAmount / 60) * rotateSpeed, -89.0f, 89.0f);
+	verticalRotationAmount = 0;
+	rotation.Yaw += (horizontalRotation * deltaTime + horizontalRotationAmount / 60) * rotateSpeed;
+	horizontalRotationAmount = 0;
 	rotation.Roll = 0;
 	SetActorRotation(rotation);
 }
@@ -77,6 +79,8 @@ void ARadarViewPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("MoveUD", this, &ARadarViewPawn::MoveUD);
 	PlayerInputComponent->BindAxis("RotateLR", this, &ARadarViewPawn::RotateLR);
 	PlayerInputComponent->BindAxis("RotateUD", this, &ARadarViewPawn::RotateUD);
+	PlayerInputComponent->BindAxis("RotateMouseLR", this, &ARadarViewPawn::RotateMouseLR);
+	PlayerInputComponent->BindAxis("RotateMouseUD", this, &ARadarViewPawn::RotateMouseUD);
 	
 }
 
@@ -119,6 +123,16 @@ void ARadarViewPawn::RotateLR(float value)
 	// auto Rotation = GetActorRotation();
 	// Rotation.Yaw += Value * RotateSpeed;
 	// SetActorRotation(Rotation);
+}
+
+void ARadarViewPawn::RotateMouseUD(float value)
+{
+	verticalRotationAmount += value;
+}
+
+void ARadarViewPawn::RotateMouseLR(float value)
+{
+	horizontalRotationAmount += value;
 }
 
 

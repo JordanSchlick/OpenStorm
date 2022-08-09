@@ -34,12 +34,16 @@ private:
 	float verticalMovement = 0;
 	float verticalRotation = 0;
 	float horizontalRotation = 0;
+	float verticalRotationAmount = 0;
+	float horizontalRotationAmount = 0;
 
 	void MoveFB(float Value);
 	void MoveLR(float Value);
 	void MoveUD(float Value);
 	void RotateLR(float Value);
 	void RotateUD(float Value);
+	void RotateMouseLR(float Value);
+	void RotateMouseUD(float Value);
 	
 private:
 	UPROPERTY(EditAnywhere)
