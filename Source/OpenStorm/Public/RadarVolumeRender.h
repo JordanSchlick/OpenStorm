@@ -2,6 +2,9 @@
 
 #pragma once
 
+
+#include "../Radar/RadarCollection.h"
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -12,6 +15,7 @@
 #include "Engine/Texture2D.h"
 #include "RadarVolumeRender.generated.h"
 
+
 UCLASS()
 class OPENSTORM_API ARadarVolumeRender : public AActor
 {
@@ -20,6 +24,7 @@ class OPENSTORM_API ARadarVolumeRender : public AActor
 public:
 	// Sets default values for this actor's properties
 	ARadarVolumeRender();
+	~ARadarVolumeRender();
 
 	UPROPERTY(VisibleAnywhere)
 		UStaticMeshComponent* cubeMeshComponent;
@@ -34,6 +39,7 @@ public:
 	UTexture2D* valueIndexTexture;
 	FByteBulkData* valueIndexImageData;
 	static ARadarVolumeRender* instance;
+	RadarCollection* radarCollection = NULL;
 	void RandomizeTexture();
 
 protected:

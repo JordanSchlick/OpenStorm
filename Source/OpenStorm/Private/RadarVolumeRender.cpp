@@ -129,23 +129,19 @@ void ARadarVolumeRender::BeginPlay()
 
 	radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), radarData.innerDistance);
 
-	RadarData::TextureBuffer imageBuffer = radarData.CreateTextureBufferReflectivity();
+	RadarData::TextureBuffer imageBuffer = radarData.CreateTextureBufferReflectivity2();
 	float* RawImageData = (float*)volumeImageData->Lock(LOCK_READ_WRITE);
 	memcpy(RawImageData, imageBuffer.data, imageBuffer.byteSize);
 	volumeImageData->Unlock();
 	volumeTexture->UpdateResource();
 
-	delete[] imageBuffer.data;
-
 
 
 	imageBuffer = radarData.CreateAngleIndexBuffer();
-
 	float* rawAngleIndexImageData = (float*)angleIndexImageData->Lock(LOCK_READ_WRITE);
 	memcpy(rawAngleIndexImageData, imageBuffer.data, imageBuffer.byteSize);
 	angleIndexImageData->Unlock();
 	angleIndexTexture->UpdateResource();
-
 	delete[] imageBuffer.data;
 	
 
@@ -153,14 +149,11 @@ void ARadarVolumeRender::BeginPlay()
 	colorParams.fromRadarData(&radarData);
 	//RadarColorIndexResult valueIndex = RadarColorIndex::relativeHue(colorParams);
 	RadarColorIndex::Result valueIndex = RadarColorIndex::reflectivityColors(colorParams);
-
 	float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
 	//memcpy(rawValueIndexImageData, valueIndex.data, 16384);
-	
 	memcpy(rawValueIndexImageData, valueIndex.data, valueIndex.byteSize);
 	valueIndexImageData->Unlock();
 	valueIndexTexture->UpdateResource();
-
 	delete[] valueIndex.data;
 	// set value bounds
 	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexLower"), valueIndex.lower);
@@ -174,12 +167,37 @@ void ARadarVolumeRender::BeginPlay()
 	const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
 	fprintf(stderr, "path %s\n", radarDirLocaition);
 	
-	RadarCollection* radarCollection = new RadarCollection();
+	radarCollection = new RadarCollection();
 	radarCollection->filePath = std::string(radarDirLocaition);
 
-	radarCollection->Allocate(12);
+	radarCollection->RegisterListener([this](RadarData* data) {
+		if (data != NULL) {
+			RadarData::TextureBuffer buffer = data->CreateTextureBufferReflectivity2();
+			//float* RawImageData = (float*)volumeImageData->Lock(LOCK_READ_WRITE);
+			//memcpy(RawImageData, buffer.data, buffer.byteSize);
+			//volumeImageData->Unlock();
+			//volumeTexture->UpdateResource();
+			//if(buffer.data != NULL){
+			//	delete[] buffer.data;
+			//}
+			FUpdateTextureRegion2D* regions = new FUpdateTextureRegion2D[1]();
+			regions[0].DestX = 0;
+			regions[0].DestY = 0;
+			regions[0].SrcX = 0;
+			regions[0].SrcY = 0;
+			regions[0].Width = data->radiusBufferCount;
+			regions[0].Height = data->fullBufferSize / data->thetaBufferSize;
+
+			volumeTexture->UpdateTextureRegions(0, 1, regions, data->radiusBufferCount * 4, 4, (uint8*)buffer.data, [](uint8* dataPtr, const FUpdateTextureRegion2D* regionsPtr) {
+				delete regionsPtr;
+			});
+			
+		}
+	});
+
+	radarCollection->Allocate(22);
 	radarCollection->ReadFiles();
-	radarCollection->LoadNewFiles();
+	radarCollection->LoadNewData();
 
 	//RandomizeTexture();
 }
@@ -213,6 +231,7 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexLower"), valueIndex.lower);
 	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexUpper"), valueIndex.upper);
 	*/
+	radarCollection->EventLoop();
 }
 
 
@@ -245,5 +264,12 @@ void ARadarVolumeRender::RandomizeTexture() {
 
 	volumeImageData->Unlock();
 	volumeTexture->UpdateResource();
+}
+
+ARadarVolumeRender::~ARadarVolumeRender()
+{
+	if(radarCollection != NULL){
+		delete radarCollection;
+	}
 }
 

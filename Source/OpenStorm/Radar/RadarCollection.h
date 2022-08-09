@@ -24,7 +24,8 @@ public:
 		enum State{
 			DataStateUnloaded,
 			DataStateLoading,
-			DataStateLoaded
+			DataStateLoaded,
+			DataStateFailed
 		};
 		// uid to distinguish when it has been chenged
 		uint64_t uid = 0;
@@ -34,6 +35,8 @@ public:
 		RadarData* radarData = NULL;
 		// async loader reference
 		AsyncTaskRunner* loader = NULL;
+		// path of file corrsponding to the data
+		std::string filePath;
 		// constructor
 		RadarDataHolder();
 		// destructor
@@ -48,9 +51,10 @@ public:
 		// define standard max size for radar
 		int radiusBufferCount = 1832;
 		int thetaBufferCount = 720;
-		int sweepBufferCount = 15;
+		int sweepBufferCount = 13;
 	};
 	
+	// settings for radar data
 	RadarDataSettings radarDataSettings = {};
 	
 	// location of directory to load from
@@ -58,6 +62,9 @@ public:
 	
 	int maxLoading = 100;
 	
+	bool automaticallyAdvance = true;
+	
+	float autoAdvanceInterval = 0.3;
 	
 	static uint64_t CreateUID();
 	
@@ -67,19 +74,20 @@ public:
 	
 	void Allocate(int cacheSize);
 	
+	void Free();
+	
 	void Move(int delta);
 	
-	void ReadFiles();
+	void EventLoop();
 	
-	void UnloadOldData();
+	// register a callback for when radar data, this can emit null if there was an error loading data
+	void RegisterListener(std::function<void(RadarData *)> callback);
 	
-	void LoadNewFiles();
 	
-	void LogState();
 	
 	
 //private:	
-
+	// true if allocate has been called
 	bool allocated = false;
 
 	// holds currently laoded radar data
@@ -106,18 +114,40 @@ public:
 	// 1 for forward -1 for backward, the given direction will be prioritized for loading
 	int lastMoveDirection = 1;
 	
+	// if radar data needs to be emitted to listeners when it is loaded
+	bool needToEmit = true;
 	
+	// info about locations of files in the directory and time
 	float firstItemTime = -1;
 	int firstItemIndex = -1;
-	
 	float lastItemTime = -1;
 	int lastItemIndex = -1;
 	
-	std::vector<AsyncTaskRunner *> asyncTasks = std::vector<AsyncTaskRunner *>();
+	// next system time to advance
+	double nextAdvanceTime = 0;
 	
-	std::vector<RadarFile> radarFiles = std::vector<RadarFile>();
+	std::vector<AsyncTaskRunner *> asyncTasks = {};
 	
-	std::vector<std::function<void()>> listeners = std::vector<std::function<void()>>();
+	std::vector<RadarFile> radarFiles = {};
+	
+	std::vector<std::function<void(RadarData *)>> listeners = {};
+	
+	// read file info from a directory
+	void ReadFiles();
+	
+	// unload old data to make room for new data
+	void UnloadOldData();
+	
+	// load in new data
+	void LoadNewData();
+	
+	// emit radar data to all listeners
+	void Emit(RadarDataHolder* holder);
+	
+	// visually describe the state of the cache in the console
+	void LogState();
+	
+	int runs = 0;
 	
 	static void Testing();
 };

@@ -1,18 +1,20 @@
 #include "SystemAPI.h"
 
 
-//#include "Unix/UnixPlatformTime.h"
-//#include "Windows/WindowsPlatformTime.h"
-#include "GenericPlatform/GenericPlatformTime.h"
 
-#include "CoreMinimal.h"
-#include "HAL/FileManager.h"
 
 #include <string>
 #include <vector>
 
 
 #ifdef UE_GAME
+
+//#include "Unix/UnixPlatformTime.h"
+//#include "Windows/WindowsPlatformTime.h"
+#include "GenericPlatform/GenericPlatformTime.h"
+
+#include "CoreMinimal.h"
+#include "HAL/FileManager.h"
 //void __cdecl std::_Xbad_function_call() {
     // for #include <functional>
     // this symbol is missing in unreal for some reason
@@ -27,11 +29,11 @@
 #endif
 
 
-double SystemAPI::currentTime() {
+double SystemAPI::CurrentTime() {
 	return FPlatformTime::Seconds();
 }
 
-std::vector<std::string> SystemAPI::readDirectory(std::string path) {
+std::vector<std::string> SystemAPI::ReadDirectory(std::string path) {
 //#ifdef _WIN32
     //fprintf(stderr, "path %s\n", path.c_str());
     std::vector<std::string> files = {};
