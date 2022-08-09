@@ -6,6 +6,6 @@
 
 class SystemAPI{
 public:
-	static double currentTime();
-	static std::vector<std::string> readDirectory(std::string path);
+	static double CurrentTime();
+	static std::vector<std::string> ReadDirectory(std::string path);
 };

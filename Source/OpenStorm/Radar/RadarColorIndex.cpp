@@ -110,7 +110,7 @@ RadarColorIndex::Result RadarColorIndex::relativeHueAcid(RadarColorIndex::Params
 	
 	for (int i = 0; i < 16384; i++) {
 		float value = (i / 16383.0f);
-		float hue = 1 - fmod(value + SystemAPI::currentTime(), 1.0);
+		float hue = 1 - fmod(value + SystemAPI::CurrentTime(), 1.0);
 		float R = std::clamp(std::abs(hue * 6.0f - 3.0f) - 1.0f, 0.0f, 1.0f);
 		float G = std::clamp(2 - std::abs(hue * 6.0f - 2.0f), 0.0f, 1.0f);
 		float B = std::clamp(2 - std::abs(hue * 6.0f - 4.0f), 0.0f, 1.0f);

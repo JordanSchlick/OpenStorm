@@ -11,7 +11,7 @@
 
 
 class FUnrealAsyncTask : public FNonAbandonableTask {
-	//friend class FAutoDeleteAsyncTask<FUnrealAsyncTask>
+	friend class FAutoDeleteAsyncTask<FUnrealAsyncTask>;
 public:
 	std::function<void()> callback;
 
@@ -49,10 +49,29 @@ void AsyncTaskRunner::Cancel() {
 	canceled = true;
 }
 
+void AsyncTaskRunner::Delete() {
+	if(finished){
+		clearedForDeletion = true;
+		delete this;
+	}else{
+		autoDelete = true;
+	}
+}
+
 void AsyncTaskRunner::InternalTask() {
-	Task();
+	if(!canceled){
+		Task();
+	}
 	finished = true;
 	if (autoDelete) {
+		clearedForDeletion = true;
 		delete this;
+	}
+}
+
+AsyncTaskRunner::~AsyncTaskRunner(){
+	if(!clearedForDeletion){
+		fprintf(stderr, "WARNING!!!! AsyncTaskRunner was freed improperly, this will likely lead to a crash\n");
+		fflush(stderr);
 	}
 }

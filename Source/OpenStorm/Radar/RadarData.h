@@ -29,6 +29,10 @@ public:
 	// do not change while buffer is allocated
 	int sweepBufferCount = 0;
 
+	// sizes of sections of the buffer
+	int thetaBufferSize = 0;
+	int sweepBufferSize = 0;
+	int fullBufferSize = 0;
 	
 
 	struct SweepInfo {
@@ -56,6 +60,7 @@ public:
 	// returns a uint8 array of the volume each pixel is 4 bytes wide. theta is padded by one pixel on each side
 	// buffer must be freed with delete[]
 	RadarData::TextureBuffer CreateTextureBufferReflectivity();
+	RadarData::TextureBuffer CreateTextureBufferReflectivity2();
 
 	// returns a float array of the sweeps for elevations to be used with the shader
 	// buffer must be freed with delete[]

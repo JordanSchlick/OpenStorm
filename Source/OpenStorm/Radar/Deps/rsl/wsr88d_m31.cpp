@@ -201,46 +201,46 @@ typedef struct {
     int doppler_prf_num[WSR88D_MAX_SWEEPS];
 } VCP_data;
 
-static VCP_data vcp_data;
+//static VCP_data vcp_data;
 
-void wsr88d_get_vcp_data(short *msgtype5)
+void wsr88d_get_vcp_data(short *msgtype5, VCP_data* vcp_data)
 {
     short azim_rate, fixed_angle, vel_res;
     short sres_and_survprf; /* super res ctrl and surveil prf, one byte each */
     short chconf_and_waveform;
     int i;
     
-    vcp_data.vcp = (unsigned short) msgtype5[2];
-    vcp_data.num_cuts = msgtype5[3];
+    vcp_data->vcp = (unsigned short) msgtype5[2];
+    vcp_data->num_cuts = msgtype5[3];
     if (little_endian()) {
-	swap_2_bytes(&vcp_data.vcp);
-	swap_2_bytes(&vcp_data.num_cuts);
+        swap_2_bytes(&vcp_data->vcp);
+        swap_2_bytes(&vcp_data->num_cuts);
     }
     vel_res = msgtype5[5];
     if (little_endian()) swap_2_bytes(&vel_res);
     vel_res = vel_res >> 8;
-    if (vel_res == 2) vcp_data.vel_res = 0.5;
-    else if (vel_res == 4) vcp_data.vel_res = 1.0;
-    else vcp_data.vel_res = 0.0;
+    if (vel_res == 2) vcp_data->vel_res = 0.5;
+    else if (vel_res == 4) vcp_data->vel_res = 1.0;
+    else vcp_data->vel_res = 0.0;
     /* Get elevation related information for each sweep. */
-    for (i=0; i < vcp_data.num_cuts; i++) {
-	fixed_angle = msgtype5[11 + i*23];
-	azim_rate = msgtype5[15 + i*23];
-	chconf_and_waveform = msgtype5[12 + i*23];
-	sres_and_survprf = msgtype5[13 + i*23];
-	vcp_data.doppler_prf_num[i] = msgtype5[23 + i*23];
-	if (little_endian()) {
-	    swap_2_bytes(&fixed_angle);
-	    swap_2_bytes(&azim_rate);
-	    swap_2_bytes(&chconf_and_waveform);
-	    swap_2_bytes(&sres_and_survprf);
-	    swap_2_bytes(&vcp_data.doppler_prf_num[i]);
-	}
-	vcp_data.fixed_angle[i] = wsr88d_get_angle(fixed_angle);
-	vcp_data.azim_rate[i] = wsr88d_get_azim_rate(azim_rate);
-	vcp_data.waveform[i] = chconf_and_waveform & 0xff;
-	vcp_data.super_res_ctrl[i] = sres_and_survprf >> 8;
-	vcp_data.surveil_prf_num[i] = sres_and_survprf & 0xff;
+    for (i=0; i < vcp_data->num_cuts; i++) {
+        fixed_angle = msgtype5[11 + i*23];
+        azim_rate = msgtype5[15 + i*23];
+        chconf_and_waveform = msgtype5[12 + i*23];
+        sres_and_survprf = msgtype5[13 + i*23];
+        vcp_data->doppler_prf_num[i] = msgtype5[23 + i*23];
+        if (little_endian()) {
+            swap_2_bytes(&fixed_angle);
+            swap_2_bytes(&azim_rate);
+            swap_2_bytes(&chconf_and_waveform);
+            swap_2_bytes(&sres_and_survprf);
+            swap_2_bytes(&vcp_data->doppler_prf_num[i]);
+        }
+        vcp_data->fixed_angle[i] = wsr88d_get_angle(fixed_angle);
+        vcp_data->azim_rate[i] = wsr88d_get_azim_rate(azim_rate);
+        vcp_data->waveform[i] = chconf_and_waveform & 0xff;
+        vcp_data->super_res_ctrl[i] = sres_and_survprf >> 8;
+        vcp_data->surveil_prf_num[i] = sres_and_survprf & 0xff;
     }
 }
 
@@ -310,7 +310,7 @@ int read_wsr88d_ray_m31(Wsr88d_file *wf, int msg_size,
 }
 
 
-void wsr88d_load_ray_hdr(Wsr88d_ray_m31 *wsr88d_ray, Ray *ray)
+void wsr88d_load_ray_hdr(Wsr88d_ray_m31 *wsr88d_ray, Ray *ray, VCP_data* vcp_data)
 {
     int month, day, year, hour, minute, sec;
     float fsec;
@@ -337,9 +337,9 @@ void wsr88d_load_ray_hdr(Wsr88d_ray_m31 *wsr88d_ray, Ray *ray)
     ray->h.nyq_vel = wsr88d_ray->nyq_vel;
     int elev_index;
     elev_index = ray_hdr.elev_num - 1;
-    ray->h.azim_rate = vcp_data.azim_rate[elev_index];
-    ray->h.fix_angle = vcp_data.fixed_angle[elev_index];
-    ray->h.vel_res = vcp_data.vel_res;
+    ray->h.azim_rate = vcp_data->azim_rate[elev_index];
+    ray->h.fix_angle = vcp_data->fixed_angle[elev_index];
+    ray->h.vel_res = vcp_data->vel_res;
     if (ray_hdr.azm_res != 1)
 	ray->h.beam_width = 1.0;
     else ray->h.beam_width = 0.5;
@@ -347,7 +347,7 @@ void wsr88d_load_ray_hdr(Wsr88d_ray_m31 *wsr88d_ray, Ray *ray)
     /* For convenience, use message type 1 routines to get some values.
      * First load VCP and elevation numbers into a msg 1 ray.
      */
-    m1_ray.vol_cpat = vcp_data.vcp;
+    m1_ray.vol_cpat = vcp_data->vcp;
     m1_ray.elev_num = ray_hdr.elev_num;
     m1_ray.unam_rng = (short) (wsr88d_ray->unamb_rng * 10.);
     m1_ray.nyq_vel = (short) wsr88d_ray->nyq_vel;
@@ -376,7 +376,7 @@ int wsr88d_get_vol_index(char* dataname)
 #define MAXSWEEPS 30
 
 void wsr88d_load_ray_into_radar(Wsr88d_ray_m31 *wsr88d_ray, int isweep,
-	Radar *radar)
+	Radar *radar, VCP_data* vcp_data)
 {
     /* Load data into ray structure for each data field. */
 
@@ -449,7 +449,7 @@ void wsr88d_load_ray_into_radar(Wsr88d_ray_m31 *wsr88d_ray, int isweep,
 	        case RH_INDEX: f = RH_F; invf = RH_INVF; break;
 	    }
 
-	    waveform = vcp_data.waveform[isweep];
+	    waveform = vcp_data->waveform[isweep];
 
 	    /* If this field is reflectivity, check to see if it's from the velocity
              * sweep in a split cut.  If so, we normally skip it since we already
@@ -459,8 +459,8 @@ void wsr88d_load_ray_into_radar(Wsr88d_ray_m31 *wsr88d_ray, int isweep,
              * waveform is Contiguous Doppler with Ambiguity Resolution (range
              * unfolding), and we're merging split cuts.
 	     */
-	    if (vol_index == DZ_INDEX && (vcp_data.surveil_prf_num[isweep] == 0 &&
-		        vcp_data.waveform[isweep] == doppler_w_amb_res &&
+	    if (vol_index == DZ_INDEX && (vcp_data->surveil_prf_num[isweep] == 0 &&
+		        vcp_data->waveform[isweep] == doppler_w_amb_res &&
 		        merging_split_cuts))
 	        continue;
 
@@ -527,7 +527,7 @@ void wsr88d_load_ray_into_radar(Wsr88d_ray_m31 *wsr88d_ray, int isweep,
 	        ray->h.f = f;
 	        ray->h.invf = invf;
 	    }
-	    wsr88d_load_ray_hdr(wsr88d_ray, ray);
+	    wsr88d_load_ray_hdr(wsr88d_ray, ray, vcp_data);
 	    ray->h.range_bin1 = data_hdr.range_first_gate;
 	    ray->h.gate_size = data_hdr.range_samp_interval;
 	    ray->h.nbins = ngates;
@@ -537,7 +537,7 @@ void wsr88d_load_ray_into_radar(Wsr88d_ray_m31 *wsr88d_ray, int isweep,
 }
 
 
-void wsr88d_load_sweep_header(Radar *radar, int isweep)
+void wsr88d_load_sweep_header(Radar *radar, int isweep, VCP_data* vcp_data)
 {
     int ivolume, nrays;
     Sweep *sweep;
@@ -551,7 +551,7 @@ void wsr88d_load_sweep_header(Radar *radar, int isweep)
 	    if (nrays == 0) continue;
 	    last_ray = sweep->ray[nrays-1];
 	    sweep->h.sweep_num = last_ray->h.elev_num;
-	    sweep->h.elev = vcp_data.fixed_angle[isweep];
+	    sweep->h.elev = vcp_data->fixed_angle[isweep];
 	    sweep->h.beam_width = last_ray->h.beam_width;
 	    sweep->h.vert_half_bw = sweep->h.beam_width / 2.;
 	    sweep->h.horz_half_bw = sweep->h.beam_width / 2.;
@@ -572,6 +572,7 @@ Radar *wsr88d_load_m31_into_radar(Wsr88d_file *wf)
     enum radial_status {START_OF_ELEV, INTERMED_RADIAL, END_OF_ELEV, BEGIN_VOS,
         END_VOS};
 
+    VCP_data vcp_data;
 
     /* Message type 31 is a variable length message.  All other types consist of
      * 1 or more segments of length 2432 bytes.  To handle all types, we read
@@ -619,7 +620,7 @@ Radar *wsr88d_load_m31_into_radar(Wsr88d_file *wf)
 			"but End-of-Elevation was not\n"
 			"issued for elevation number %d.  Number of rays = %d"
 			"\n", prev_elev_num, prev_raynum);
-		wsr88d_load_sweep_header(radar, isweep);
+		wsr88d_load_sweep_header(radar, isweep, &vcp_data);
 		isweep++;
 		prev_elev_num = wsr88d_ray.ray_hdr.elev_num - 1;
 	    }
@@ -632,12 +633,12 @@ Radar *wsr88d_load_m31_into_radar(Wsr88d_file *wf)
             }
 
 	    /* Load ray into radar structure. */
-	    wsr88d_load_ray_into_radar(&wsr88d_ray, isweep, radar);
+	    wsr88d_load_ray_into_radar(&wsr88d_ray, isweep, radar, &vcp_data);
 	    prev_raynum = raynum;
 
 	    /* Check for end of sweep */
 	    if (wsr88d_ray.ray_hdr.radial_status == END_OF_ELEV) {
-		wsr88d_load_sweep_header(radar, isweep);
+		wsr88d_load_sweep_header(radar, isweep, &vcp_data);
 		isweep++;
 		prev_elev_num = wsr88d_ray.ray_hdr.elev_num;
 	    }
@@ -653,11 +654,11 @@ Radar *wsr88d_load_m31_into_radar(Wsr88d_file *wf)
 		    fprintf(stderr,"Read failed.\n");
 		fprintf(stderr,"Current sweep index: %d\n"
 			"Last ray read: %d\n", isweep, prev_raynum);
-		wsr88d_load_sweep_header(radar, isweep);
+		wsr88d_load_sweep_header(radar, isweep, &vcp_data);
 		return radar;
 	    }
 	    if (msghdr.msg_type == 5) {
-		wsr88d_get_vcp_data(non31_seg_remainder);
+		wsr88d_get_vcp_data(non31_seg_remainder, &vcp_data);
 		radar->h.vcp = vcp_data.vcp;
 	    }
 	}
@@ -672,13 +673,13 @@ Radar *wsr88d_load_m31_into_radar(Wsr88d_file *wf)
 		else fprintf(stderr,"Failed reading msghdr.\n");
 		fprintf(stderr,"Current sweep index: %d\n"
 			"Last ray read: %d\n", isweep, prev_raynum);
-		wsr88d_load_sweep_header(radar, isweep);
+		wsr88d_load_sweep_header(radar, isweep, &vcp_data);
 		end_of_vos = 1;
 	    }
 	}
 	else {
 	    end_of_vos = 1;
-	    wsr88d_load_sweep_header(radar, isweep);
+	    wsr88d_load_sweep_header(radar, isweep, &vcp_data);
 	}
     }  /* while not end of vos */
 

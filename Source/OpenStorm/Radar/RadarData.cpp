@@ -147,9 +147,9 @@ void RadarData::ReadNexrad(const char* filename) {
 
 
 			// sizes of sections of the buffer
-			int thetaBufferSize = radiusBufferCount;
-			int sweepBufferSize = thetaBufferCount * thetaBufferSize;
-			int fullBufferSize = sweepBufferCount * sweepBufferSize;
+			thetaBufferSize = radiusBufferCount;
+			sweepBufferSize = (thetaBufferCount + 2) * thetaBufferSize;
+			fullBufferSize = sweepBufferCount * sweepBufferSize;
 
 			if (buffer == NULL) {
 				buffer = new float[fullBufferSize];
@@ -181,7 +181,7 @@ void RadarData::ReadNexrad(const char* filename) {
 								// value for no data
 								value = -INFINITY;
 							}
-							buffer[radius + (realTheta * thetaBufferSize) + (sweepIndex * sweepBufferSize)] = value;
+							buffer[radius + ((realTheta + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)] = value;
 
 							//if (theta == 0) {
 							//	value = 255;
@@ -223,12 +223,12 @@ void RadarData::ReadNexrad(const char* filename) {
 							int previousRayAbs = modulo(theta + previousRay, thetaBufferCount);
 							int nextRayAbs = modulo(theta + nextRay, thetaBufferCount);
 							for (int radius = 0; radius < radiusBufferCount; radius++) {
-								float previousValue = buffer[radius + previousRayAbs * thetaBufferSize + sweepIndex * sweepBufferSize];
-								float nextValue = buffer[radius + nextRayAbs * thetaBufferSize + sweepIndex * sweepBufferSize];
+								float previousValue = buffer[radius + (previousRayAbs + 1) * thetaBufferSize + sweepIndex * sweepBufferSize];
+								float nextValue = buffer[radius + (nextRayAbs + 1) * thetaBufferSize + sweepIndex * sweepBufferSize];
 								for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
 									float interLocation = (float)(thetaTo - previousRay) / (float)(nextRay - previousRay);
 									// write interpolated value
-									buffer[radius + modulo(theta + thetaTo, thetaBufferCount) * thetaBufferSize + sweepIndex * sweepBufferSize] = previousValue * (1.0 - interLocation) + nextValue * interLocation;
+									buffer[radius + (modulo(theta + thetaTo, thetaBufferCount) + 1) * thetaBufferSize + sweepIndex * sweepBufferSize] = previousValue * (1.0 - interLocation) + nextValue * interLocation;
 								}
 							}
 							for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
@@ -239,6 +239,18 @@ void RadarData::ReadNexrad(const char* filename) {
 					}
 				}
 				delete[] usedThetas;
+				
+				// pad theta with ray from other side to allow correct interpolation in shader at edges
+				memcpy(
+					buffer + (sweepIndex * sweepBufferSize),
+					buffer + (thetaBufferCount * thetaBufferSize + (sweepIndex * sweepBufferSize)),
+					thetaBufferSize*4);
+				memcpy(
+					buffer + (((thetaBufferCount + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)),
+					buffer + (thetaBufferSize + (sweepIndex * sweepBufferSize)),
+					thetaBufferSize*4);
+				
+				
 				sweepIndex++;
 			}
 
@@ -259,14 +271,23 @@ void RadarData::ReadNexrad(const char* filename) {
 
 
 RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
-
+	int thetaBufferSize2 = radiusBufferCount;
+	int sweepBufferSize2 = (thetaBufferCount + 2) * thetaBufferSize2;
+	int fullBufferSize2 = sweepBufferCount * sweepBufferSize2;
+	
+	
+	if(buffer == NULL){
+		RadarData::TextureBuffer returnValue;
+		returnValue.data = NULL;
+		//returnValue.data = new float[fullBufferSize2];
+		returnValue.byteSize = 0;
+		return returnValue;
+	}
 	
 	// sizes of secitions of the buffer
-	int thetaBufferSize = radiusBufferCount;
-	int sweepBufferSize = (thetaBufferCount + 2) * thetaBufferSize;
-	int fullBufferSize = sweepBufferCount * sweepBufferSize;
+	
 
-	float* textureBuffer = new float[fullBufferSize]();
+	float* textureBuffer = new float[fullBufferSize2]();
 	//int divider = (maxValue - minValue) / 256 + 1;
 	float divider = (maxValue - minValue);
 	for (int sweepIndex = 0; sweepIndex < sweepBufferCount; sweepIndex++) {
@@ -284,22 +305,22 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
 			}
 		}
 		// pad theta with pixels from the other side
-		fprintf(stderr, "sweepIndex %i \n", sweepIndex);
-		fflush(stderr);
+		//fprintf(stderr, "sweepIndex %i \n", sweepIndex);
+		//fflush(stderr);
 		memcpy(
-			textureBuffer + (sweepIndex * sweepBufferSize),
-			textureBuffer + (thetaBufferCount * thetaBufferSize + (sweepIndex * sweepBufferSize)),
-			thetaBufferSize*4);
+			textureBuffer + (sweepIndex * sweepBufferSize2),
+			textureBuffer + (thetaBufferCount * thetaBufferSize2 + (sweepIndex * sweepBufferSize2)),
+			thetaBufferSize2*4);
 
 		
 
 
 		memcpy(
-			textureBuffer + (((thetaBufferCount + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)),
-			textureBuffer + (thetaBufferSize + (sweepIndex * sweepBufferSize)),
-			thetaBufferSize*4);
+			textureBuffer + (((thetaBufferCount + 1) * thetaBufferSize2) + (sweepIndex * sweepBufferSize2)),
+			textureBuffer + (thetaBufferSize2 + (sweepIndex * sweepBufferSize2)),
+			thetaBufferSize2*4);
 
-		if (sweepIndex == 3 ) {
+		/*if (sweepIndex == 3 ) {
 			//for (int radius = 0; radius < thetaBufferSize; radius++) {
 			//	textureBuffer[(sweepIndex * sweepBufferSize) + radius] = 255;
 			//}
@@ -307,7 +328,7 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
 				//textureBuffer[((230) * thetaBufferSize) + (sweepIndex * sweepBufferSize) + radius] = 255;
 				textureBuffer[((230) * thetaBufferSize) + (sweepIndex * sweepBufferSize) + radius] = 1.0f * (float)radius / (float)thetaBufferSize;
 			}
-		}
+		}*/
 		/*memcpy(textureBuffer + (sweepIndex * thetaRadiusBufferSize), textureBuffer + (radiusBufferCount * radiusBufferSize + sweepIndex * thetaRadiusBufferSize), radiusBufferSize);
 		for (int radius = 0; radius < radiusBufferCount; radius++) {
 			textureBuffer[3 + radius * 4 + sweepIndex * thetaRadiusBufferSize] = textureBuffer[3 + radius * 4 + radiusBufferCount * radiusBufferSize + sweepIndex * thetaRadiusBufferSize];
@@ -317,9 +338,22 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
 	//for(int sweep)
 	RadarData::TextureBuffer returnValue;
 	returnValue.data = textureBuffer;
+	returnValue.byteSize = fullBufferSize2 * 4;
+	return returnValue;
+}
+
+RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity2(){
+	RadarData::TextureBuffer returnValue;
+	if(buffer == NULL){
+		returnValue.data = NULL;
+		returnValue.byteSize = 0;
+		return returnValue;
+	}
+	returnValue.data = buffer;
 	returnValue.byteSize = fullBufferSize * 4;
 	return returnValue;
 }
+
 
 RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 	float* textureBuffer = new float[65536]();
