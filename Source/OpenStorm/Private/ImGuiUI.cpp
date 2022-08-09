@@ -3,6 +3,7 @@
 
 #include "ImGuiUI.h"
 #include <imgui.h>
+#include <RadarViewPawn.h>
 
 // Sets default values
 AImGuiUI::AImGuiUI()
@@ -22,9 +23,9 @@ void AImGuiUI::BeginPlay()
 const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
 
 // Called every frame
-void AImGuiUI::Tick(float DeltaTime)
+void AImGuiUI::Tick(float deltaTime)
 {
-	Super::Tick(DeltaTime);
+	Super::Tick(deltaTime);
 	static float Scale = 1.0f;
 	
 	ImGui::Begin("Menu", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground);
