@@ -193,7 +193,7 @@ void RadarCollection::RegisterListener(std::function<void(RadarData *)> callback
 
 void RadarCollection::ReadFiles() {
 	if(radarFiles.size() > 0){
-		// TODO: implement reloading files by replacing radarFiles and changing firstItemIndex and lastItemIndex to reflent the new vector
+		// TODO: implement reloading files by replacing radarFiles and changing firstItemIndex and lastItemIndex to reflect the new vector
 		fprintf(stderr, "file reloading is not implemented yet\n");
 		return;
 	}

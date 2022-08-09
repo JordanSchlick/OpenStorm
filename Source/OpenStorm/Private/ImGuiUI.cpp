@@ -20,7 +20,7 @@ void AImGuiUI::BeginPlay()
 	
 }
 
-const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
+//const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
 
 // Called every frame
 void AImGuiUI::Tick(float deltaTime)
