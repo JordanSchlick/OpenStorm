@@ -15,7 +15,8 @@ public:
 	// buffer of volume values
 	// dim 0: sweep  dim 1: rotation  dim 2: radius
 	float* buffer = NULL;
-
+	
+	
 	// counts can be set when there is no buffer loaded
 	// they will be set automaticaly if they are zero
 
@@ -34,6 +35,14 @@ public:
 	int sweepBufferSize = 0;
 	int fullBufferSize = 0;
 	
+	
+	// if the data should be compressed as it is read
+	bool compress = false;
+	// A buffer where empty space is compressed
+	float* bufferCompressed = NULL;
+	// number of elements in the compressed buffer
+	int compressedBufferSize = 0;
+
 
 	struct SweepInfo {
 		float elevation = 0;
@@ -51,6 +60,8 @@ public:
 	float maxValue = 0;
 
 	void ReadNexrad(const char* filename);
+	
+	void CopyFrom(RadarData* data);
 
 	struct TextureBuffer {
 		float* data;
@@ -68,6 +79,9 @@ public:
 	// pixel 65536 is strait up, pixel 32768 is parallel with the ground, pixel 0 is strait down
 	// value 0 is no sweep, value 1.0-255.0 specify the index of the sweep, value 1.0 specifies first sweep, values inbetween intagers will interpolate sweeps
 	RadarData::TextureBuffer CreateAngleIndexBuffer();
+	
+	
+	void Compress();
 	
 	//frees all buffers
 	void Deallocate();

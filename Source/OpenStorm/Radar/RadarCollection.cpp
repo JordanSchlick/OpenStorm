@@ -61,6 +61,7 @@ public:
 	}
 	void Task(){
 		RadarData* radarData = new RadarData();
+		radarData->compress = true;
 		radarData->radiusBufferCount = radarSettings.radiusBufferCount;
 		radarData->thetaBufferCount = radarSettings.thetaBufferCount;
 		radarData->sweepBufferCount = radarSettings.sweepBufferCount;

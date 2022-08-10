@@ -1,15 +1,16 @@
 #include "AsyncTask.h"
 
 
-#include "CoreMinimal.h"
-#include "Async/AsyncWork.h"
+
 
 #include <functional>
 
 
 
 
-
+#ifdef UE_GAME
+#include "CoreMinimal.h"
+#include "Async/AsyncWork.h"
 class FUnrealAsyncTask : public FNonAbandonableTask {
 	friend class FAutoDeleteAsyncTask<FUnrealAsyncTask>;
 public:
@@ -32,17 +33,19 @@ public:
 };
 
 
-
-void AsyncTaskRunner::Start() {
-	AsyncTaskRunner::Start(false);
-}
-
 void AsyncTaskRunner::Start(bool autoDeleteTask) {
 	this->autoDelete = autoDeleteTask;
 	FAutoDeleteAsyncTask<FUnrealAsyncTask>* task = new FAutoDeleteAsyncTask<FUnrealAsyncTask>([this] {
 		InternalTask();
 	});
 	task->StartBackgroundTask();
+}
+
+#endif
+
+
+void AsyncTaskRunner::Start() {
+	AsyncTaskRunner::Start(false);
 }
 
 void AsyncTaskRunner::Cancel() {

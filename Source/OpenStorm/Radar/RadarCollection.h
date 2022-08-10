@@ -64,7 +64,7 @@ public:
 	
 	bool automaticallyAdvance = true;
 	
-	float autoAdvanceInterval = 0.3;
+	float autoAdvanceInterval = 0.1;
 	
 	static uint64_t CreateUID();
 	

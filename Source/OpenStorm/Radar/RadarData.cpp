@@ -1,6 +1,8 @@
 
 #include "RadarData.h"
+#include "SparseCompression.h"
 #include "./Deps/rsl/rsl.h"
+
 
 
 //#include "CoreMinimal.h"
@@ -83,7 +85,7 @@ void RadarData::ReadNexrad(const char* filename) {
 
 
 
-			// do a pass of the data to find info
+			
 			if (sweepBufferCount == 0) {
 				sweepBufferCount = sweeps.size();
 			}
@@ -96,6 +98,8 @@ void RadarData::ReadNexrad(const char* filename) {
 			int maxRadius = 0;
 			minValue = INFINITY;
 			maxValue = -INFINITY;
+			
+			// do a pass of the data to find info
 			for (const auto pair : sweeps) {
 				if (sweepId >= sweepBufferCount) {
 					break;
@@ -123,13 +127,13 @@ void RadarData::ReadNexrad(const char* filename) {
 								//minValue = value < minValue ? value : minValue;
 								maxValue = value > maxValue ? value : maxValue;
 							}
-							
 						}
 					}
 				}
 
 				sweepId++;
 			}
+			
 			if (minValue == INFINITY) {
 				minValue = 0;
 				maxValue = 1;
@@ -143,17 +147,28 @@ void RadarData::ReadNexrad(const char* filename) {
 
 
 			fprintf(stderr, "min: %f   max: %f\n", minValue, maxValue);
-
-
-
+			
 			// sizes of sections of the buffer
 			thetaBufferSize = radiusBufferCount;
 			sweepBufferSize = (thetaBufferCount + 2) * thetaBufferSize;
 			fullBufferSize = sweepBufferCount * sweepBufferSize;
-
-			if (buffer == NULL) {
-				buffer = new float[fullBufferSize];
-				std::fill(buffer, buffer+fullBufferSize, -INFINITY);
+			
+			SparseCompress::CompressorState compressorState = {};
+			
+			// pointer to beginning of a sweep buffer to write to
+			float* sweepBuffer = NULL;
+			
+			if(compress){
+				// store in compressed form
+				compressorState.preCompressedSize = fullBufferSize / 10;
+				SparseCompress::compressStart(&compressorState);
+				sweepBuffer = new float[sweepBufferSize];
+			}else{
+				// store in continuous buffer
+				if (buffer == NULL) {
+					buffer = new float[fullBufferSize];
+					std::fill(buffer, buffer+fullBufferSize, -INFINITY);
+				}
 			}
 			
 			int sweepIndex = 0;
@@ -164,6 +179,12 @@ void RadarData::ReadNexrad(const char* filename) {
 				}
 				Sweep* sweep = pair.second;
 				int thetaSize = sweep->h.nrays;
+				int sweepOffset = sweepIndex * sweepBufferSize;
+				if(compress){
+					std::fill(sweepBuffer, sweepBuffer + sweepBufferSize, -INFINITY);
+				}else{
+					sweepBuffer = buffer + sweepOffset;
+				}
 				bool* usedThetas = new bool[thetaBufferCount]();
 				// fill in buffer from rays
 				for (int theta = 0; theta < thetaSize; theta++) {
@@ -181,7 +202,7 @@ void RadarData::ReadNexrad(const char* filename) {
 								// value for no data
 								value = -INFINITY;
 							}
-							buffer[radius + ((realTheta + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)] = value;
+							sweepBuffer[radius + ((realTheta + 1) * thetaBufferSize)] = value;
 
 							//if (theta == 0) {
 							//	value = 255;
@@ -197,7 +218,7 @@ void RadarData::ReadNexrad(const char* filename) {
 
 				for (int theta = 0; theta < thetaBufferCount; theta++) {
 					if (!usedThetas[theta]) {
-						// fill in blank by interpolating suroundings
+						// fill in blank by interpolating surroundings
 						int previousRay = 0;
 						int nextRay = 0;
 						// find 2 nearby populated rays
@@ -223,12 +244,12 @@ void RadarData::ReadNexrad(const char* filename) {
 							int previousRayAbs = modulo(theta + previousRay, thetaBufferCount);
 							int nextRayAbs = modulo(theta + nextRay, thetaBufferCount);
 							for (int radius = 0; radius < radiusBufferCount; radius++) {
-								float previousValue = buffer[radius + (previousRayAbs + 1) * thetaBufferSize + sweepIndex * sweepBufferSize];
-								float nextValue = buffer[radius + (nextRayAbs + 1) * thetaBufferSize + sweepIndex * sweepBufferSize];
+								float previousValue = sweepBuffer[radius + (previousRayAbs + 1) * thetaBufferSize];
+								float nextValue = sweepBuffer[radius + (nextRayAbs + 1) * thetaBufferSize];
 								for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
 									float interLocation = (float)(thetaTo - previousRay) / (float)(nextRay - previousRay);
 									// write interpolated value
-									buffer[radius + (modulo(theta + thetaTo, thetaBufferCount) + 1) * thetaBufferSize + sweepIndex * sweepBufferSize] = previousValue * (1.0 - interLocation) + nextValue * interLocation;
+									sweepBuffer[radius + (modulo(theta + thetaTo, thetaBufferCount) + 1) * thetaBufferSize] = previousValue * (1.0 - interLocation) + nextValue * interLocation;
 								}
 							}
 							for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
@@ -242,18 +263,32 @@ void RadarData::ReadNexrad(const char* filename) {
 				
 				// pad theta with ray from other side to allow correct interpolation in shader at edges
 				memcpy(
-					buffer + (sweepIndex * sweepBufferSize),
-					buffer + (thetaBufferCount * thetaBufferSize + (sweepIndex * sweepBufferSize)),
+					sweepBuffer,
+					sweepBuffer + (thetaBufferCount * thetaBufferSize),
 					thetaBufferSize*4);
 				memcpy(
-					buffer + (((thetaBufferCount + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)),
-					buffer + (thetaBufferSize + (sweepIndex * sweepBufferSize)),
+					sweepBuffer + (((thetaBufferCount + 1) * thetaBufferSize)),
+					sweepBuffer + (thetaBufferSize),
 					thetaBufferSize*4);
 				
+				if(compress){
+					SparseCompress::compressValues(&compressorState, sweepBuffer, sweepBufferSize);
+				}
 				
 				sweepIndex++;
 			}
-
+			
+			if(compress){
+				delete sweepBuffer;
+				if(bufferCompressed){
+					delete[] bufferCompressed;
+				}
+				bufferCompressed = SparseCompress::compressEnd(&compressorState);
+				compressedBufferSize = compressorState.sizeAllocated;
+				fprintf(stderr, "Compressed size bytes:   %i\n", compressedBufferSize * 4);
+				fprintf(stderr, "Uncompressed size bytes: %i\n", fullBufferSize * 4);
+			}
+			
 
 			/*
 			fprintf(stderr,"ray values:");
@@ -265,6 +300,32 @@ void RadarData::ReadNexrad(const char* filename) {
 
 			RSL_free_radar(radar);
 		}
+	}
+}
+
+void RadarData::CopyFrom(RadarData* data) {
+	if(buffer == NULL){
+		if (radiusBufferCount == 0) {
+			radiusBufferCount = data->radiusBufferCount;
+		}
+		if (thetaBufferCount == 0) {
+			thetaBufferCount = data->thetaBufferCount;
+		}
+		if (sweepBufferCount == 0) {
+			sweepBufferCount = data->sweepBufferCount;
+		}
+		
+		thetaBufferSize = radiusBufferCount;
+		sweepBufferSize = (thetaBufferCount + 2) * thetaBufferSize;
+		fullBufferSize = sweepBufferCount * sweepBufferSize;
+		
+		buffer = new float[fullBufferSize];
+		std::fill(buffer, buffer+fullBufferSize, -INFINITY);
+	}
+	if(data->bufferCompressed != NULL){
+		SparseCompress::decompressToBuffer(buffer, data->bufferCompressed, fullBufferSize);
+	}else if(data->buffer != NULL){
+		memcpy(buffer, data->buffer, std::min(fullBufferSize, data->fullBufferSize) * 4);
 	}
 }
 
@@ -344,6 +405,11 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
 
 RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity2(){
 	RadarData::TextureBuffer returnValue;
+	if(bufferCompressed != NULL){
+		returnValue.data = bufferCompressed;
+		returnValue.byteSize = compressedBufferSize;
+		return returnValue;
+	}
 	if(buffer == NULL){
 		returnValue.data = NULL;
 		returnValue.byteSize = 0;
@@ -394,10 +460,36 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 	return returnValue;
 }
 
+void RadarData::Compress() {
+	if(buffer == NULL){
+		return;
+	}
+	int compressedSize = 2;
+	bool isEmpty = true;
+	for(int i = 0; i < fullBufferSize; i++){
+		float value = buffer[i];
+		if(value == -INFINITY){
+			if(isEmpty == false){
+				compressedSize += 2;
+				isEmpty = true;
+			}
+		}else{
+			compressedSize++;
+			isEmpty = false;
+		}
+	}
+	fprintf(stderr, "Compressed size bytes:   %i\n", compressedSize * 4);
+	fprintf(stderr, "Uncompressed size bytes: %i\n", fullBufferSize * 4);
+}
+
 void RadarData::Deallocate(){
 	if(buffer != NULL){
 		delete[] buffer;
 		buffer = NULL;
+	}
+	if(bufferCompressed != NULL){
+		delete[] bufferCompressed;
+		bufferCompressed = NULL;
 	}
 	if(sweepInfo != NULL){
 		delete[] sweepInfo;

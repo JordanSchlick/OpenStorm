@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Camera/CameraComponent.h"
+#include "Components/InputComponent.h"
 #include "RadarViewPawn.generated.h"
 
 UCLASS()

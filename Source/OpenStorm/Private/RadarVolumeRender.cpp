@@ -92,10 +92,11 @@ void ARadarVolumeRender::BeginPlay()
 	//FString radarFile = FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/Demo/KTLX20130531_231434_V06"));
 	FString fullPath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarFile);
 	const char* fileLocaition = StringCast<ANSICHAR>(*fullPath).Get();
-	RadarData radarData = {};
-	radarData.ReadNexrad(fileLocaition);
-
-	if (radarData.radiusBufferCount == 0) {
+	radarData = new RadarData();
+	radarData->ReadNexrad(fileLocaition);
+	//radarData->Compress();
+	
+	if (radarData->radiusBufferCount == 0) {
 		fprintf(stderr, "Could not open %s\n", fileLocaition);
 		return;
 	}
@@ -104,7 +105,7 @@ void ARadarVolumeRender::BeginPlay()
 	// PF_R32_FLOAT - single float value per pixel
 	// PF_A32B32G32R32F - 4 float values per pixel
 
-	volumeTexture = UTexture2D::CreateTransient(radarData.radiusBufferCount, (radarData.thetaBufferCount + 2) * radarData.sweepBufferCount, PF_R32_FLOAT);
+	volumeTexture = UTexture2D::CreateTransient(radarData->radiusBufferCount, (radarData->thetaBufferCount + 2) * radarData->sweepBufferCount, PF_R32_FLOAT);
 	FTexture2DMipMap* MipMap = &(volumeTexture->PlatformData->Mips[0]);
 	volumeImageData = &(MipMap->BulkData);
 	radarMaterialInstance->SetTextureParameterValue(TEXT("Volume"), volumeTexture);
@@ -127,9 +128,9 @@ void ARadarVolumeRender::BeginPlay()
 
 	
 
-	radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), radarData.innerDistance);
+	radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), radarData->innerDistance);
 
-	RadarData::TextureBuffer imageBuffer = radarData.CreateTextureBufferReflectivity2();
+	RadarData::TextureBuffer imageBuffer = radarData->CreateTextureBufferReflectivity2();
 	float* RawImageData = (float*)volumeImageData->Lock(LOCK_READ_WRITE);
 	memcpy(RawImageData, imageBuffer.data, imageBuffer.byteSize);
 	volumeImageData->Unlock();
@@ -137,7 +138,7 @@ void ARadarVolumeRender::BeginPlay()
 
 
 
-	imageBuffer = radarData.CreateAngleIndexBuffer();
+	imageBuffer = radarData->CreateAngleIndexBuffer();
 	float* rawAngleIndexImageData = (float*)angleIndexImageData->Lock(LOCK_READ_WRITE);
 	memcpy(rawAngleIndexImageData, imageBuffer.data, imageBuffer.byteSize);
 	angleIndexImageData->Unlock();
@@ -146,7 +147,7 @@ void ARadarVolumeRender::BeginPlay()
 	
 
 	RadarColorIndex::Params colorParams = {};
-	colorParams.fromRadarData(&radarData);
+	colorParams.fromRadarData(radarData);
 	//RadarColorIndexResult valueIndex = RadarColorIndex::relativeHue(colorParams);
 	RadarColorIndex::Result valueIndex = RadarColorIndex::reflectivityColors(colorParams);
 	float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
@@ -172,7 +173,7 @@ void ARadarVolumeRender::BeginPlay()
 
 	radarCollection->RegisterListener([this](RadarData* data) {
 		if (data != NULL) {
-			RadarData::TextureBuffer buffer = data->CreateTextureBufferReflectivity2();
+			//RadarData::TextureBuffer buffer = data->CreateTextureBufferReflectivity2();
 			//float* RawImageData = (float*)volumeImageData->Lock(LOCK_READ_WRITE);
 			//memcpy(RawImageData, buffer.data, buffer.byteSize);
 			//volumeImageData->Unlock();
@@ -180,22 +181,38 @@ void ARadarVolumeRender::BeginPlay()
 			//if(buffer.data != NULL){
 			//	delete[] buffer.data;
 			//}
+			
+			// RadarData::TextureBuffer buffer = data->CreateTextureBufferReflectivity2();
+			// FUpdateTextureRegion2D* regions = new FUpdateTextureRegion2D[1]();
+			// regions[0].DestX = 0;
+			// regions[0].DestY = 0;
+			// regions[0].SrcX = 0;
+			// regions[0].SrcY = 0;
+			// regions[0].Width = data->radiusBufferCount;
+			// regions[0].Height = data->fullBufferSize / data->thetaBufferSize;
+
+			// volumeTexture->UpdateTextureRegions(0, 1, regions, data->radiusBufferCount * 4, 4, (uint8*)buffer.data, [](uint8* dataPtr, const FUpdateTextureRegion2D* regionsPtr) {
+			// 	delete regionsPtr;
+			// });
+			
+			radarData->CopyFrom(data);
+			RadarData::TextureBuffer buffer = radarData->CreateTextureBufferReflectivity2();
 			FUpdateTextureRegion2D* regions = new FUpdateTextureRegion2D[1]();
 			regions[0].DestX = 0;
 			regions[0].DestY = 0;
 			regions[0].SrcX = 0;
 			regions[0].SrcY = 0;
-			regions[0].Width = data->radiusBufferCount;
-			regions[0].Height = data->fullBufferSize / data->thetaBufferSize;
+			regions[0].Width = radarData->radiusBufferCount;
+			regions[0].Height = radarData->fullBufferSize / radarData->thetaBufferSize;
 
-			volumeTexture->UpdateTextureRegions(0, 1, regions, data->radiusBufferCount * 4, 4, (uint8*)buffer.data, [](uint8* dataPtr, const FUpdateTextureRegion2D* regionsPtr) {
+			volumeTexture->UpdateTextureRegions(0, 1, regions, radarData->radiusBufferCount * 4, 4, (uint8*)buffer.data, [](uint8* dataPtr, const FUpdateTextureRegion2D* regionsPtr) {
 				delete regionsPtr;
 			});
 			
 		}
 	});
 
-	radarCollection->Allocate(22);
+	radarCollection->Allocate(50);
 	radarCollection->ReadFiles();
 	radarCollection->LoadNewData();
 
@@ -270,6 +287,9 @@ ARadarVolumeRender::~ARadarVolumeRender()
 {
 	if(radarCollection != NULL){
 		delete radarCollection;
+	}
+	if(radarData != NULL){
+		delete radarData;
 	}
 	if(instance == this){
 		instance = NULL;

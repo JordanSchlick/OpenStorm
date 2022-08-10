@@ -40,6 +40,7 @@ public:
 	FByteBulkData* valueIndexImageData;
 	static ARadarVolumeRender* instance;
 	RadarCollection* radarCollection = NULL;
+	RadarData* radarData;
 	void RandomizeTexture();
 
 protected:

@@ -10,8 +10,12 @@
 #ifdef UE_GAME
 
 //#include "Unix/UnixPlatformTime.h"
-//#include "Windows/WindowsPlatformTime.h"
+#ifdef PLATFORM_WINDOWS
+#include "Windows/WindowsPlatformTime.h"
+#endif
+
 #include "GenericPlatform/GenericPlatformTime.h"
+
 
 #include "CoreMinimal.h"
 #include "HAL/FileManager.h"
