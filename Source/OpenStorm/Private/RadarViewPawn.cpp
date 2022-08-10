@@ -2,6 +2,7 @@
 
 
 #include "RadarViewPawn.h"
+#include "RadarGameStateBase.h"
 
 // Sets default values
 ARadarViewPawn::ARadarViewPawn()
@@ -53,7 +54,9 @@ void ARadarViewPawn::Tick(float deltaTime)
 	}
 	meshComponent->SetRelativeLocation(camera->GetRelativeLocation());
 	meshComponent->SetRelativeRotation(camera->GetRelativeRotation());
-
+	if (ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>())
+	{
+	moveSpeed = GS->globalState.moveSpeed;
 	FVector location = GetActorLocation();
 	location += camera->GetForwardVector() * forwardMovement * deltaTime * moveSpeed;
 	location += camera->GetRightVector() * sidewaysMovement * deltaTime * moveSpeed;
@@ -67,6 +70,9 @@ void ARadarViewPawn::Tick(float deltaTime)
 	horizontalRotationAmount = 0;
 	rotation.Roll = 0;
 	SetActorRotation(rotation);
+	
+	GS->globalState.testFloat = forwardMovement;
+	}
 }
 
 // Called to bind functionality to input
