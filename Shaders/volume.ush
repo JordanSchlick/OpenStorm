@@ -341,4 +341,5 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 
 //color -= 1;
 
-return float4(color.x,color.y,color.z,alpha);
+// alpha will be applied in the engine so divide by alpha
+return float4(color.x / alpha, color.y / alpha, color.z / alpha, alpha);

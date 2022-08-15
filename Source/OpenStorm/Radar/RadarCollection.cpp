@@ -188,7 +188,7 @@ void RadarCollection::EventLoop() {
 	}
 }
 
-void RadarCollection::RegisterListener(std::function<void(RadarData *)> callback) {
+void RadarCollection::RegisterListener(std::function<void(RadarUpdateEvent)> callback) {
 	listeners.push_back(callback);
 }
 
@@ -392,8 +392,13 @@ void RadarCollection::LoadNewData() {
 void RadarCollection::Emit(RadarDataHolder* holder) {
 	fprintf(stderr, "Emitting %s\n", holder->filePath.c_str());
 	LogState();
+	RadarUpdateEvent event = {};
+	event.data = holder->radarData;
+	if(automaticallyAdvance){
+		event.minTimeTillNext = autoAdvanceInterval;
+	}
 	for(auto listener : listeners){
-		listener(holder->radarData);
+		listener(event);
 	}
 }
 

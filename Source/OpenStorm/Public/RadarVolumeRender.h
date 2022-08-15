@@ -4,17 +4,21 @@
 
 
 #include "../Radar/RadarCollection.h"
+#include "../Radar/RadarColorIndex.h"
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/StaticMesh.h" 
 #include "Components/StaticMeshComponent.h"
 #include "UObject/Object.h"
-#include "UObject/ConstructorHelpers.h"
+#include "Materials/Material.h"
 #include "Engine/Texture2D.h"
+//#include "Engine/TextureRenderTarget2D.h"
+//#include "Engine/CanvasRenderTarget2D.h"
 #include "RadarVolumeRender.generated.h"
 
+
+class UMaterialRenderTarget;
 
 UCLASS()
 class OPENSTORM_API ARadarVolumeRender : public AActor
@@ -29,19 +33,54 @@ public:
 	UPROPERTY(VisibleAnywhere)
 		UStaticMeshComponent* cubeMeshComponent;
 	//UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	UMaterialInstanceDynamic* radarMaterialInstance = NULL;
-	UStaticMesh* cubeMesh;
-	UMaterial* storedMaterial;
-	UTexture2D* volumeTexture;
+	UPROPERTY(VisibleAnywhere)
+	UMaterialInstanceDynamic* interpolationMaterialInstance = NULL;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMesh* cubeMesh = NULL;
+	UPROPERTY(VisibleAnywhere)
+	UMaterial* storedMaterial = NULL;
+	UPROPERTY(VisibleAnywhere)
+	UMaterial* storedInterpolationMaterial = NULL;
+	
+	// if time interpolation is enabled
+	bool doTimeInterpolation = true;
+	
+	// if interpolation is being animated
+	bool interpolationAnimating = false;
+	float interpolationStartValue = 0;
+	float interpolationEndValue = 0;
+	double interpolationStartTime = 0;
+	double interpolationEndTime = 0;
+	
+	// write to volume 1 if true and write to volume 2 if false
+	bool usePrimaryTexture = true;
+	UPROPERTY(VisibleAnywhere)
+	UTexture2D* volumeTexture = NULL;
 	FByteBulkData* volumeImageData;
-	UTexture2D* angleIndexTexture;
+	UPROPERTY(VisibleAnywhere)
+	UTexture2D* volumeTexture2 = NULL;
+	FByteBulkData* volumeImageData2;
+	UPROPERTY(VisibleAnywhere)
+	UMaterialRenderTarget* volumeMaterialRenderTarget = NULL;
+
+	FRenderTarget* volumeRenderTarget;
+	UPROPERTY(VisibleAnywhere)
+	UTexture2D* angleIndexTexture = NULL;
 	FByteBulkData* angleIndexImageData;
-	UTexture2D* valueIndexTexture;
+	UPROPERTY(VisibleAnywhere)
+	UTexture2D* valueIndexTexture = NULL;
 	FByteBulkData* valueIndexImageData;
 	static ARadarVolumeRender* instance;
 	RadarCollection* radarCollection = NULL;
 	RadarData* radarData;
+	
+	RadarColorIndex::Result radarColorResult = {};
+	
 	void RandomizeTexture();
+
+	void InitializeTextures();
 
 protected:
 	// Called when the game starts or when spawned

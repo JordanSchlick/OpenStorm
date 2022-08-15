@@ -76,6 +76,12 @@ void RadarColorIndex::Params::fromRadarData(RadarData* radarData) {
 	minValue = radarData->minValue;
 }
 
+void RadarColorIndex::Result::Delete() {
+	if(data != NULL){
+		delete[] data;
+		data = NULL;
+	}
+}
 
 RadarColorIndex::Result RadarColorIndex::relativeHue(RadarColorIndex::Params params) {
 	RadarColorIndex::Result result = {};
@@ -126,13 +132,20 @@ RadarColorIndex::Result RadarColorIndex::relativeHueAcid(RadarColorIndex::Params
 
 	return result;
 };
-RadarColorIndex::Result RadarColorIndex::reflectivityColors(RadarColorIndex::Params params) {
+RadarColorIndex::Result RadarColorIndex::reflectivityColors(RadarColorIndex::Params params, Result* reuseResult) {
 	RadarColorIndex::Result result = {};
 	float l = -20;
 	result.lower = l;
 	float u = 80;
 	result.upper = u;
-	result.data = new float[65536]();
+	if(reuseResult != NULL){
+		if(reuseResult->data != NULL){
+			result.data = reuseResult->data;
+		}
+	}
+	if(result.data == NULL){
+		result.data = new float[65536]();
+	}
 	
 	fprintf(stderr,"%i %i \n",valueToIndex(l,u,-20), valueToIndex(l,u,15));
 	float3 rgb = HSLToRGB(0.66,1,0.5);
@@ -171,5 +184,7 @@ RadarColorIndex::Result RadarColorIndex::reflectivityColors(RadarColorIndex::Par
 	}
 	return result;
 };
+
+
 
 

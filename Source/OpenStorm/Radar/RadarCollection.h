@@ -18,6 +18,14 @@ public:
 		std::string path = "";
 	};
 	
+	class RadarUpdateEvent{
+	public:
+		// radar data for event
+		RadarData * data;
+		// time to use for animations if not zero
+		float minTimeTillNext = 0;
+	};
+	
 	// a class that holds the radar data and related information
 	class RadarDataHolder{
 	public:
@@ -51,7 +59,7 @@ public:
 		// define standard max size for radar
 		int radiusBufferCount = 1832;
 		int thetaBufferCount = 720;
-		int sweepBufferCount = 13;
+		int sweepBufferCount = 14;
 	};
 	
 	// settings for radar data
@@ -64,7 +72,7 @@ public:
 	
 	bool automaticallyAdvance = true;
 	
-	float autoAdvanceInterval = 0.1;
+	float autoAdvanceInterval = 0.5;
 	
 	static uint64_t CreateUID();
 	
@@ -81,7 +89,7 @@ public:
 	void EventLoop();
 	
 	// register a callback for when radar data, this can emit null if there was an error loading data
-	void RegisterListener(std::function<void(RadarData *)> callback);
+	void RegisterListener(std::function<void(RadarUpdateEvent)> callback);
 	
 	
 	
@@ -130,7 +138,7 @@ public:
 	
 	std::vector<RadarFile> radarFiles = {};
 	
-	std::vector<std::function<void(RadarData *)>> listeners = {};
+	std::vector<std::function<void(RadarUpdateEvent)>> listeners = {};
 	
 	// read file info from a directory
 	void ReadFiles();
