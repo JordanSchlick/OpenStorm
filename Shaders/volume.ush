@@ -224,7 +224,7 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 		// get color and alpha from valueIndex using localValue as the index
 		int mappedValueIndex = saturate((localValue - valueIndexLower) / (valueIndexUpper - valueIndexLower)) * 16383;
 		float4 localMappedValue = valueIndex[uint2(mappedValueIndex & 0x7F, mappedValueIndex >> 7)];
-		localColor = localMappedValue;
+		localColor = (float3)localMappedValue;
 		localAlpha = localMappedValue.a;
 		
 		//localColor = F::HUEtoRGB(1-localValue) * 1;
@@ -270,7 +270,7 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 		
 		int mappedValueIndex = saturate((localValue - valueIndexLower) / (valueIndexUpper - valueIndexLower)) * 16383;
 		float4 localMappedValue = valueIndex[uint2(mappedValueIndex & 0x7F, mappedValueIndex >> 7)];
-		localColor = localMappedValue;
+		localColor = (float3)localMappedValue;
 		localAlpha = localMappedValue.a;
 	}
 	
@@ -342,4 +342,4 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 //color -= 1;
 
 // alpha will be applied in the engine so divide by alpha
-return float4(color.x / alpha, color.y / alpha, color.z / alpha, alpha);
+return alpha > 0 ? float4(color.x / alpha, color.y / alpha, color.z / alpha, alpha) : 0;

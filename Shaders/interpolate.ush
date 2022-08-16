@@ -20,6 +20,7 @@ Conflicting values result in a more parabolic curve. Vectors pointing away from 
 This can likely be done by multiplier=(multiplier-1)*(1-abs(Amount*2-1))+1 or by offset=offset*(1-abs(Amount*2-1))
 */
 
+//*
 float3 vec1 = value1 - float3(
 	texture1[uint2(radius - 1, yPos                                  )].r,
 	texture1[uint2(radius    , theta - 1 +  sweep      * thetaSizeInt)].r,
@@ -36,7 +37,7 @@ float offset = dot(vec1,vec2) / dist1 / dist2 * (-0.5) + 0.5;
 offset = offset * min(dist1, dist2) * (1 - abs(amount * 2 - 1));
 
 base += isfinite(offset) ? offset : 0;
-
+// */
 
 //base = lerp(base,max(value1,value2), 1 - abs(amount * 2 - 1));
 

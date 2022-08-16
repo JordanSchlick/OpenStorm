@@ -37,7 +37,7 @@ for(float travelDistance = 0.0; travelDistance <= maxStepDistance && alpha < 0.9
 	float sphereDistance = saturate((30 - distance(location,0)) / 30);
 	
 	float3 localColor = F::HUEtoRGB(sphereDistance) * 0.5;
-	float3 localAlpha = sphereDistance;
+	float localAlpha = sphereDistance;
 	//localAlpha = sphereDistance > 0 ? 0.7 : 0;
 	localAlpha = sphereDistance > 0 ? sphereDistance * 1.4 + 0.4 : 0;
 	
