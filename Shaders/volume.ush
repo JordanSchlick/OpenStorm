@@ -237,14 +237,14 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 		// linear interpolate pixel
 		
 		sweepInt = sweep;
-		float4 localValue000 = volume[uint2(radiusInt,     thetaInt +     (sweepInt    ) * thetaSize2)].r;
-		float4 localValue100 = volume[uint2(radiusInt + 1, thetaInt +     (sweepInt    ) * thetaSize2)].r;
-		float4 localValue010 = volume[uint2(radiusInt,     thetaInt + 1 + (sweepInt    ) * thetaSize2)].r;
-		float4 localValue110 = volume[uint2(radiusInt + 1, thetaInt + 1 + (sweepInt    ) * thetaSize2)].r;
-		float4 localValue001 = volume[uint2(radiusInt,     thetaInt +     (sweepInt + 1) * thetaSize2)].r;
-		float4 localValue101 = volume[uint2(radiusInt + 1, thetaInt +     (sweepInt + 1) * thetaSize2)].r;
-		float4 localValue011 = volume[uint2(radiusInt,     thetaInt + 1 + (sweepInt + 1) * thetaSize2)].r;
-		float4 localValue111 = volume[uint2(radiusInt + 1, thetaInt + 1 + (sweepInt + 1) * thetaSize2)].r;
+		float localValue000 = volume[uint2(radiusInt,     thetaInt +     (sweepInt    ) * thetaSize2)].r;
+		float localValue100 = volume[uint2(radiusInt + 1, thetaInt +     (sweepInt    ) * thetaSize2)].r;
+		float localValue010 = volume[uint2(radiusInt,     thetaInt + 1 + (sweepInt    ) * thetaSize2)].r;
+		float localValue110 = volume[uint2(radiusInt + 1, thetaInt + 1 + (sweepInt    ) * thetaSize2)].r;
+		float localValue001 = volume[uint2(radiusInt,     thetaInt +     (sweepInt + 1) * thetaSize2)].r;
+		float localValue101 = volume[uint2(radiusInt + 1, thetaInt +     (sweepInt + 1) * thetaSize2)].r;
+		float localValue011 = volume[uint2(radiusInt,     thetaInt + 1 + (sweepInt + 1) * thetaSize2)].r;
+		float localValue111 = volume[uint2(radiusInt + 1, thetaInt + 1 + (sweepInt + 1) * thetaSize2)].r;
 		
 		localValue000 = max(localValue000, valueIndexLower);
 		localValue100 = max(localValue100, valueIndexLower);
@@ -255,13 +255,13 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 		localValue011 = max(localValue011, valueIndexLower);
 		localValue111 = max(localValue111, valueIndexLower);
 		
-		float4 localValue00 = lerp(localValue000,localValue100, radius - radiusInt);
-		float4 localValue10 = lerp(localValue010,localValue110, radius - radiusInt);
-		float4 localValue01 = lerp(localValue001,localValue101, radius - radiusInt);
-		float4 localValue11 = lerp(localValue011,localValue111, radius - radiusInt);
+		float localValue00 = lerp(localValue000,localValue100, radius - radiusInt);
+		float localValue10 = lerp(localValue010,localValue110, radius - radiusInt);
+		float localValue01 = lerp(localValue001,localValue101, radius - radiusInt);
+		float localValue11 = lerp(localValue011,localValue111, radius - radiusInt);
 		
-		float4 localValue0 = lerp(localValue00,localValue10, theta - thetaInt);
-		float4 localValue1 = lerp(localValue01,localValue11, theta - thetaInt);
+		float localValue0 = lerp(localValue00,localValue10, theta - thetaInt);
+		float localValue1 = lerp(localValue01,localValue11, theta - thetaInt);
 		
 		float localValue = lerp(localValue0,localValue1, sweep - sweepInt);
 		

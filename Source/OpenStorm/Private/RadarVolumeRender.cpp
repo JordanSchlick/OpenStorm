@@ -46,7 +46,8 @@ ARadarVolumeRender::ARadarVolumeRender()
 
 	storedMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/RadarVolumeMaterial.RadarVolumeMaterial'")).Object;
 
-	storedInterpolationMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/InterpolationMaterial.InterpolationMaterial'")).Object;
+	//storedInterpolationMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/InterpolationMaterial.InterpolationMaterial'")).Object;
+	storedInterpolationMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/InterpolationAdvancedMaterial.InterpolationAdvancedMaterial'")).Object;
 
 
 

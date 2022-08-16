@@ -1,0 +1,43 @@
+
+
+int radius = (radiusSize * UV.x);
+int yPos = (UV.y * (thetaSize * sweepCount));
+int thetaSizeInt = thetaSize;
+int theta = yPos % thetaSizeInt;
+int sweep = yPos / thetaSizeInt;
+
+float value1 = texture1[uint2(radius,yPos)].r;
+float value2 = texture2[uint2(radius,yPos)].r;
+value1 = max(value1,minimum);
+value2 = max(value2,minimum);
+
+float base = lerp(value1,value2,amount);
+
+/*
+Use 3 surrounding pixels from both textures to calculate components for the gradient of each texture pointing towards increasing value.
+Then use the gradients to create a curve between the values. Agreeing gradients result in a roughly linear curve.
+Conflicting values result in a more parabolic curve. Vectors pointing away from each other result in an upwards curve.
+This can likely be done by multiplier=(multiplier-1)*(1-abs(Amount*2-1))+1 or by offset=offset*(1-abs(Amount*2-1))
+*/
+
+float3 vec1 = value1 - float3(
+	texture1[uint2(radius - 1, yPos                                  )].r,
+	texture1[uint2(radius    , theta - 1 +  sweep      * thetaSizeInt)].r,
+	texture1[uint2(radius    , theta     + (sweep - 1) * thetaSizeInt)].r
+); 
+float3 vec2 = value2 - float3(
+	texture2[uint2(radius - 1, yPos                                  )].r,
+	texture2[uint2(radius    , theta - 1 +  sweep      * thetaSizeInt)].r,
+	texture2[uint2(radius    , theta     + (sweep - 1) * thetaSizeInt)].r
+); 
+float dist1 = distance(vec1,0);
+float dist2 = distance(vec2,0);
+float offset = dot(vec1,vec2) / dist1 / dist2 * (-0.5) + 0.5;
+offset = offset * min(dist1, dist2) * (1 - abs(amount * 2 - 1));
+
+base += isfinite(offset) ? offset : 0;
+
+
+//base = lerp(base,max(value1,value2), 1 - abs(amount * 2 - 1));
+
+return base;

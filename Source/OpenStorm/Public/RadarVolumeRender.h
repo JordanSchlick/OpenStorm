@@ -41,7 +41,7 @@ public:
 	UStaticMesh* cubeMesh = NULL;
 	UPROPERTY(VisibleAnywhere)
 	UMaterial* storedMaterial = NULL;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 	UMaterial* storedInterpolationMaterial = NULL;
 	
 	// if time interpolation is enabled
