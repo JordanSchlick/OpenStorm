@@ -24,8 +24,8 @@ void UMaterialRenderTarget::Initialize(int width, int height, EPixelFormat pixel
 
 void UMaterialRenderTarget::Update(){
 	//fprintf(stderr,"Update2 %i\n",OnCanvasRenderTargetUpdate.IsBound());
-	//RepaintCanvas();
-	UpdateResource();
+	RepaintCanvas();
+	//UpdateResource();
 	//ReceiveUpdate(NULL,1,1);
 }
 

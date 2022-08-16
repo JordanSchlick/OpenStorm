@@ -408,6 +408,7 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity2(){
 	if(bufferCompressed != NULL){
 		returnValue.data = bufferCompressed;
 		returnValue.byteSize = compressedBufferSize;
+		returnValue.doDelete = false;
 		return returnValue;
 	}
 	if(buffer == NULL){
@@ -417,6 +418,7 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity2(){
 	}
 	returnValue.data = buffer;
 	returnValue.byteSize = fullBufferSize * 4;
+	returnValue.doDelete = false;
 	return returnValue;
 }
 
@@ -501,4 +503,11 @@ void RadarData::Deallocate(){
 RadarData::~RadarData(){
 	RadarData::Deallocate();
 	fprintf(stderr,"freed RadarData\n");
+}
+
+void RadarData::TextureBuffer::Delete() {
+	if(doDelete && data != NULL){
+		delete[] data;
+		data = NULL;
+	}
 }

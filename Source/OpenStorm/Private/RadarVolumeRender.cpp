@@ -128,7 +128,7 @@ void ARadarVolumeRender::BeginPlay()
 	memcpy(RawImageData, imageBuffer.data, imageBuffer.byteSize);
 	volumeImageData->Unlock();
 	volumeTexture->UpdateResource();
-
+	imageBuffer.Delete();
 
 
 	imageBuffer = radarData->CreateAngleIndexBuffer();
@@ -136,7 +136,7 @@ void ARadarVolumeRender::BeginPlay()
 	memcpy(rawAngleIndexImageData, imageBuffer.data, imageBuffer.byteSize);
 	angleIndexImageData->Unlock();
 	angleIndexTexture->UpdateResource();
-	delete[] imageBuffer.data;
+	imageBuffer.Delete();
 	
 
 	RadarColorIndex::Params colorParams = {};
@@ -149,7 +149,6 @@ void ARadarVolumeRender::BeginPlay()
 	memcpy(rawValueIndexImageData, radarColorResult.data, radarColorResult.byteSize);
 	valueIndexImageData->Unlock();
 	valueIndexTexture->UpdateResource();
-	delete[] radarColorResult.data;
 	// set value bounds
 	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexLower"), radarColorResult.lower);
 	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexUpper"), radarColorResult.upper);

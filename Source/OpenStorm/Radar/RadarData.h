@@ -63,9 +63,12 @@ public:
 	
 	void CopyFrom(RadarData* data);
 
-	struct TextureBuffer {
-		float* data;
-		int byteSize;
+	class TextureBuffer {
+	public:
+		float* data = NULL;
+		int byteSize = 0;
+		bool doDelete = true;
+		void Delete();
 	};
 
 	// returns a uint8 array of the volume each pixel is 4 bytes wide. theta is padded by one pixel on each side
