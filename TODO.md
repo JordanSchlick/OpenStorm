@@ -10,6 +10,7 @@
 - [ ] Pull data from http server
 - [ ] Add designated thread pools to AsyncTask and multi-thread radar decompression
 - [ ] Add linux support to ImGUI and get linux working for everything
+- [ ] Mouse grabbing and DPI support for UI
 
 ## Future:
 - [ ] Mobile Support (Possibly)
