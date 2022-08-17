@@ -11,6 +11,7 @@ GS->globalState.fade
 GS->globalState.animate
 GS->globalState.animateSpeed
 GS->globalState.interpolation
+GS->globalState.maxFPS
 
 */
 
@@ -41,10 +42,9 @@ void AImGuiUI::BeginPlay()
 void AImGuiUI::Tick(float deltaTime)
 {
 	Super::Tick(deltaTime);
-	static float Scale = 1.0f;
 	ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>();
 
-	ImGui::Begin("Menu", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground);
+	ImGui::Begin("Menu", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), 0, ImVec2(0.0f, 0.0f));
 	ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -79,16 +79,18 @@ void AImGuiUI::Tick(float deltaTime)
 		//ImGui::Separator();
 
 	}	
-	
-	
 	if (!ImGui::CollapsingHeader("Filter")) {
 		ImGui::Text("TODO");
+	}
+	
+	if (!ImGui::CollapsingHeader("Settings")) {
+		ImGui::Text("Max FPS:");
+		ImGui::InputInt("##1", &GS->globalState.maxFPS, 10);
 	}
 	
 	if (ImGui::Button("Test")) {
 		ligma(GS->globalState.inputToggle);
 	}
-
 
 	ImGui::End();
 	
