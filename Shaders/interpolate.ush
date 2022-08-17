@@ -21,6 +21,7 @@ This can likely be done by multiplier=(multiplier-1)*(1-abs(Amount*2-1))+1 or by
 */
 
 //*
+// get values from the opposite direction of the volume shader to keep the theta padding it uses pristine
 float3 vec1 = value1 - float3(
 	texture1[uint2(radius - 1, yPos                                  )].r,
 	texture1[uint2(radius    , theta - 1 +  sweep      * thetaSizeInt)].r,
@@ -34,9 +35,13 @@ float3 vec2 = value2 - float3(
 float dist1 = distance(vec1,0);
 float dist2 = distance(vec2,0);
 float offset = dot(vec1,vec2) / dist1 / dist2 * (-0.5) + 0.5;
-offset = offset * min(dist1, dist2) * (1 - abs(amount * 2 - 1));
 
+// The offset is a bit too much in lower value areas which causes the green regions of reflectivity to pulsate.
+offset = offset * min(dist1, dist2) * (1 - abs(amount * 2 - 1));
 base += isfinite(offset) ? offset : 0;
+
+//float multiplier = offset / 10 * (1 - abs(amount * 2 - 1)) + 1;
+//base *= multiplier;
 // */
 
 //base = lerp(base,max(value1,value2), 1 - abs(amount * 2 - 1));
