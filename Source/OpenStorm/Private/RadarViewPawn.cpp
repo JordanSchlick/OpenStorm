@@ -3,6 +3,14 @@
 
 #include "RadarViewPawn.h"
 #include "RadarGameStateBase.h"
+#include "Kismet/GameplayStatics.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Engine/StaticMesh.h" 
+#include "Materials/Material.h"
+#include "Materials/MaterialInstanceDynamic.h"
+
+
+
 
 // Sets default values
 ARadarViewPawn::ARadarViewPawn()
@@ -37,7 +45,9 @@ void ARadarViewPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	meshComponent->SetRelativeScale3D(FVector3d(0.25, 2, 2));
-	mainVolumeRender = ARadarVolumeRender::instance;
+	//mainVolumeRender = ARadarVolumeRender::instance;
+	mainVolumeRender = FindActor<ARadarVolumeRender>();
+	gui = FindActor<AImGuiUI>();
 }
 
 // Called every frame
@@ -71,7 +81,18 @@ void ARadarViewPawn::Tick(float deltaTime)
 	rotation.Roll = 0;
 	SetActorRotation(rotation);
 	
-	GS->globalState.testFloat = forwardMovement;
+	//GS->globalState.testFloat = forwardMovement;
+	}
+}
+
+template <class T>
+T* ARadarViewPawn::FindActor() {
+	TArray<AActor*> FoundActors = {};
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), T::StaticClass(), FoundActors);
+	if (FoundActors.Num() > 0) {
+		return (T*)FoundActors[0];
+	} else {
+		return NULL;
 	}
 }
 
@@ -87,6 +108,7 @@ void ARadarViewPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("RotateUD", this, &ARadarViewPawn::RotateUD);
 	PlayerInputComponent->BindAxis("RotateMouseLR", this, &ARadarViewPawn::RotateMouseLR);
 	PlayerInputComponent->BindAxis("RotateMouseUD", this, &ARadarViewPawn::RotateMouseUD);
+	PlayerInputComponent->BindAction("MouseButton", IE_Released, this, &ARadarViewPawn::ReleaseMouse);
 	
 }
 
@@ -141,7 +163,12 @@ void ARadarViewPawn::RotateMouseLR(float value)
 	horizontalRotationAmount += value;
 }
 
-
+void ARadarViewPawn::ReleaseMouse() {
+	// return mouse to gui
+	if (gui != NULL) {
+		gui->UnlockMouse();
+	}
+}
 
 
 

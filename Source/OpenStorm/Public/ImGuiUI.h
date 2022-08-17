@@ -14,6 +14,11 @@ class OPENSTORM_API AImGuiUI : public AActor
 public:
 	// Sets default values for this actor's properties
 	AImGuiUI();
+	bool showDemoWindow = false;
+	bool scalabilityTest = false;
+	
+	void LockMouse();
+	void UnlockMouse();
 
 protected:
 	// Called when the game starts or when spawned

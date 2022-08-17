@@ -1,3 +1,8 @@
+#pragma once
+#include <string>
+#include <functional>
+#include <map>
+#include <vector>
 
 
 class GlobalState{
@@ -6,6 +11,7 @@ public:
 	bool fade = false; // animate fade
 	bool animate = false; // animate the scene
 	bool interpolation = false; // interpolate the scene
+	bool isMouseCaptured = false; // true if mouse is currently captured
 	
 	int maxFPS = 60; // maximum frames per second
 	
@@ -15,10 +21,20 @@ public:
 	float rotateSpeed = 200.0f; // speed of rotation
 
 	
+	// register a callback for the given event name. returns a uid to remove callback
+	uint64_t RegisterEvent(std::string name, std::function<void(std::string, void*)> callback);
+	// remove callback
+	void UnregisterEvent(uint64_t uid);
+	// emit an event to all registered callbacks
+	void EmitEvent(std::string name, std::string stringData, void* extraData);
+	void EmitEvent(std::string name);
+	
 	//Testing
-	float testFloat = 0; // test float
+	float testFloat = 1; // test float
 	bool testBool = false;
 	void test(); // test fuction
 private:
-	
+	std::unordered_map<std::string, std::unordered_map<uint64_t, std::function<void(std::string, void*)>>> callbacks = {};
+	std::unordered_map<uint64_t, std::string> callbacksUidNames = {};
+	uint64_t callbackUid = 1;
 };

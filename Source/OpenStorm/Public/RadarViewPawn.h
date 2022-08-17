@@ -2,6 +2,7 @@
 
 #pragma once
 #include "RadarVolumeRender.h"
+#include "ImGuiUI.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Camera/CameraComponent.h"
@@ -28,7 +29,9 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
-	
+	template <class T>
+	T* FindActor();
+
 private:
 	float forwardMovement = 0;
 	float sidewaysMovement = 0;
@@ -45,6 +48,7 @@ private:
 	void RotateUD(float Value);
 	void RotateMouseLR(float Value);
 	void RotateMouseUD(float Value);
+	void ReleaseMouse();
 	
 private:
 	UPROPERTY(EditAnywhere)
@@ -57,6 +61,9 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 		ARadarVolumeRender* mainVolumeRender = NULL;
+
+	UPROPERTY(EditAnywhere)
+		AImGuiUI* gui = NULL;
 	
 	UPROPERTY(EditAnywhere)
 		UMaterialInstanceDynamic* radarMaterialInstance = NULL;

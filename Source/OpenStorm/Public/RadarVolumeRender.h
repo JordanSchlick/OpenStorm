@@ -6,6 +6,8 @@
 #include "../Radar/RadarCollection.h"
 #include "../Radar/RadarColorIndex.h"
 
+#include "../Application/GlobalState.h"
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Engine/StaticMesh.h" 
@@ -76,6 +78,8 @@ public:
 	RadarCollection* radarCollection = NULL;
 	RadarData* radarData;
 	
+	GlobalState* globalState = NULL;
+	uint64_t callbackIdTest = 0;
 	RadarColorIndex::Result radarColorResult = {};
 	
 	void RandomizeTexture();
@@ -85,6 +89,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type endPlayReason) override;
 
 public:
 	// Called every frame

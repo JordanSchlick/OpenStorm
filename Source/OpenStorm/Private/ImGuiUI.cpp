@@ -16,10 +16,13 @@ GS->globalState.maxFPS
 */
 
 #include "ImGuiUI.h"
+#include "../Radar/SystemApi.h"
 #include <imgui.h>
 #include <ImGuiModule.h>
 #include "RadarGameStateBase.h"
 #include <RadarViewPawn.h>
+
+#include "UnrealClient.h"
 
 // Sets default values
 AImGuiUI::AImGuiUI()
@@ -33,6 +36,8 @@ AImGuiUI::AImGuiUI()
 void AImGuiUI::BeginPlay()
 {
 	Super::BeginPlay();
+	UnlockMouse();
+
 	
 }
 
@@ -41,10 +46,19 @@ void AImGuiUI::BeginPlay()
 // Called every frame
 void AImGuiUI::Tick(float deltaTime)
 {
+
+	FImGuiModule::Get().GetProperties().SetMouseInputShared(false);
 	Super::Tick(deltaTime);
 	ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>();
+	GlobalState &globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 
+	
 	ImGui::Begin("Menu", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize);
+	if(scalabilityTest){
+		ImGui::SetWindowFontScale(cos(SystemAPI::CurrentTime() / 1) / 2 + 1.5);
+	}else{
+		ImGui::SetWindowFontScale(1);
+	}
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), 0, ImVec2(0.0f, 0.0f));
 	ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -88,17 +102,81 @@ void AImGuiUI::Tick(float deltaTime)
 		ImGui::InputInt("##1", &GS->globalState.maxFPS, 10);
 	}
 	
+	if (ImGui::CollapsingHeader("Ligma")) {
+		if (ImGui::Button("Demo Window")) {
+			showDemoWindow = !showDemoWindow;
+		}
+		ImGui::Text("Number float input:");
+		
+		ImGui::PushID("testInput");
+		ImGui::PushItemWidth(8 * ImGui::GetFontSize());
+		ImGui::InputFloat("##floatInput", &globalState.testFloat, 0.1f, 1.0f);
+		ImGui::SameLine();
+		ImGui::PopItemWidth();
+		ImGui::PushItemWidth(12 * ImGui::GetFontSize());
+		ImGui::SliderFloat("##floatSlider", &globalState.testFloat,0,1);
+		ImGui::PopItemWidth();
+		ImGui::SameLine();
+		ImGui::Text("Test input");
+		ImGui::PopID();
+		
+		ImGui::Checkbox("Scalability Test", &scalabilityTest);
+		
+	}
+	if(showDemoWindow){
+		ImGui:: ShowDemoWindow();
+	}
+	
 	if (ImGui::Button("Test")) {
 		ligma(GS->globalState.inputToggle);
 	}
 
 	ImGui::End();
 	
+	ImGuiIO& io = ImGui::GetIO();
+	if(!io.WantCaptureMouse){
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)){
+			// mouse release will not be recieved
+			//io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+			//io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
+			fprintf(stderr, "Capture mouse here\n");
+			globalState.isMouseCaptured = true;
+			LockMouse();
+		}
+	}
+	
+}
+
+
+
+
+
+void AImGuiUI::LockMouse() {
+	FImGuiModule::Get().GetProperties().SetInputEnabled(false);
+	//GetWorld()->GetGameViewport()->Viewport->;
+	GetWorld()->GetGameViewport()->Viewport->CaptureMouse(true);
+	GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeGameOnly());
+	ImGuiIO& io = ImGui::GetIO();
+}
+
+void AImGuiUI::UnlockMouse() {
+	FImGuiModule::Get().GetProperties().SetInputEnabled(true);
+	ImGui::SetWindowFocus();
+	FImGuiModule::Get().GetProperties().SetMouseInputShared(true);
+	//GetWorld()->GetGameViewport()->Viewport->SetUserFocus(true);
+	//FImGuiModule::Get().SetInputMode
+	ImGuiIO& io = ImGui::GetIO();
+	io.ClearInputKeys();
+	io.ClearInputCharacters();
+	io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+	io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
 }
 
 void AImGuiUI::ligma(bool Value)
 {
 	FImGuiModule::Get().GetProperties().SetInputEnabled(Value);
-
+	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+	globalState->EmitEvent("Test");
+	globalState->EmitEvent("TestUnregistered");
 }
 

@@ -5,6 +5,7 @@
 
 #include "RadarVolumeRender.h"
 #include "StdioConsole.h"
+#include "RadarGameStateBase.h"
 #include "../EngineHelpers/MaterialRenderTarget.h"
 
 
@@ -20,7 +21,6 @@
 #include "Math/UnrealMathUtility.h"
 #include "HAL/FileManager.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "UObject/ConstructorHelpers.h"
 
 #include <algorithm>
 
@@ -232,7 +232,18 @@ void ARadarVolumeRender::BeginPlay()
 	radarCollection->ReadFiles();
 	radarCollection->LoadNewData();
 
+
+	globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+	
+	callbackIdTest = globalState->RegisterEvent("Test",[this](std::string stringData, void* extraData){
+		fprintf(stderr, "Test event received in RadarVolumeRender\n");
+	});
+	
 	//RandomizeTexture();
+}
+
+void ARadarVolumeRender::EndPlay(const EEndPlayReason::Type endPlayReason) {
+	globalState->UnregisterEvent(callbackIdTest);
 }
 
 //=======================================================================================================
@@ -314,7 +325,7 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 			float animationProgress = std::clamp((now - interpolationStartTime) / (interpolationEndTime - interpolationStartTime), 0.0, 1.0);
 			float animationValue = interpolationStartValue * (1.0f - animationProgress) + interpolationEndValue * animationProgress;
 			interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), animationValue);
-			fprintf(stderr, "%f\n", animationValue);
+			//fprintf(stderr, "%f\n", animationValue);
 			if(animationProgress == 1){
 				interpolationAnimating = false;
 			}
@@ -390,4 +401,6 @@ ARadarVolumeRender::~ARadarVolumeRender()
 	}
 	radarColorResult.Delete();
 }
+
+
 
