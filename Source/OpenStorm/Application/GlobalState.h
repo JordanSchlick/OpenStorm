@@ -10,12 +10,15 @@ public:
 	bool inputToggle = false; // toggle mouse input
 	bool fade = false; // animate fade
 	bool animate = false; // animate the scene
+	bool animateCutoff = false; // animate the cotoff
 	bool interpolation = false; // interpolate the scene
 	bool isMouseCaptured = false; // true if mouse is currently captured
 	
 	int maxFPS = 60; // maximum frames per second
 	
 	float animateSpeed = 3.0f; // speed of animation
+	float animateCutoffTime = 5.0f; // speed of animation
+	float cutoff = 0.0f; // how much of the radar range to hide starting at the lowest
 	float fadeSpeed = 0.0f; // speed of fade
 	float moveSpeed = 300.0f; // speed of movement
 	float rotateSpeed = 200.0f; // speed of rotation

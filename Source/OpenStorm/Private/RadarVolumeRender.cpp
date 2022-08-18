@@ -23,12 +23,14 @@
 #include "Materials/MaterialInstanceDynamic.h"
 
 #include <algorithm>
+#include <cmath>
 
 // modulo that always returns positive
 inline int modulo(int i, int n) {
 	return (i % n + n) % n;
 }
 
+#define PI2F 6.283185307179586f
 
 ARadarVolumeRender *ARadarVolumeRender::instance = NULL;
 // Sets default values
@@ -216,7 +218,7 @@ void ARadarVolumeRender::BeginPlay()
 				interpolationStartTime = now;
 				interpolationEndTime = now + (double)event.minTimeTillNext;
 				interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), interpolationStartValue);
-				interpolationMaterialInstance->SetScalarParameterValue(TEXT("Minimum"), radarColorResult.lower);
+				//interpolationMaterialInstance->SetScalarParameterValue(TEXT("Minimum"), radarColorResult.lower);
 				usePrimaryTexture = !usePrimaryTexture;
 				
 			}
@@ -233,7 +235,7 @@ void ARadarVolumeRender::BeginPlay()
 	radarCollection->LoadNewData();
 
 
-	globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	
 	callbackIds.push_back(globalState->RegisterEvent("Test",[this](std::string stringData, void* extraData){
 		fprintf(stderr, "Test event received in RadarVolumeRender\n");
@@ -249,6 +251,7 @@ void ARadarVolumeRender::BeginPlay()
 }
 
 void ARadarVolumeRender::EndPlay(const EEndPlayReason::Type endPlayReason) {
+	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	for(auto id : callbackIds){
 		globalState->UnregisterEvent(id);
 	}
@@ -319,7 +322,8 @@ inline uint32_t deadbeefRand() {
 void ARadarVolumeRender::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+	double now = SystemAPI::CurrentTime();
+	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	radarCollection->automaticallyAdvance = globalState->animate;
 	radarCollection->autoAdvanceInterval = 1.0f / globalState->animateSpeed;
 	
@@ -332,7 +336,6 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 			interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), interpolationEndValue);
 			interpolationAnimating = false;
 		}else{
-			double now = SystemAPI::CurrentTime();
 			float animationProgress = std::clamp((now - interpolationStartTime) / (interpolationEndTime - interpolationStartTime), 0.0, 1.0);
 			float animationValue = interpolationStartValue * (1.0f - animationProgress) + interpolationEndValue * animationProgress;
 			interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), animationValue);
@@ -343,26 +346,30 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 		}
 	}
 	//return;
-	/*
+	//*
 	RadarColorIndex::Params colorParams = {};
 	colorParams.fromRadarData(radarData);
-	colorParams.minValue = 0;
-	colorParams.maxValue = 1;
-	RadarColorIndex::Result valueIndex = RadarColorIndex::relativeHueAcid(colorParams);
-
+	radarColorResult = RadarColorIndex::reflectivityColors(colorParams, &radarColorResult);
+	float cutoff = globalState->cutoff;
+	if(globalState->animateCutoff){
+		cutoff = (sin(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * PI2F) + 1) / 2 * cutoff;
+		//cutoff = abs(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * -2 + 1) * cutoff;
+	}
+	RadarColorIndex::Cutoff(cutoff, &radarColorResult);
 	float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
 	//memcpy(rawValueIndexImageData, valueIndex.data, 16384);
 	
-	memcpy(rawValueIndexImageData, valueIndex.data, valueIndex.byteSize);
+	memcpy(rawValueIndexImageData, radarColorResult.data, radarColorResult.byteSize);
 	valueIndexImageData->Unlock();
 	valueIndexTexture->UpdateResource();
 
-	delete[] valueIndex.data;
 	// set value bounds
-	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexLower"), valueIndex.lower);
-	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexUpper"), valueIndex.upper);
-	//*/
-
+	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexLower"), radarColorResult.lower);
+	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexUpper"), radarColorResult.upper);
+	
+	if (doTimeInterpolation) {
+		interpolationMaterialInstance->SetScalarParameterValue(TEXT("Minimum"), radarColorResult.lower);
+	}
 
 	radarCollection->EventLoop();
 }

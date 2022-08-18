@@ -83,11 +83,16 @@ void RadarColorIndex::Result::Delete() {
 	}
 }
 
-RadarColorIndex::Result RadarColorIndex::relativeHue(RadarColorIndex::Params params) {
+RadarColorIndex::Result RadarColorIndex::relativeHue(RadarColorIndex::Params params, Result* reuseResult) {
 	RadarColorIndex::Result result = {};
 	result.lower = params.minValue;
 	result.upper = params.maxValue;
-	result.data = new float[65536]();
+	if(reuseResult != NULL && reuseResult->data != NULL){
+		result.data = reuseResult->data;
+	}
+	if(result.data == NULL){
+		result.data = new float[65536]();
+	}
 	
 	for (int i = 0; i < 16384; i++) {
 		float value = (i / 16383.0f);
@@ -108,11 +113,17 @@ RadarColorIndex::Result RadarColorIndex::relativeHue(RadarColorIndex::Params par
 	return result;
 };
 
-RadarColorIndex::Result RadarColorIndex::relativeHueAcid(RadarColorIndex::Params params) {
+RadarColorIndex::Result RadarColorIndex::relativeHueAcid(RadarColorIndex::Params params, Result* reuseResult) {
 	RadarColorIndex::Result result = {};
-	result.lower = 0.0;
-	result.upper = 1.0;
-	result.data = new float[65536]();
+	result.lower = params.minValue;
+	result.upper = params.maxValue;
+	if(reuseResult != NULL && reuseResult->data != NULL){
+		result.data = reuseResult->data;
+	}
+	if(result.data == NULL){
+		result.data = new float[65536]();
+	}
+	
 	
 	for (int i = 0; i < 16384; i++) {
 		float value = (i / 16383.0f);
@@ -129,7 +140,7 @@ RadarColorIndex::Result RadarColorIndex::relativeHueAcid(RadarColorIndex::Params
 		result.data[i * 4 + 3] = value;
 		//fprintf(stderr,"%f\n",value);
 	}
-
+	result.data[3] = 0;
 	return result;
 };
 RadarColorIndex::Result RadarColorIndex::reflectivityColors(RadarColorIndex::Params params, Result* reuseResult) {
@@ -138,10 +149,8 @@ RadarColorIndex::Result RadarColorIndex::reflectivityColors(RadarColorIndex::Par
 	result.lower = l;
 	float u = 80;
 	result.upper = u;
-	if(reuseResult != NULL){
-		if(reuseResult->data != NULL){
-			result.data = reuseResult->data;
-		}
+	if(reuseResult != NULL && reuseResult->data != NULL){
+		result.data = reuseResult->data;
 	}
 	if(result.data == NULL){
 		result.data = new float[65536]();
@@ -184,6 +193,13 @@ RadarColorIndex::Result RadarColorIndex::reflectivityColors(RadarColorIndex::Par
 	}
 	return result;
 };
+
+void RadarColorIndex::Cutoff(float amount, Result* existingResult) {
+	int max = std::min((int)(amount * 16384), (int)16384);
+	for (int i = 0; i < max; i++) {
+		existingResult->data[i * 4 + 3] = 0;
+	}
+}
 
 
 

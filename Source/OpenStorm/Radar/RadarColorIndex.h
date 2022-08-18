@@ -25,6 +25,7 @@ public:
 		float* data = NULL;
 		// constant size of buffer in bytes
 		int byteSize = 262144;
+		int floatSize = 65536;
 		// lowest value mapped by the buffer
 		float lower = 0;
 		// highest value mapped by the buffer
@@ -33,7 +34,9 @@ public:
 		void Delete();
 	};
 	
-	static Result relativeHue(Params params);
-	static Result relativeHueAcid(Params params);
+	static Result relativeHue(Params params, Result* reuseResult);
+	static Result relativeHueAcid(Params params, Result* reuseResult);
 	static Result reflectivityColors(Params params, Result* reuseResult);
+	
+	static void Cutoff(float amount, Result* existingResult);
 };

@@ -79,7 +79,7 @@ public:
 	RadarCollection* radarCollection = NULL;
 	RadarData* radarData;
 	
-	GlobalState* globalState = NULL;
+	//GlobalState* globalState = NULL;
 	std::vector<uint64_t> callbackIds = {};
 	RadarColorIndex::Result radarColorResult = {};
 	

@@ -295,7 +295,7 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	
 	//localColor = F::HUEtoRGB((distance(location,cameraPos) / 300) % 1) * 1;
 	
-	localAlpha = animationTime < localAlpha ? localAlpha : 0;
+	//localAlpha = animationTime < localAlpha ? localAlpha : 0;
 	//if(radiusInt < radiusSize){
 	//	localAlpha = 1;
 	//}
