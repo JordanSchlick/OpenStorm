@@ -83,7 +83,7 @@ void AStdioConsole::ShowConsole(){
 	if (conHandle != NULL)
 	{
 		HINSTANCE hGetProcIDDLL = LoadLibraryA("user32.dll");
-		if (!hGetProcIDDLL) {
+		if (hGetProcIDDLL != NULL) {
 			ShowWindowDef ShowWindow = (ShowWindowDef)GetProcAddress(hGetProcIDDLL, "ShowWindow");
 			if (ShowWindow) {
 				ShowWindow((HWND)conHandle, SW_SHOW);

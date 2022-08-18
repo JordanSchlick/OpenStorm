@@ -17,12 +17,14 @@ GS->globalState.maxFPS
 
 #include "ImGuiUI.h"
 #include "font.h"
+#include "native.h"
 #include "../Radar/SystemApi.h"
 #include "imgui.h"
 //#include "imgui_internal.h"
 #include <ImGuiModule.h>
 #include "RadarGameStateBase.h"
 #include <RadarViewPawn.h>
+#include "Widgets/SWindow.h"
 
 #include "UnrealClient.h"
 
@@ -85,6 +87,7 @@ void AImGuiUI::BeginPlay()
 	ImGuiStyle &style = ImGui::GetStyle();
 	
 	
+	
 	UnlockMouse();
 }
 
@@ -93,19 +96,30 @@ void AImGuiUI::BeginPlay()
 // Called every frame
 void AImGuiUI::Tick(float deltaTime)
 {
-
-	FImGuiModule::Get().GetProperties().SetMouseInputShared(false);
 	Super::Tick(deltaTime);
 	ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>();
 	GlobalState &globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+
+	FViewport* veiwport = GetWorld()->GetGameViewport()->Viewport;
+	FIntPoint viewportSize = veiwport->GetSizeXY();
+
+	// this should probably not be called every frame
+	SWindow* swindow = GetWorld()->GetGameViewport()->GetWindow().Get();
+	float nativeScale = swindow->GetDPIScaleFactor();
+	fprintf(stderr, "scale %f\n", nativeScale);
+	if(nativeScale != globalState.defaults->guiScale){
+		if(globalState.defaults->guiScale == globalState.guiScale){
+			globalState.guiScale = nativeScale;
+		}
+		globalState.defaults->guiScale = nativeScale;
+	}
 
 	float fontScale = 0.4;
 	fontScale *= globalState.guiScale;
 	ImGui::SetNextWindowBgAlpha(0.3);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), 0, ImVec2(0.0f, 0.0f));
 	//ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
-	FViewport* veiwport = GetWorld()->GetGameViewport()->Viewport;
-	FIntPoint viewportSize = veiwport->GetSizeXY();
+	
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, 100.0f), ImVec2(viewportSize.X / 2, viewportSize.Y));
 	ImGui::Begin("Menu", NULL, ImGuiWindowFlags_NoMove | /*ImGuiWindowFlags_NoBackground |*/ ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar);
 	if(scalabilityTest){
