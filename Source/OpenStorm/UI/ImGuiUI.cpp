@@ -122,7 +122,6 @@ void AImGuiUI::Tick(float deltaTime)
 
 	SWindow* swindow = GetWorld()->GetGameViewport()->GetWindow().Get();
 	float nativeScale = swindow->GetDPIScaleFactor();
-	fprintf(stderr, "scale %f\n", nativeScale);
 	if(nativeScale != globalState.defaults->guiScale){
 		if(globalState.defaults->guiScale == globalState.guiScale){
 			globalState.guiScale = nativeScale;
@@ -256,7 +255,7 @@ void AImGuiUI::Tick(float deltaTime)
 			// mouse release will not be recieved
 			//io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
 			//io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
-			fprintf(stderr, "Capture mouse here\n");
+			//fprintf(stderr, "Capture mouse here\n");
 			globalState.isMouseCaptured = true;
 			LockMouse();
 		}

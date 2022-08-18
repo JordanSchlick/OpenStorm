@@ -156,12 +156,6 @@ RadarColorIndex::Result RadarColorIndex::reflectivityColors(RadarColorIndex::Par
 		result.data = new float[65536]();
 	}
 	
-	fprintf(stderr,"%i %i \n",valueToIndex(l,u,-20), valueToIndex(l,u,15));
-	float3 rgb = HSLToRGB(0.66,1,0.5);
-	
-	fprintf(stderr,"%f %f %f\n",rgb.x,rgb.y,rgb.z);
-	
-	
 	//gray
 	colorRangeHSL(result.data, valueToIndex(l,u,-20), valueToIndex(l,u,15),  0,0,0.1,  0,0,0.4);
 	//blue
