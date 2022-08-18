@@ -28,11 +28,19 @@ GS->globalState.maxFPS
 
 #include "UnrealClient.h"
 
+static bool inlineLabel = false;
+
+
 // intput for a float value
 void CustomFloatInput(const char* label, float minSlider, float maxSlider, float* value, float* defaultValue = NULL){
 	float fontSize = ImGui::GetFontSize();
 	ImGuiStyle &style = ImGui::GetStyle();
 	ImGui::PushID(label);
+	if(!inlineLabel){
+		ImGui::PushItemWidth(0.01);
+		ImGui::LabelText(label, "");
+		ImGui::PopItemWidth();
+	}
 	ImGui::PushItemWidth(8 * fontSize);
 	ImGui::InputFloat("##floatInput", value, 0.1f, 1.0f, "%.2f");
 	ImGui::PopItemWidth();
@@ -51,17 +59,20 @@ void CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 		ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
 		ImGui::PopItemWidth();
 	}
-	ImGui::SameLine();
 	
-	/*const char* labelEnd = ImGui::FindRenderedTextEnd(label);
-    if (label != labelEnd)
-    {
-        ImGui::TextEx(label, labelEnd);
-    }*/
-	//ImGui::TextUnformatted(label);
-	ImGui::PushItemWidth(0.01);
-	ImGui::LabelText(label, "");
-	ImGui::PopItemWidth();
+	if(inlineLabel){
+		ImGui::SameLine();
+	
+		/*const char* labelEnd = ImGui::FindRenderedTextEnd(label);
+		if (label != labelEnd)
+		{
+			ImGui::TextEx(label, labelEnd);
+		}*/
+		//ImGui::TextUnformatted(label);
+		ImGui::PushItemWidth(0.01);
+		ImGui::LabelText(label, "");
+		ImGui::PopItemWidth();
+	}
 	ImGui::PopID();
 }
 
@@ -126,10 +137,37 @@ void AImGuiUI::Tick(float deltaTime)
 	}else{
 		ImGui::SetWindowFontScale(fontScale);
 	}
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	if (ImGui::CollapsingHeader("Main")) {
+	
+	float frameHeight = ImGui::GetFrameHeight();
+	float fontSize = ImGui::GetFontSize();
+	ImVec2 squareButtonSize = ImVec2(frameHeight, frameHeight);
+	
+	if (ImGui::CollapsingHeader("Basic", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::PushButtonRepeat(true);
+		if(ImGui::Button(ICON_FA_BACKWARD_STEP, squareButtonSize)){
+			globalState.EmitEvent("BackwardStep");
+		}
+		ImGui::SameLine();
+		bool buttonActive = globalState.animate;
+		if(buttonActive){
+			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+		}
+		if(ImGui::Button(ICON_FA_PLAY, squareButtonSize)){
+			globalState.animate = !globalState.animate;
+		}
+		if(buttonActive){
+			ImGui::PopStyleColor(2);
+		}
+		ImGui::SameLine();
+		if(ImGui::Button(ICON_FA_FORWARD_STEP, squareButtonSize)){
+			globalState.EmitEvent("ForwardStep");
+		}
+		ImGui::PopButtonRepeat();
+	}
+	if (ImGui::CollapsingHeader("Main", ImGuiTreeNodeFlags_DefaultOpen)) {
 		
-		if (ImGui::TreeNode("Movement")) {
+		if (ImGui::TreeNodeEx("Movement", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 			ImGui::Text("Forward Movement Speed:");
 			ImGui::SliderFloat("##1", &GS->globalState.moveSpeed, 0.0f, 1000.0f);
 			
@@ -140,7 +178,7 @@ void AImGuiUI::Tick(float deltaTime)
 		}
 		ImGui::Separator();
 		
-		if (ImGui::TreeNode("Fade")) {
+		if (ImGui::TreeNodeEx("Fade", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 			ImGui::Checkbox("Fade", &GS->globalState.fade);
 			ImGui::Text("Fade Speed:");
 			ImGui::SliderFloat("##1", &GS->globalState.fadeSpeed, 0.0f, 5.0f);
@@ -148,11 +186,12 @@ void AImGuiUI::Tick(float deltaTime)
 		}
 		ImGui::Separator();
 		
-		if (ImGui::TreeNode("Animation")) {
+		if (ImGui::TreeNodeEx("Animation", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 			ImGui::Checkbox("Animate", &GS->globalState.animate);
 			ImGui::Checkbox("Interpolation", &GS->globalState.interpolation);
-			ImGui::Text("Animation Speed:");
-			ImGui::SliderFloat("##1", &GS->globalState.animateSpeed, 0.0f, 5.0f);
+			//ImGui::Text("Animation Speed:");
+			//ImGui::SliderFloat("##1", &GS->globalState.animateSpeed, 0.0f, 5.0f);
+			CustomFloatInput("Animation Speed", 1, 15, &globalState.animateSpeed, &globalState.defaults->animateSpeed);
 			ImGui::TreePop();
 		}
 		//ImGui::Separator();
@@ -168,6 +207,7 @@ void AImGuiUI::Tick(float deltaTime)
 	}
 	
 	if (ImGui::CollapsingHeader("Ligma")) {
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		if (ImGui::Button("Demo Window")) {
 			showDemoWindow = !showDemoWindow;
 		}

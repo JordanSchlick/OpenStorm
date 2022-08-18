@@ -18,6 +18,7 @@ public:
 		std::string path = "";
 	};
 	
+	// event emittid when new current data is available
 	class RadarUpdateEvent{
 	public:
 		// radar data for event
@@ -68,24 +69,35 @@ public:
 	// location of directory to load from
 	std::string filePath = "";
 	
+	// TODO: add a maximum number of current async tasks
 	int maxLoading = 100;
 	
+	// should the position be animated
 	bool automaticallyAdvance = true;
 	
+	// time between automatic advances
 	float autoAdvanceInterval = 1;
 	
+	// create a UID for use with threading
 	static uint64_t CreateUID();
 	
 	RadarCollection();
 	
 	~RadarCollection();
 	
+	// allocate data
 	void Allocate(int cacheSize);
 	
+	// free all allocated data
 	void Free();
 	
+	// moves the curent position
 	void Move(int delta);
 	
+	// initiates a move for the user
+	void MoveManual(int delta);
+	
+	// this function should be called regularly on the main thread
 	void EventLoop();
 	
 	// register a callback for when radar data, this can emit null if there was an error loading data

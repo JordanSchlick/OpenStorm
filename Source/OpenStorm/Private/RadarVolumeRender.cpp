@@ -235,15 +235,23 @@ void ARadarVolumeRender::BeginPlay()
 
 	globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	
-	callbackIdTest = globalState->RegisterEvent("Test",[this](std::string stringData, void* extraData){
+	callbackIds.push_back(globalState->RegisterEvent("Test",[this](std::string stringData, void* extraData){
 		fprintf(stderr, "Test event received in RadarVolumeRender\n");
-	});
+	}));
+	callbackIds.push_back(globalState->RegisterEvent("ForwardStep",[this](std::string stringData, void* extraData){
+		radarCollection->MoveManual(1);
+	}));
+	callbackIds.push_back(globalState->RegisterEvent("BackwardStep",[this](std::string stringData, void* extraData){
+		radarCollection->MoveManual(-1);
+	}));
 	
 	//RandomizeTexture();
 }
 
 void ARadarVolumeRender::EndPlay(const EEndPlayReason::Type endPlayReason) {
-	globalState->UnregisterEvent(callbackIdTest);
+	for(auto id : callbackIds){
+		globalState->UnregisterEvent(id);
+	}
 }
 
 //=======================================================================================================
@@ -311,6 +319,9 @@ inline uint32_t deadbeefRand() {
 void ARadarVolumeRender::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	radarCollection->automaticallyAdvance = globalState->animate;
+	radarCollection->autoAdvanceInterval = 1.0f / globalState->animateSpeed;
 	
 	if(volumeMaterialRenderTarget != NULL){
 		volumeMaterialRenderTarget->Update();

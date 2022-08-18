@@ -15,7 +15,7 @@ public:
 	
 	int maxFPS = 60; // maximum frames per second
 	
-	float animateSpeed = 0.0f; // speed of animation
+	float animateSpeed = 3.0f; // speed of animation
 	float fadeSpeed = 0.0f; // speed of fade
 	float moveSpeed = 300.0f; // speed of movement
 	float rotateSpeed = 200.0f; // speed of rotation

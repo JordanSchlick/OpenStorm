@@ -155,6 +155,11 @@ void RadarCollection::Move(int delta) {
 	}
 }
 
+void RadarCollection::MoveManual(int delta) {
+	Move(delta);
+	lastMoveDirection = delta < 0 ? -1 : 1;
+}
+
 
 void RadarCollection::EventLoop() {
 	if(!allocated){

@@ -5,8 +5,9 @@
 
 #include "../Radar/RadarCollection.h"
 #include "../Radar/RadarColorIndex.h"
-
 #include "../Application/GlobalState.h"
+
+#include <vector>
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -79,7 +80,7 @@ public:
 	RadarData* radarData;
 	
 	GlobalState* globalState = NULL;
-	uint64_t callbackIdTest = 0;
+	std::vector<uint64_t> callbackIds = {};
 	RadarColorIndex::Result radarColorResult = {};
 	
 	void RandomizeTexture();
