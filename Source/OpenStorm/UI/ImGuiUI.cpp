@@ -103,7 +103,6 @@ void AImGuiUI::Tick(float deltaTime)
 	FViewport* veiwport = GetWorld()->GetGameViewport()->Viewport;
 	FIntPoint viewportSize = veiwport->GetSizeXY();
 
-	// this should probably not be called every frame
 	SWindow* swindow = GetWorld()->GetGameViewport()->GetWindow().Get();
 	float nativeScale = swindow->GetDPIScaleFactor();
 	fprintf(stderr, "scale %f\n", nativeScale);

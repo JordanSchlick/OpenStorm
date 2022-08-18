@@ -10,8 +10,8 @@ typedef void* HANDLE;
 typedef void* HINSTANCE;
 typedef void* HWND;
 typedef void* HMONITOR;
-//typedef int HRESULT;
-//typedef int DWORD;
+typedef long HRESULT;
+typedef unsigned long DWORD;
 typedef int BOOL;
 extern "C" {
 	__declspec(dllimport) HWND __stdcall GetConsoleWindow();
