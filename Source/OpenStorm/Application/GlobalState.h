@@ -19,6 +19,7 @@ public:
 	float fadeSpeed = 0.0f; // speed of fade
 	float moveSpeed = 300.0f; // speed of movement
 	float rotateSpeed = 200.0f; // speed of rotation
+	float guiScale = 1.0f; // scale of gui for high dpi displays
 
 	
 	// register a callback for the given event name. returns a uid to remove callback

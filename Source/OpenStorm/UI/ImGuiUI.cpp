@@ -18,7 +18,8 @@ GS->globalState.maxFPS
 #include "ImGuiUI.h"
 #include "font.h"
 #include "../Radar/SystemApi.h"
-#include <imgui.h>
+#include "imgui.h"
+//#include "imgui_internal.h"
 #include <ImGuiModule.h>
 #include "RadarGameStateBase.h"
 #include <RadarViewPawn.h>
@@ -26,18 +27,18 @@ GS->globalState.maxFPS
 #include "UnrealClient.h"
 
 // intput for a float value
-void CustomFloatInput(const char* label, float* value, float* defaultValue = NULL){
+void CustomFloatInput(const char* label, float minSlider, float maxSlider, float* value, float* defaultValue = NULL){
 	float fontSize = ImGui::GetFontSize();
+	ImGuiStyle &style = ImGui::GetStyle();
 	ImGui::PushID(label);
 	ImGui::PushItemWidth(8 * fontSize);
 	ImGui::InputFloat("##floatInput", value, 0.1f, 1.0f, "%.2f");
 	ImGui::PopItemWidth();
 	ImGui::SameLine();
 	if(defaultValue != NULL){
-		ImGuiStyle &style = ImGui::GetStyle();
 		float frameHeight = ImGui::GetFrameHeight();
 		ImGui::PushItemWidth(12 * fontSize - frameHeight - style.ItemSpacing.x);
-		ImGui::SliderFloat("##floatSlider", value,0,1);
+		ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 		if(ImGui::Button("\xe0\x49",ImVec2(frameHeight, frameHeight))){
@@ -45,11 +46,20 @@ void CustomFloatInput(const char* label, float* value, float* defaultValue = NUL
 		}
 	}else{
 		ImGui::PushItemWidth(12 * fontSize);
-		ImGui::SliderFloat("##floatSlider", value,0,1);
+		ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
 		ImGui::PopItemWidth();
 	}
 	ImGui::SameLine();
-	ImGui::Text(label);
+	
+	/*const char* labelEnd = ImGui::FindRenderedTextEnd(label);
+    if (label != labelEnd)
+    {
+        ImGui::TextEx(label, labelEnd);
+    }*/
+	//ImGui::TextUnformatted(label);
+	ImGui::PushItemWidth(0.01);
+	ImGui::LabelText(label, "");
+	ImGui::PopItemWidth();
 	ImGui::PopID();
 }
 
@@ -72,6 +82,9 @@ void AImGuiUI::BeginPlay()
 	LoadFonts();
 	FImGuiModule::Get().RebuildFontAtlas();
 	
+	ImGuiStyle &style = ImGui::GetStyle();
+	
+	
 	UnlockMouse();
 }
 
@@ -86,17 +99,22 @@ void AImGuiUI::Tick(float deltaTime)
 	ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>();
 	GlobalState &globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 
-	float fontScale = 0.5;
-	ImGui::Begin("Menu", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize);
+	float fontScale = 0.4;
+	fontScale *= globalState.guiScale;
+	ImGui::SetNextWindowBgAlpha(0.3);
+	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), 0, ImVec2(0.0f, 0.0f));
+	//ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
+	FViewport* veiwport = GetWorld()->GetGameViewport()->Viewport;
+	FIntPoint viewportSize = veiwport->GetSizeXY();
+	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, 100.0f), ImVec2(viewportSize.X / 2, viewportSize.Y));
+	ImGui::Begin("Menu", NULL, ImGuiWindowFlags_NoMove | /*ImGuiWindowFlags_NoBackground |*/ ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar);
 	if(scalabilityTest){
 		ImGui::SetWindowFontScale((cos(SystemAPI::CurrentTime() / 1) / 2 + 1.5) * fontScale);
 	}else{
 		ImGui::SetWindowFontScale(fontScale);
 	}
-	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), 0, ImVec2(0.0f, 0.0f));
-	ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	if (!ImGui::CollapsingHeader("Main")) {
+	if (ImGui::CollapsingHeader("Main")) {
 		
 		if (ImGui::TreeNode("Movement")) {
 			ImGui::Text("Forward Movement Speed:");
@@ -127,11 +145,11 @@ void AImGuiUI::Tick(float deltaTime)
 		//ImGui::Separator();
 
 	}	
-	if (!ImGui::CollapsingHeader("Filter")) {
+	if (ImGui::CollapsingHeader("Filter")) {
 		ImGui::Text("TODO");
 	}
 	
-	if (!ImGui::CollapsingHeader("Settings")) {
+	if (ImGui::CollapsingHeader("Settings")) {
 		ImGui::Text("Max FPS:");
 		ImGui::InputInt("##1", &GS->globalState.maxFPS, 10);
 	}
@@ -141,8 +159,10 @@ void AImGuiUI::Tick(float deltaTime)
 			showDemoWindow = !showDemoWindow;
 		}
 		ImGui::Text("Custom float input:");
-		CustomFloatInput("test float", &globalState.testFloat);
-		CustomFloatInput("test float##2", &globalState.testFloat, &globalState.defaults->testFloat);
+		CustomFloatInput("test float", 0, 1, &globalState.testFloat);
+		CustomFloatInput("test float##2", 0, 1, &globalState.testFloat, &globalState.defaults->testFloat);
+		
+		CustomFloatInput("gui scale", 1, 2, &globalState.guiScale, &globalState.defaults->guiScale);
 		
 		
 		ImGui::Checkbox("Scalability Test", &scalabilityTest);
