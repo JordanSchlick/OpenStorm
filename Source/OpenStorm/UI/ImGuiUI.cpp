@@ -43,7 +43,7 @@ void CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 		ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
-		if(ImGui::Button("\xe0\x49",ImVec2(frameHeight, frameHeight))){
+		if(ImGui::Button(ICON_FA_DELETE_LEFT ,ImVec2(frameHeight, frameHeight))){
 			*value = *defaultValue;
 		}
 	}else{
@@ -172,8 +172,8 @@ void AImGuiUI::Tick(float deltaTime)
 			showDemoWindow = !showDemoWindow;
 		}
 		ImGui::Text("Custom float input:");
-		CustomFloatInput("test float", 0, 1, &globalState.testFloat);
-		CustomFloatInput("test float##2", 0, 1, &globalState.testFloat, &globalState.defaults->testFloat);
+		CustomFloatInput("test float", 0, 3, &globalState.testFloat);
+		CustomFloatInput("test float##2", 0, 2, &globalState.testFloat, &globalState.defaults->testFloat);
 		
 		CustomFloatInput("gui scale", 1, 2, &globalState.guiScale, &globalState.defaults->guiScale);
 		
