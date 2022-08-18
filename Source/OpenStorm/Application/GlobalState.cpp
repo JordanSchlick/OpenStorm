@@ -41,3 +41,19 @@ void GlobalState::test() {
 	fprintf(stderr, "testFloat %f\n", testFloat);
 }
 
+GlobalState::GlobalState(){
+	this->defaults = new GlobalState(true);
+}
+
+GlobalState::GlobalState(bool doNotInitDefaults){
+	// no defaults init
+}
+
+GlobalState::~GlobalState(){
+	if(this->defaults != NULL){
+		delete this->defaults;
+	}
+}
+
+
+

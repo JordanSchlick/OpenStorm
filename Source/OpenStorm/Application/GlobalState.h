@@ -29,12 +29,21 @@ public:
 	void EmitEvent(std::string name, std::string stringData, void* extraData);
 	void EmitEvent(std::string name);
 	
+	
+	GlobalState* defaults = NULL;
+	
 	//Testing
 	float testFloat = 1; // test float
 	bool testBool = false;
 	void test(); // test fuction
+	
+	GlobalState();
+	~GlobalState();
+	
 private:
 	std::unordered_map<std::string, std::unordered_map<uint64_t, std::function<void(std::string, void*)>>> callbacks = {};
 	std::unordered_map<uint64_t, std::string> callbacksUidNames = {};
 	uint64_t callbackUid = 1;
+	// constructor to prevent infinite recursion through defaults
+	GlobalState(bool doNotInitDefaults);
 };

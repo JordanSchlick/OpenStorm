@@ -16,6 +16,7 @@ GS->globalState.maxFPS
 */
 
 #include "ImGuiUI.h"
+#include "font.h"
 #include "../Radar/SystemApi.h"
 #include <imgui.h>
 #include <ImGuiModule.h>
@@ -23,6 +24,37 @@ GS->globalState.maxFPS
 #include <RadarViewPawn.h>
 
 #include "UnrealClient.h"
+
+// intput for a float value
+void CustomFloatInput(const char* label, float* value, float* defaultValue = NULL){
+	float fontSize = ImGui::GetFontSize();
+	ImGui::PushID(label);
+	ImGui::PushItemWidth(8 * fontSize);
+	ImGui::InputFloat("##floatInput", value, 0.1f, 1.0f, "%.2f");
+	ImGui::PopItemWidth();
+	ImGui::SameLine();
+	if(defaultValue != NULL){
+		ImGuiStyle &style = ImGui::GetStyle();
+		float frameHeight = ImGui::GetFrameHeight();
+		ImGui::PushItemWidth(12 * fontSize - frameHeight - style.ItemSpacing.x);
+		ImGui::SliderFloat("##floatSlider", value,0,1);
+		ImGui::PopItemWidth();
+		ImGui::SameLine();
+		if(ImGui::Button("\xe0\x49",ImVec2(frameHeight, frameHeight))){
+			*value = *defaultValue;
+		}
+	}else{
+		ImGui::PushItemWidth(12 * fontSize);
+		ImGui::SliderFloat("##floatSlider", value,0,1);
+		ImGui::PopItemWidth();
+	}
+	ImGui::SameLine();
+	ImGui::Text(label);
+	ImGui::PopID();
+}
+
+
+
 
 // Sets default values
 AImGuiUI::AImGuiUI()
@@ -36,9 +68,11 @@ AImGuiUI::AImGuiUI()
 void AImGuiUI::BeginPlay()
 {
 	Super::BeginPlay();
-	UnlockMouse();
-
 	
+	LoadFonts();
+	FImGuiModule::Get().RebuildFontAtlas();
+	
+	UnlockMouse();
 }
 
 //const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
@@ -52,12 +86,12 @@ void AImGuiUI::Tick(float deltaTime)
 	ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>();
 	GlobalState &globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 
-	
+	float fontScale = 0.5;
 	ImGui::Begin("Menu", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize);
 	if(scalabilityTest){
-		ImGui::SetWindowFontScale(cos(SystemAPI::CurrentTime() / 1) / 2 + 1.5);
+		ImGui::SetWindowFontScale((cos(SystemAPI::CurrentTime() / 1) / 2 + 1.5) * fontScale);
 	}else{
-		ImGui::SetWindowFontScale(1);
+		ImGui::SetWindowFontScale(fontScale);
 	}
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), 0, ImVec2(0.0f, 0.0f));
 	ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
@@ -106,19 +140,10 @@ void AImGuiUI::Tick(float deltaTime)
 		if (ImGui::Button("Demo Window")) {
 			showDemoWindow = !showDemoWindow;
 		}
-		ImGui::Text("Number float input:");
+		ImGui::Text("Custom float input:");
+		CustomFloatInput("test float", &globalState.testFloat);
+		CustomFloatInput("test float##2", &globalState.testFloat, &globalState.defaults->testFloat);
 		
-		ImGui::PushID("testInput");
-		ImGui::PushItemWidth(8 * ImGui::GetFontSize());
-		ImGui::InputFloat("##floatInput", &globalState.testFloat, 0.1f, 1.0f);
-		ImGui::SameLine();
-		ImGui::PopItemWidth();
-		ImGui::PushItemWidth(12 * ImGui::GetFontSize());
-		ImGui::SliderFloat("##floatSlider", &globalState.testFloat,0,1);
-		ImGui::PopItemWidth();
-		ImGui::SameLine();
-		ImGui::Text("Test input");
-		ImGui::PopID();
 		
 		ImGui::Checkbox("Scalability Test", &scalabilityTest);
 		
