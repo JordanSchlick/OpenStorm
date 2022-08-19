@@ -16,6 +16,7 @@ public:
 	AImGuiUI();
 	bool showDemoWindow = false;
 	bool scalabilityTest = false;
+	int unsafeFrames = 0;
 	
 	void LockMouse();
 	void UnlockMouse();

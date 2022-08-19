@@ -1,0 +1,61 @@
+Unhandled Exception: EXCEPTION_ACCESS_VIOLATION reading address 0x0000000000000008
+UnrealEditor_ImGui!ImGui::Begin() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui.cpp:6413]
+UnrealEditor_OpenStorm!AImGuiUI::Tick() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Source\OpenStorm\UI\ImGuiUI.cpp:140]
+UnrealEditor_Engine
+UnrealEditor_Engine
+UnrealEditor_Engine
+UnrealEditor_Engine
+UnrealEditor_Core
+UnrealEditor_Core
+UnrealEditor_Core
+UnrealEditor_Engine
+UnrealEditor_Engine
+UnrealEditor_Engine
+UnrealEditor_Engine
+UnrealEditor_UnrealEd
+UnrealEditor_UnrealEd
+UnrealEditor
+UnrealEditor
+UnrealEditor
+UnrealEditor
+UnrealEditor
+UnrealEditor
+kernel32
+ntdll
+
+
+
+UnrealEditor_ImGui!ImGui::SetCurrentFont() [D:\Unreal_projects\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui.cpp:6812]
+UnrealEditor_ImGui!ImGui::NewFrame() [D:\Unreal_projects\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui.cpp:4260]
+UnrealEditor_ImGui!FImGuiContextProxy::BeginFrame() [D:\Unreal_projects\OpenStorm\Plugins\UnrealImGui\Source\ImGui\Private\ImGuiContextProxy.cpp:229]
+UnrealEditor_ImGui!FImGuiContextProxy::Tick() [D:\Unreal_projects\OpenStorm\Plugins\UnrealImGui\Source\ImGui\Private\ImGuiContextProxy.cpp:209]
+UnrealEditor_ImGui!SImGuiWidget::OnPaint() [D:\Unreal_projects\OpenStorm\Plugins\UnrealImGui\Source\ImGui\Private\Widgets\SImGuiWidget.cpp:637]
+UnrealEditor_SlateCore
+
+
+Unhandled Exception: EXCEPTION_ACCESS_VIOLATION reading address 0x0000000000000008
+UnrealEditor_ImGui!ImGui::Begin() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui.cpp:6413]
+UnrealEditor_OpenStorm!AImGuiUI::Tick() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Source\OpenStorm\UI\ImGuiUI.cpp:140]
+UnrealEditor_Engine
+
+Unhandled Exception: EXCEPTION_ACCESS_VIOLATION reading address 0xffffffffffffffff
+UnrealEditor_ImGui!ImFont::CalcTextSizeA() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui_draw.cpp:3503]
+UnrealEditor_ImGui!ImGui::TreeNodeBehavior() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui_widgets.cpp:5841]
+UnrealEditor_OpenStorm_patch_1!AImGuiUI::Tick() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Source\OpenStorm\UI\ImGuiUI.cpp:156]
+UnrealEditor_Engine
+
+Unhandled Exception: EXCEPTION_ACCESS_VIOLATION reading address 0xffffffffffffffff
+UnrealEditor_ImGui!ImFont::CalcTextSizeA() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui_draw.cpp:3503]
+UnrealEditor_ImGui!ImGui::TextEx() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui_widgets.cpp:245]
+UnrealEditor_ImGui!ImGui::TextV() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui_widgets.cpp:279]
+UnrealEditor_ImGui!ImGui::Text() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui_widgets.cpp:268]
+UnrealEditor_OpenStorm_patch_2!AImGuiUI::Tick() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Source\OpenStorm\UI\ImGuiUI.cpp:237]
+UnrealEditor_Engine
+
+Unhandled Exception: EXCEPTION_ACCESS_VIOLATION reading address 0xffffffffffffffff
+UnrealEditor_ImGui!ImFont::CalcTextSizeA() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui_draw.cpp:3503]
+UnrealEditor_ImGui!ImGui::TextEx() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui_widgets.cpp:245]
+UnrealEditor_ImGui!ImGui::TextV() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui_widgets.cpp:279]
+UnrealEditor_ImGui!ImGui::Text() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Plugins\UnrealImGui\Source\ThirdParty\ImGuiLibrary\Private\imgui_widgets.cpp:268]
+UnrealEditor_OpenStorm!AImGuiUI::Tick() [C:\Users\Admin\Desktop\stuff\projects\openstorm\OpenStorm\Source\OpenStorm\UI\ImGuiUI.cpp:244]
+UnrealEditor_Engine

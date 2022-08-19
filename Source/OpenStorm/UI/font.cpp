@@ -2,6 +2,7 @@
 
 #include "font.h"
 #include "imgui.h"
+#include "ImGuiModule.h"
 
 // File: 'fa6-solid-900.ttf' (389948 bytes)
 // Exported using binary_to_compressed_c.cpp
@@ -3206,4 +3207,5 @@ void LoadFonts(){
 	ImFont* fontOpenFontIcons = io.Fonts->AddFontFromMemoryCompressedBase85TTF(FontAwesome_compressed_data_base85, 32, &config, FontAwesome_ranges);
 	
 	//io.Fonts->Build();
+    FImGuiModule::Get().RebuildFontAtlas();
 }

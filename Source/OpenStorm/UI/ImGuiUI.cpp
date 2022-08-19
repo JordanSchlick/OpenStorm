@@ -99,7 +99,8 @@ void AImGuiUI::BeginPlay()
 	Super::BeginPlay();
 	
 	LoadFonts();
-	FImGuiModule::Get().RebuildFontAtlas();
+	unsafeFrames = 10;
+	//FImGuiModule::Get().RebuildFontAtlas();
 	
 	ImGuiStyle &style = ImGui::GetStyle();
 	
@@ -114,6 +115,12 @@ void AImGuiUI::BeginPlay()
 void AImGuiUI::Tick(float deltaTime)
 {
 	Super::Tick(deltaTime);
+
+	if (unsafeFrames > 0) {
+		unsafeFrames--;
+		return;
+	}
+
 	ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>();
 	GlobalState &globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 
@@ -228,6 +235,12 @@ void AImGuiUI::Tick(float deltaTime)
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			if (ImGui::Button("Demo Window")) {
 				showDemoWindow = !showDemoWindow;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Load Font")) {
+				LoadFonts();
+				unsafeFrames = 10;
+				return;
 			}
 			ImGui::Text("Custom float input:");
 			CustomFloatInput("test float", 0, 3, &globalState.testFloat);
