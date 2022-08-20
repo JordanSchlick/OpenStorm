@@ -13,6 +13,7 @@ public:
 	bool animateCutoff = false; // animate the cotoff
 	bool interpolation = false; // interpolate the scene
 	bool isMouseCaptured = false; // true if mouse is currently captured
+	bool vrMode = false; // true if in vr
 	
 	int maxFPS = 60; // maximum frames per second
 	

@@ -20,6 +20,7 @@ public:
 	
 	void LockMouse();
 	void UnlockMouse();
+	void InitializeConsole();
 
 protected:
 	// Called when the game starts or when spawned

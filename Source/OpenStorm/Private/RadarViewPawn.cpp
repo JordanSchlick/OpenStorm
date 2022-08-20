@@ -62,27 +62,32 @@ void ARadarViewPawn::Tick(float deltaTime)
 			}
 		}
 	}
+	if (ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>()){
+		moveSpeed = GS->globalState.moveSpeed;
+		FVector location = GetActorLocation();
+		location += camera->GetForwardVector() * forwardMovement * deltaTime * moveSpeed;
+		location += camera->GetRightVector() * sidewaysMovement * deltaTime * moveSpeed;
+		location.Z += verticalMovement * deltaTime * moveSpeed;
+		SetActorLocation(location);
+
+		FRotator rotation = GetActorRotation();
+		if(GS->globalState.vrMode){
+			rotation.Pitch = 0;
+		}else{
+			rotation.Pitch = FMath::Clamp(rotation.Pitch + (verticalRotation * deltaTime + verticalRotationAmount / 60) * rotateSpeed, -89.0f, 89.0f);
+			camera->SetRelativeLocation(FVector(0, 0, 0));
+			camera->SetRelativeRotation(FRotator(0, 0, 0));
+		}
+		verticalRotationAmount = 0;
+		rotation.Yaw += (horizontalRotation * deltaTime + horizontalRotationAmount / 60) * rotateSpeed;
+		horizontalRotationAmount = 0;
+		rotation.Roll = 0;
+		SetActorRotation(rotation);
+		
+		//GS->globalState.testFloat = forwardMovement;
+	}
 	meshComponent->SetRelativeLocation(camera->GetRelativeLocation());
 	meshComponent->SetRelativeRotation(camera->GetRelativeRotation());
-	if (ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>())
-	{
-	moveSpeed = GS->globalState.moveSpeed;
-	FVector location = GetActorLocation();
-	location += camera->GetForwardVector() * forwardMovement * deltaTime * moveSpeed;
-	location += camera->GetRightVector() * sidewaysMovement * deltaTime * moveSpeed;
-	location.Z += verticalMovement * deltaTime * moveSpeed;
-	SetActorLocation(location);
-
-	FRotator rotation = GetActorRotation();
-	rotation.Pitch = FMath::Clamp(rotation.Pitch + (verticalRotation * deltaTime + verticalRotationAmount / 60) * rotateSpeed, -89.0f, 89.0f);
-	verticalRotationAmount = 0;
-	rotation.Yaw += (horizontalRotation * deltaTime + horizontalRotationAmount / 60) * rotateSpeed;
-	horizontalRotationAmount = 0;
-	rotation.Roll = 0;
-	SetActorRotation(rotation);
-	
-	//GS->globalState.testFloat = forwardMovement;
-	}
 }
 
 template <class T>

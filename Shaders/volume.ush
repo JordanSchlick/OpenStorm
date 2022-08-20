@@ -140,7 +140,7 @@ if(true){
 //#define STEP_SIZE 1;
 //#define MAX_DISTANCE 200;
 
-const float stepSize = 5;
+//const float stepSize = 5;
 //const float maxSteps = 400;
 const float maxSteps = boundingRadius * 2 / stepSize;
 const float maxStepDistance = 4000;
@@ -155,7 +155,8 @@ float alpha = 0;
 
 if(fuzz >= 1){
 	// add random noise to starting position to prevent patterns from appearing
-	startingDistance += frac(sin(dot(rayOrigin, float3(12.9898, 78.233, 29.4382)) + animationTime) * 43758.5453) * stepSize;
+	//startingDistance += frac(sin(dot(rayOrigin, float3(12.9898, 78.233, 29.4382)) + animationTime) * 43758.5453) * stepSize;
+	startingDistance += frac(sin(dot(screenPosition, float2(12.9898, 78.233)) + animationTime) * 43758.5453) * stepSize;
 }
 
 //animationTime = (1 - cos(PI2 * animationTime))/2;

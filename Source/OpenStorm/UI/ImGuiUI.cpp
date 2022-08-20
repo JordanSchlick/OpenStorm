@@ -25,6 +25,8 @@ GS->globalState.maxFPS
 #include "RadarGameStateBase.h"
 #include <RadarViewPawn.h>
 #include "Widgets/SWindow.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/Console.h"
 
 #include "UnrealClient.h"
 
@@ -104,7 +106,7 @@ void AImGuiUI::BeginPlay()
 	
 	ImGuiStyle &style = ImGui::GetStyle();
 	
-	
+	InitializeConsole();
 	
 	UnlockMouse();
 }
@@ -242,6 +244,16 @@ void AImGuiUI::Tick(float deltaTime)
 				unsafeFrames = 10;
 				return;
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Launch VR " ICON_FA_VR_CARDBOARD)) {
+				globalState.vrMode = !globalState.vrMode;
+				if(globalState.vrMode){
+					GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 1"));
+				}else{
+					GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 0"));
+				}
+				//ImGui::SetWindowCollapsed(true);
+			}
 			ImGui::Text("Custom float input:");
 			CustomFloatInput("test float", 0, 3, &globalState.testFloat);
 			CustomFloatInput("test float##2", 0, 2, &globalState.testFloat, &globalState.defaults->testFloat);
@@ -265,7 +277,7 @@ void AImGuiUI::Tick(float deltaTime)
 	ImGuiIO& io = ImGui::GetIO();
 	if(!io.WantCaptureMouse){
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)){
-			// mouse release will not be recieved
+			// mouse release will not be received
 			//io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
 			//io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
 			//fprintf(stderr, "Capture mouse here\n");
@@ -309,3 +321,15 @@ void AImGuiUI::ligma(bool Value)
 	globalState->EmitEvent("TestUnregistered");
 }
 
+void AImGuiUI::InitializeConsole()
+{
+    UWorld* World = GetWorld();
+    if (!ensure(World != nullptr)) return;
+    auto* Viewport = World->GetGameViewport();
+    if (!ensure(Viewport != nullptr)) return;
+
+    if (!Viewport->ViewportConsole)
+    {
+        Viewport->ViewportConsole = static_cast<UConsole*>(UGameplayStatics::SpawnObject(UConsole::StaticClass(), GetWorld()->GetGameViewport()));
+    }
+}

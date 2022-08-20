@@ -96,6 +96,7 @@ void AStdioConsole::ShowConsole(){
 		//ShowWindow((HWND)conHandle, SW_SHOW);
 		freopen("CONOUT$", "w", stdout);
 		freopen("CONOUT$", "w", stderr);
+		//freopen("CONIN$", "w", stdin);
 	} else {
 		UE_LOG(LogTemp, Display, TEXT("No console handle gound"));
 	}
