@@ -158,15 +158,11 @@ void ARadarVolumeRender::BeginPlay()
 	
 
 	
-	RadarCollection::Testing();
+	//RadarCollection::Testing();
 	
-	FString radarDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("../files/dir/"));
-	FString fullradarDir = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarDir);
-	const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
-	fprintf(stderr, "path %s\n", radarDirLocaition);
+	
 	
 	radarCollection = new RadarCollection();
-	radarCollection->filePath = std::string(radarDirLocaition);
 
 	radarCollection->RegisterListener([this](RadarCollection::RadarUpdateEvent event) {
 		if (event.data != NULL) {
@@ -231,8 +227,16 @@ void ARadarVolumeRender::BeginPlay()
 	});
 
 	radarCollection->Allocate(75);
-	radarCollection->ReadFiles();
-	radarCollection->LoadNewData();
+	
+	
+	FString radarDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("../files/dir/"));
+	FString fullradarDir = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarDir);
+	const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
+	fprintf(stderr, "path %s\n", radarDirLocaition);
+	radarCollection->ReadFiles(std::string(radarDirLocaition));
+	
+	
+	//radarCollection->LoadNewData();
 
 
 	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
@@ -245,6 +249,10 @@ void ARadarVolumeRender::BeginPlay()
 	}));
 	callbackIds.push_back(globalState->RegisterEvent("BackwardStep",[this](std::string stringData, void* extraData){
 		radarCollection->MoveManual(-1);
+	}));
+	callbackIds.push_back(globalState->RegisterEvent("LoadDirectory",[this](std::string stringData, void* extraData){
+		radarCollection->Clear();
+		radarCollection->ReadFiles(stringData);
 	}));
 	
 	//RandomizeTexture();

@@ -26,6 +26,12 @@ public:
 	void LockMouse();
 	void UnlockMouse();
 	void InitializeConsole();
+	// move gui to external window
+	void ExternalWindow();
+	// move gui to main viewport
+	void InternalWindow();
+	// choose a dierectory or specific files
+	void ChooseFiles();
 
 protected:
 	// Called when the game starts or when spawned

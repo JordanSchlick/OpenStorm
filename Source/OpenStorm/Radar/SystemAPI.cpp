@@ -39,7 +39,7 @@ double SystemAPI::CurrentTime() {
 
 std::vector<std::string> SystemAPI::ReadDirectory(std::string path) {
 //#ifdef _WIN32
-    //fprintf(stderr, "path %s\n", path.c_str());
+    fprintf(stderr, "path %s\n", path.c_str());
     std::vector<std::string> files = {};
     TArray<FString> Files;
     FString FullPathFilename((path + "/*").c_str());

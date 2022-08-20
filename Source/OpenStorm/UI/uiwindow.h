@@ -1,6 +1,9 @@
 #include "CoreMinimal.h"
 
 class SWindow;
+class UGameViewportClient;
+class SWidget;
+class SOverlay;
 
 class UIWindow{
 public:
@@ -10,11 +13,10 @@ public:
 
 	// viewport overlay of main window (not UIWindow)
 	TSharedPtr<SOverlay> mainViewportOverlayWidget = NULL;
-	UGameViewportClient* mainViewport;
 
 	bool isOpen = false;
 
-	// create a new window and steel ImGui from viewport
+	// create a new window and steal ImGui from viewport
 	UIWindow(UGameViewportClient* viewport);
 
 	~UIWindow();
@@ -23,7 +25,7 @@ public:
 	void Close();
 
 
-	// return ImGui to main windo. this is called automatcaly when Close is called.
+	// return ImGui to main window. this is called automatically when Close is called.
 	void ReturnImGui();
 	void Tick();
 };

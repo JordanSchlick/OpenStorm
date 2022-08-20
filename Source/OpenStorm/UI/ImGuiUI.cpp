@@ -20,16 +20,18 @@ GS->globalState.maxFPS
 #include "native.h"
 #include "uiwindow.h"
 #include "../Radar/SystemApi.h"
-#include "imgui.h"
+#include "RadarGameStateBase.h"
+#include "RadarViewPawn.h"
 
 //#include "imgui_internal.h"
-#include <ImGuiModule.h>
-#include "RadarGameStateBase.h"
-#include <RadarViewPawn.h>
+#include "imgui.h"
+#include "ImGuiModule.h"
 #include "Widgets/SWindow.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Console.h"
-
+#include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
+#include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h"
+#include "HAL/FileManager.h"
 #include "UnrealClient.h"
 
 static bool inlineLabel = false;
@@ -260,15 +262,17 @@ void AImGuiUI::Tick(float deltaTime)
 				}
 				//ImGui::SetWindowCollapsed(true);
 			}
-			if (ImGui::Button("Send To Brazil") && uiWindow == NULL) {
-				uiWindow = new UIWindow(GetWorld()->GetGameViewport());
+			if (ImGui::Button("Send To Brazil")) {
+				ExternalWindow();
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("Escape Brazil") && uiWindow != NULL) {
+			if (ImGui::Button("Escape Brazil")) {
 				// this was thought to be impossible
-				uiWindow->Close();
-				delete uiWindow;
-				uiWindow = NULL;
+				InternalWindow();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Files")) {
+				ChooseFiles();
 			}
 			ImGui::Text("Custom float input:");
 			CustomFloatInput("test float", 0, 3, &globalState.testFloat);
@@ -354,4 +358,44 @@ void AImGuiUI::InitializeConsole()
     {
         Viewport->ViewportConsole = static_cast<UConsole*>(UGameplayStatics::SpawnObject(UConsole::StaticClass(), GetWorld()->GetGameViewport()));
     }
+}
+
+void AImGuiUI::ExternalWindow() {
+	if(uiWindow == NULL){
+		uiWindow = new UIWindow(GetWorld()->GetGameViewport());
+	}
+}
+
+void AImGuiUI::InternalWindow() {
+	if(uiWindow != NULL){
+		uiWindow->Close();
+		delete uiWindow;
+		uiWindow = NULL;
+	}
+}
+
+void AImGuiUI::ChooseFiles() {
+	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+	std::vector<std::string> files = {};
+    TArray<FString> outFiles;
+	
+	IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
+	if (DesktopPlatform)
+	{
+		void* handle = GEngine->GameViewport->GetWindow()->GetNativeWindow()->GetOSWindowHandle();
+		uint32 SelectionFlag = 1; //A value of 0 represents single file selection while a value of 1 represents multiple file selection
+		DesktopPlatform->OpenFileDialog(handle, TEXT("Open Radar Files"), FPaths::ProjectDir(), FString(""), FString(""), SelectionFlag, outFiles);
+	}
+	//IDesktopPlatform::OpenFileDialog(GetWorld()->GetGameViewport()->GetWindow()->GetNativeWindow()->GetOSWindowHandle(),FPaths::ProjectDir())
+	
+    for (FString file : outFiles)
+    {
+        std::string fileString = std::string(TCHAR_TO_UTF8(*file));
+        files.push_back(fileString);
+		fprintf(stderr, "%s\n", fileString.c_str());
+    }
+	if(files.size() > 0){
+		globalState->EmitEvent("LoadDirectory", files[0], NULL);
+	}
+	
 }

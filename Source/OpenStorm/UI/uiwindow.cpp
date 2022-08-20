@@ -1,7 +1,7 @@
 #include "uiwindow.h"
 
 
-
+#include "Engine/GameViewportClient.h"
 //#include "Runtime/Engine/Public/Slate/SceneViewport.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Slate/SceneViewport.h"
@@ -47,10 +47,10 @@ UIWindow::UIWindow(UGameViewportClient* gameViewport){
 		{
 			fprintf(stderr, "I found you imgui, you are going to brazil.\n");
 			imGuiWidget = child;
+			// remove from main viewport
 			mainViewportOverlayWidget->RemoveSlot(child);
+			// place in window
 			window->SetFullWindowOverlayContent(child);
-
-			// TODO send SImGuiLayout to UIWindow
 		}
 	}
 
@@ -62,7 +62,7 @@ UIWindow::UIWindow(UGameViewportClient* gameViewport){
 }
 
 UIWindow::~UIWindow(){
-	// avoid moving ImGui during cleanup
+	// avoid moving ImGui during cleanup to prevent crashing
 	imGuiWidget = NULL;
 	Close();
 }
@@ -70,11 +70,10 @@ UIWindow::~UIWindow(){
 
 
 void UIWindow::ReturnImGui() {
-	//if (imGuiWidget) {
-	//	
-	//}
 	if (imGuiWidget.IsValid() && mainViewportOverlayWidget.IsValid()) {
+		// remove from window
 		window->RemoveOverlaySlot(imGuiWidget.ToSharedRef());
+		// place back into main viewport
 		mainViewportOverlayWidget->AddSlot(10001)[imGuiWidget.ToSharedRef()];
 		imGuiWidget = NULL;
 		//slot.AttachWidget(imGuiWidget.ToSharedRef());

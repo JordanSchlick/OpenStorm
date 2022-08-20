@@ -16,6 +16,7 @@ public:
 	public:
 		double time;
 		std::string path = "";
+		std::string name = "";
 	};
 	
 	// event emittid when new current data is available
@@ -66,8 +67,6 @@ public:
 	// settings for radar data
 	RadarDataSettings radarDataSettings = {};
 	
-	// location of directory to load from
-	std::string filePath = "";
 	
 	// TODO: add a maximum number of current async tasks
 	int maxLoading = 100;
@@ -91,6 +90,12 @@ public:
 	// free all allocated data
 	void Free();
 	
+	// Clears radar data
+	void Clear();
+	
+	// read file info from a directory
+	void ReadFiles(std::string path);
+	
 	// moves the curent position
 	void Move(int delta);
 	
@@ -103,10 +108,16 @@ public:
 	// register a callback for when radar data, this can emit null if there was an error loading data
 	void RegisterListener(std::function<void(RadarUpdateEvent)> callback);
 	
+	// visually describe the state of the cache in the console
+	void LogState();
+	
+	static void Testing();
 	
 	
-	
-//private:	
+private:	
+	// location of directory to load from
+	std::string filePath = "";
+
 	// true if allocate has been called
 	bool allocated = false;
 
@@ -152,8 +163,7 @@ public:
 	
 	std::vector<std::function<void(RadarUpdateEvent)>> listeners = {};
 	
-	// read file info from a directory
-	void ReadFiles();
+	
 	
 	// unload old data to make room for new data
 	void UnloadOldData();
@@ -164,10 +174,7 @@ public:
 	// emit radar data to all listeners
 	void Emit(RadarDataHolder* holder);
 	
-	// visually describe the state of the cache in the console
-	void LogState();
+	
 	
 	int runs = 0;
-	
-	static void Testing();
 };

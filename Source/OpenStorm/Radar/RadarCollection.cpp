@@ -125,6 +125,13 @@ void RadarCollection::Allocate(int newCacheSize) {
 
 void RadarCollection::Free() {
 	allocated = false;
+	Clear();
+	if(cache != NULL){
+		delete[] cache;
+	}
+}
+
+void RadarCollection::Clear() {
 	for(auto& item : asyncTasks){
 		item->Cancel();
 		item->Delete();
@@ -132,8 +139,20 @@ void RadarCollection::Free() {
 	asyncTasks.clear();
 	radarFiles.clear();
 	if(cache != NULL){
-		delete[] cache;
+		for(int i = 0; i < cacheSize; i++){
+			cache[i].Unload();
+		}
 	}
+	// reset variables
+	currentPosition = cacheSize / 2;
+	cachedAfter = 0;
+	cachedBefore = 0;
+	cachedBefore = 0;
+	lastMoveDirection = 1;
+	firstItemTime = -1;
+	firstItemIndex = -1;
+	lastItemTime = -1;
+	lastItemIndex = -1;
 }
 
 void RadarCollection::Move(int delta) {
@@ -197,13 +216,21 @@ void RadarCollection::RegisterListener(std::function<void(RadarUpdateEvent)> cal
 	listeners.push_back(callback);
 }
 
-void RadarCollection::ReadFiles() {
+void RadarCollection::ReadFiles(std::string path) {
 	if(radarFiles.size() > 0){
 		// TODO: implement reloading files by replacing radarFiles and changing firstItemIndex and lastItemIndex to reflect the new vector
 		fprintf(stderr, "file reloading is not implemented yet\n");
 		return;
 	}
-
+	
+	std::string lastCharecter = path.substr(path.length() - 1,1);
+	bool isDirectory = lastCharecter == "/" || lastCharecter == "\\";
+	int lastSlash = std::max(std::max((int)path.find_last_of('/'), (int)path.find_last_of('\\')), 0);
+	filePath = path.substr(0, lastSlash + 1);
+	fprintf(stderr, "lastSlash var %i\n", (int)lastSlash);
+	fprintf(stderr, "Path var %s\n", path.c_str());
+	fprintf(stderr, "filePath var %s\n", filePath.c_str());
+	
 	auto files = SystemAPI::ReadDirectory(filePath);
 	fprintf(stderr, "files %i\n", (int)files.size());
 	float i = 1;
@@ -211,13 +238,31 @@ void RadarCollection::ReadFiles() {
 		fprintf(stderr, "%s\n", (filePath + filename).c_str());
 		RadarFile radarFile = {};
 		radarFile.path = filePath + filename;
+		radarFile.name = filename;
 		radarFile.time = i++;
 		radarFiles.push_back(radarFile);
 	}
 	if(lastItemIndex == -1){
-		lastItemIndex = radarFiles.size() - 1;
-		firstItemIndex = lastItemIndex;
+		if(!isDirectory){
+			std::string filename = filePath.substr(lastSlash + 1);
+			// start on chosen file
+			int index = 0;
+			for (auto file: radarFiles) {
+				if(file.name == filename){
+					lastItemIndex = index;
+					firstItemIndex = lastItemIndex;
+					break;
+				}
+				index++;
+			}
+		}
+		if(lastItemIndex == -1){
+			lastItemIndex = radarFiles.size() - 1;
+			firstItemIndex = lastItemIndex;
+		}
 	}
+	UnloadOldData();
+	LoadNewData();
 }
 
 void RadarCollection::UnloadOldData() {
