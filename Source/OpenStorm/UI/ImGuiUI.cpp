@@ -18,8 +18,10 @@ GS->globalState.maxFPS
 #include "ImGuiUI.h"
 #include "font.h"
 #include "native.h"
+#include "uiwindow.h"
 #include "../Radar/SystemApi.h"
 #include "imgui.h"
+
 //#include "imgui_internal.h"
 #include <ImGuiModule.h>
 #include "RadarGameStateBase.h"
@@ -92,7 +94,9 @@ AImGuiUI::AImGuiUI()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+}
+AImGuiUI::~AImGuiUI(){
+	delete uiWindow;
 }
 
 // Called when the game starts or when spawned
@@ -107,6 +111,8 @@ void AImGuiUI::BeginPlay()
 	ImGuiStyle &style = ImGui::GetStyle();
 	
 	InitializeConsole();
+	
+	
 	
 	UnlockMouse();
 }
@@ -254,6 +260,16 @@ void AImGuiUI::Tick(float deltaTime)
 				}
 				//ImGui::SetWindowCollapsed(true);
 			}
+			if (ImGui::Button("Send To Brazil") && uiWindow == NULL) {
+				uiWindow = new UIWindow(GetWorld()->GetGameViewport());
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Escape Brazil") && uiWindow != NULL) {
+				// this was thought to be impossible
+				uiWindow->Close();
+				delete uiWindow;
+				uiWindow = NULL;
+			}
 			ImGui::Text("Custom float input:");
 			CustomFloatInput("test float", 0, 3, &globalState.testFloat);
 			CustomFloatInput("test float##2", 0, 2, &globalState.testFloat, &globalState.defaults->testFloat);
@@ -264,15 +280,17 @@ void AImGuiUI::Tick(float deltaTime)
 			ImGui::Checkbox("Scalability Test", &scalabilityTest);
 			
 		}
-		if(showDemoWindow){
-			ImGui:: ShowDemoWindow();
-		}
 		
 		if (ImGui::Button("Test")) {
 			ligma(GS->globalState.inputToggle);
 		}
 	}
 	ImGui::End();
+	
+	
+	if(showDemoWindow){
+		ImGui:: ShowDemoWindow();
+	}
 	
 	ImGuiIO& io = ImGui::GetIO();
 	if(!io.WantCaptureMouse){
@@ -284,6 +302,10 @@ void AImGuiUI::Tick(float deltaTime)
 			globalState.isMouseCaptured = true;
 			LockMouse();
 		}
+	}
+	
+	if (uiWindow != NULL) {
+		uiWindow->Tick();
 	}
 	
 }

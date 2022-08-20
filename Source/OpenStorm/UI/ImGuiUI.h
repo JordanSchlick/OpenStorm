@@ -6,6 +6,9 @@
 #include "GameFramework/Actor.h"
 #include "ImGuiUI.generated.h"
 
+
+class UIWindow;
+
 UCLASS()
 class OPENSTORM_API AImGuiUI : public AActor
 {
@@ -14,9 +17,11 @@ class OPENSTORM_API AImGuiUI : public AActor
 public:
 	// Sets default values for this actor's properties
 	AImGuiUI();
+	~AImGuiUI();
 	bool showDemoWindow = false;
 	bool scalabilityTest = false;
 	int unsafeFrames = 0;
+	UIWindow* uiWindow = NULL;
 	
 	void LockMouse();
 	void UnlockMouse();
