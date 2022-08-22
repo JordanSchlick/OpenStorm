@@ -88,7 +88,17 @@ void CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 	ImGui::PopID();
 }
 
-
+bool ToggleButton(const char* label, bool active, const ImVec2 &size = ImVec2(0, 0)) {
+	if (active) {
+		ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+	}
+	bool pressed = ImGui::Button(label, size);
+	if (active) {
+		ImGui::PopStyleColor(2);
+	}
+	return pressed;
+}
 
 
 // Sets default values
@@ -176,16 +186,8 @@ void AImGuiUI::Tick(float deltaTime)
 				globalState.EmitEvent("BackwardStep");
 			}
 			ImGui::SameLine();
-			bool buttonActive = globalState.animate;
-			if(buttonActive){
-				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-			}
-			if(ImGui::Button(ICON_FA_PLAY, squareButtonSize)){
+			if(ToggleButton(ICON_FA_PLAY, globalState.animate, squareButtonSize)){
 				globalState.animate = !globalState.animate;
-			}
-			if(buttonActive){
-				ImGui::PopStyleColor(2);
 			}
 			ImGui::SameLine();
 			if(ImGui::Button(ICON_FA_FORWARD_STEP, squareButtonSize)){
@@ -253,7 +255,7 @@ void AImGuiUI::Tick(float deltaTime)
 				return;
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("Launch VR " ICON_FA_VR_CARDBOARD)) {
+			if (ToggleButton("VR " ICON_FA_VR_CARDBOARD, globalState.vrMode)) {
 				globalState.vrMode = !globalState.vrMode;
 				if(globalState.vrMode){
 					GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 1"));
@@ -261,6 +263,7 @@ void AImGuiUI::Tick(float deltaTime)
 					GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 0"));
 				}
 				//ImGui::SetWindowCollapsed(true);
+				ExternalWindow();
 			}
 			if (ImGui::Button("Send To Brazil")) {
 				ExternalWindow();

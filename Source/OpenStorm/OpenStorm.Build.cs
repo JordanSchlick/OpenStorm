@@ -8,7 +8,7 @@ public class OpenStorm : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ImGui", "Slate", "SlateCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ImGui", "Slate", "SlateCore", "DesktopPlatform" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

@@ -31,10 +31,14 @@ public:
 	int sweepBufferCount = 0;
 
 	// sizes of sections of the buffer
+	// size of one ray
 	int thetaBufferSize = 0;
+	// size of an entire sweep
 	int sweepBufferSize = 0;
+	// size of the whole volume
 	int fullBufferSize = 0;
-	
+	// amount of buffer currently used. indexes above this should be blank
+	int usedBufferSize = 0;
 	
 	// if the data should be compressed as it is read
 	bool compress = false;

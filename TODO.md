@@ -6,6 +6,7 @@
 - [ ] Implement Map data
 - [ ] Create settings window
 - [ ] Allow multiple products
+- [ ] Allow computed products
 - [ ] Implement directory polling
 - [ ] Pull data from http server
 - [ ] Add designated thread pools to AsyncTask and multi-thread radar decompression
@@ -17,4 +18,4 @@
 - [ ] More Advanced Tools/Options for interacting, measuring, and viewing data
 - [ ] Top down radar view panning
 - [ ] Combining radar data from multiple points
-
+- [ ] Change radar reader to one that is more performant and uses less memory

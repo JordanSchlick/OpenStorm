@@ -153,6 +153,7 @@ void RadarCollection::Clear() {
 	firstItemIndex = -1;
 	lastItemTime = -1;
 	lastItemIndex = -1;
+	needToEmit = true;
 }
 
 void RadarCollection::Move(int delta) {
@@ -227,15 +228,19 @@ void RadarCollection::ReadFiles(std::string path) {
 	bool isDirectory = lastCharecter == "/" || lastCharecter == "\\";
 	int lastSlash = std::max(std::max((int)path.find_last_of('/'), (int)path.find_last_of('\\')), 0);
 	filePath = path.substr(0, lastSlash + 1);
-	fprintf(stderr, "lastSlash var %i\n", (int)lastSlash);
-	fprintf(stderr, "Path var %s\n", path.c_str());
-	fprintf(stderr, "filePath var %s\n", filePath.c_str());
+	std::string inputFilename = path.substr(lastSlash + 1);
+	//fprintf(stderr, "lastSlash var %i\n", (int)lastSlash);
+	//fprintf(stderr, "Path var %s\n", path.c_str());
+	//fprintf(stderr, "filePath var %s\n", filePath.c_str());
 	
 	auto files = SystemAPI::ReadDirectory(filePath);
-	fprintf(stderr, "files %i\n", (int)files.size());
+	//fprintf(stderr, "files %i\n", (int)files.size());
 	float i = 1;
 	for (auto filename : files) {
-		fprintf(stderr, "%s\n", (filePath + filename).c_str());
+		//fprintf(stderr, "%s\n", (filePath + filename).c_str());
+		if(filename == ".gitkeep"){
+			continue;
+		}
 		RadarFile radarFile = {};
 		radarFile.path = filePath + filename;
 		radarFile.name = filename;
@@ -244,11 +249,12 @@ void RadarCollection::ReadFiles(std::string path) {
 	}
 	if(lastItemIndex == -1){
 		if(!isDirectory){
-			std::string filename = filePath.substr(lastSlash + 1);
+			
 			// start on chosen file
 			int index = 0;
 			for (auto file: radarFiles) {
-				if(file.name == filename){
+				fprintf(stderr, "%s %s\n",file.name.c_str() , inputFilename.c_str());
+				if(file.name == inputFilename){
 					lastItemIndex = index;
 					firstItemIndex = lastItemIndex;
 					break;

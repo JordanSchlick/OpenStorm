@@ -278,9 +278,12 @@ void RadarData::ReadNexrad(const char* filename) {
 				sweepIndex++;
 			}
 			
+			usedBufferSize = sweepIndex * sweepBufferSize;
+			
 			if(compress){
 				delete sweepBuffer;
 				if(bufferCompressed){
+					// remove old buffer
 					delete[] bufferCompressed;
 				}
 				bufferCompressed = SparseCompress::compressEnd(&compressorState);
@@ -319,14 +322,21 @@ void RadarData::CopyFrom(RadarData* data) {
 		sweepBufferSize = (thetaBufferCount + 2) * thetaBufferSize;
 		fullBufferSize = sweepBufferCount * sweepBufferSize;
 		
+		usedBufferSize = 0;
+		
 		buffer = new float[fullBufferSize];
 		std::fill(buffer, buffer+fullBufferSize, -INFINITY);
 	}
 	if(data->bufferCompressed != NULL){
 		SparseCompress::decompressToBuffer(buffer, data->bufferCompressed, fullBufferSize);
 	}else if(data->buffer != NULL){
-		memcpy(buffer, data->buffer, std::min(fullBufferSize, data->fullBufferSize) * 4);
+		memcpy(buffer, data->buffer, std::min(fullBufferSize, data->usedBufferSize) * 4);
 	}
+	if(data->usedBufferSize < usedBufferSize){
+		// fill newly unused space
+		std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, -INFINITY);
+	}
+	usedBufferSize = data->usedBufferSize;
 }
 
 
@@ -488,6 +498,7 @@ void RadarData::Deallocate(){
 	if(buffer != NULL){
 		delete[] buffer;
 		buffer = NULL;
+		usedBufferSize = 0;
 	}
 	if(bufferCompressed != NULL){
 		delete[] bufferCompressed;
