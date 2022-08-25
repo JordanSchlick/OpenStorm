@@ -60,6 +60,15 @@
 		"xlocmon": "cpp",
 		"xloctime": "cpp",
 		"array": "cpp",
-		"iterator": "cpp"
+		"iterator": "cpp",
+		"condition_variable": "cpp",
+		"csignal": "cpp",
+		"resumable": "cpp",
+		"future": "cpp",
+		"mutex": "cpp",
+		"regex": "cpp",
+		"set": "cpp",
+		"xthread": "cpp",
+		"thread": "cpp"
 	}
 }

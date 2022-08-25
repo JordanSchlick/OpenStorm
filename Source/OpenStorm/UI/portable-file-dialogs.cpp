@@ -78,92 +78,6 @@
 namespace pfd
 {
 
-enum class button
-{
-    cancel = -1,
-    ok,
-    yes,
-    no,
-    abort,
-    retry,
-    ignore,
-};
-
-enum class choice
-{
-    ok = 0,
-    ok_cancel,
-    yes_no,
-    yes_no_cancel,
-    retry_cancel,
-    abort_retry_ignore,
-};
-
-enum class icon
-{
-    info = 0,
-    warning,
-    error,
-    question,
-};
-
-// Additional option flags for various dialog constructors
-enum class opt : uint8_t
-{
-    none = 0,
-    // For file open, allow multiselect.
-    multiselect     = 0x1,
-    // For file save, force overwrite and disable the confirmation dialog.
-    force_overwrite = 0x2,
-    // For folder select, force path to be the provided argument instead
-    // of the last opened directory, which is the Microsoft-recommended,
-    // user-friendly behaviour.
-    force_path      = 0x4,
-};
-
-inline opt operator |(opt a, opt b) { return opt(uint8_t(a) | uint8_t(b)); }
-inline bool operator &(opt a, opt b) { return bool(uint8_t(a) & uint8_t(b)); }
-
-// The settings class, only exposing to the user a way to set verbose mode
-// and to force a rescan of installed desktop helpers (zenity, kdialog…).
-class settings
-{
-public:
-    static bool available();
-
-    static void verbose(bool value);
-    static void rescan();
-
-protected:
-    explicit settings(bool resync = false);
-
-    bool check_program(std::string const &program);
-
-    inline bool is_osascript() const;
-    inline bool is_zenity() const;
-    inline bool is_kdialog() const;
-
-    enum class flag
-    {
-        is_scanned = 0,
-        is_verbose,
-
-        has_zenity,
-        has_matedialog,
-        has_qarma,
-        has_kdialog,
-        is_vista,
-
-        max_flag,
-    };
-
-    // Static array of flags for internal state
-    bool const &flags(flag in_flag) const;
-
-    // Non-const getter for the static array of flags
-    bool &flags(flag in_flag);
-};
-
 // Internal classes, not to be used by client applications
 namespace internal
 {
@@ -529,7 +443,7 @@ static inline std::string getenv(std::string const &str)
 
 // settings implementation
 
-inline settings::settings(bool resync)
+settings::settings(bool resync)
 {
     flags(flag::is_scanned) &= !resync;
 
@@ -563,7 +477,7 @@ inline settings::settings(bool resync)
     flags(flag::is_scanned) = true;
 }
 
-inline bool settings::available()
+bool settings::available()
 {
 #if _WIN32
     return true;
@@ -581,18 +495,18 @@ inline bool settings::available()
 #endif
 }
 
-inline void settings::verbose(bool value)
+void settings::verbose(bool value)
 {
     settings().flags(flag::is_verbose) = value;
 }
 
-inline void settings::rescan()
+void settings::rescan()
 {
     settings(/* resync = */ true);
 }
 
 // Check whether a program is present using “which”.
-inline bool settings::check_program(std::string const &program)
+bool settings::check_program(std::string const &program)
 {
 #if _WIN32
     (void)program;
@@ -609,7 +523,7 @@ inline bool settings::check_program(std::string const &program)
 #endif
 }
 
-inline bool settings::is_osascript() const
+bool settings::is_osascript() const
 {
 #if __APPLE__
     return true;
@@ -618,25 +532,25 @@ inline bool settings::is_osascript() const
 #endif
 }
 
-inline bool settings::is_zenity() const
+bool settings::is_zenity() const
 {
     return flags(flag::has_zenity) ||
            flags(flag::has_matedialog) ||
            flags(flag::has_qarma);
 }
 
-inline bool settings::is_kdialog() const
+bool settings::is_kdialog() const
 {
     return flags(flag::has_kdialog);
 }
 
-inline bool const &settings::flags(flag in_flag) const
+bool const &settings::flags(flag in_flag) const
 {
     static bool flags[size_t(flag::max_flag)];
     return flags[size_t(in_flag)];
 }
 
-inline bool &settings::flags(flag in_flag)
+bool &settings::flags(flag in_flag)
 {
     return const_cast<bool &>(static_cast<settings const *>(this)->flags(in_flag));
 }
@@ -1888,6 +1802,31 @@ inline select_folder::select_folder(std::string const &title,
 inline std::string select_folder::result()
 {
     return string_result();
+}
+
+public_open_file::public_open_file(std::string const &title,
+            std::string const &default_path,
+            std::vector<std::string> const &filters,
+            opt options)
+{
+	ptr = new open_file(title, default_path, filters, options);
+}
+public_open_file::~public_open_file()
+{
+	delete ptr;
+}
+bool public_open_file::ready(int timeout) const
+{
+    return ptr->ready(timeout);
+}
+
+bool public_open_file::kill() const
+{
+    return ptr->kill();
+}
+
+std::vector<std::string>  public_open_file::result(){
+    return ptr->result();
 }
 
 #endif // PFD_SKIP_IMPLEMENTATION

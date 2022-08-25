@@ -8,6 +8,9 @@
 
 
 class UIWindow;
+namespace pfd{
+	class public_open_file;
+}
 
 UCLASS()
 class OPENSTORM_API AImGuiUI : public AActor
@@ -22,6 +25,7 @@ public:
 	bool scalabilityTest = false;
 	int unsafeFrames = 0;
 	UIWindow* uiWindow = NULL;
+	pfd::public_open_file* fileChooser = NULL;
 	
 	void LockMouse();
 	void UnlockMouse();

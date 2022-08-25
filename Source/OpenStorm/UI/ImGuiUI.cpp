@@ -22,6 +22,9 @@ GS->globalState.maxFPS
 #include "../Radar/SystemApi.h"
 #include "RadarGameStateBase.h"
 #include "RadarViewPawn.h"
+#include "portable-file-dialogs.h"
+
+#include <vector>
 
 //#include "imgui_internal.h"
 #include "imgui.h"
@@ -315,6 +318,18 @@ void AImGuiUI::Tick(float deltaTime)
 		uiWindow->Tick();
 	}
 	
+	if(fileChooser != NULL){
+		// check if user has taken action
+		if(fileChooser->ready()){
+			std::vector<std::string> files = fileChooser->result();
+			if(files.size() > 0){
+				globalState.EmitEvent("LoadDirectory", files[0], NULL);
+			}
+			delete fileChooser;
+			fileChooser = NULL;
+		}
+	}
+	
 }
 
 
@@ -378,6 +393,7 @@ void AImGuiUI::InternalWindow() {
 }
 
 void AImGuiUI::ChooseFiles() {
+	/*
 	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	std::vector<std::string> files = {};
     TArray<FString> outFiles;
@@ -399,6 +415,11 @@ void AImGuiUI::ChooseFiles() {
     }
 	if(files.size() > 0){
 		globalState->EmitEvent("LoadDirectory", files[0], NULL);
+	}*/
+	if (fileChooser == NULL) {
+		FString radarDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("../files/dir/"));
+		FString fullradarDir = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarDir);
+		const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
+		fileChooser = new pfd::public_open_file("Open Radar Files", "", { "All Files", "*" }, pfd::opt::multiselect);
 	}
-	
 }
