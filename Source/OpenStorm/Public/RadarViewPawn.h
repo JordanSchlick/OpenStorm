@@ -49,6 +49,7 @@ private:
 	void RotateMouseLR(float Value);
 	void RotateMouseUD(float Value);
 	void ReleaseMouse();
+	void PressMouse();
 	
 private:
 	UPROPERTY(EditAnywhere)

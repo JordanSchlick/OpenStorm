@@ -114,6 +114,7 @@ void ARadarViewPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("RotateMouseLR", this, &ARadarViewPawn::RotateMouseLR);
 	PlayerInputComponent->BindAxis("RotateMouseUD", this, &ARadarViewPawn::RotateMouseUD);
 	PlayerInputComponent->BindAction("MouseButton", IE_Released, this, &ARadarViewPawn::ReleaseMouse);
+	PlayerInputComponent->BindAction("MouseButton", IE_Pressed, this, &ARadarViewPawn::PressMouse);
 	
 }
 
@@ -170,8 +171,17 @@ void ARadarViewPawn::RotateMouseLR(float value)
 
 void ARadarViewPawn::ReleaseMouse() {
 	// return mouse to gui
+	fprintf(stderr, "Relesed mouse button\n");
 	if (gui != NULL) {
 		gui->UnlockMouse();
+	}
+}
+
+void ARadarViewPawn::PressMouse() {
+	// take mouse from gui
+	fprintf(stderr, "Pressed mouse button\n");
+	if (gui != NULL) {
+		gui->LockMouse();
 	}
 }
 

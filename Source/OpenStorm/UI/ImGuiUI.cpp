@@ -151,7 +151,7 @@ void AImGuiUI::Tick(float deltaTime)
 	FIntPoint viewportSize = veiwport->GetSizeXY();
 
 	SWindow* swindow = GetWorld()->GetGameViewport()->GetWindow().Get();
-	float nativeScale = swindow->GetDPIScaleFactor();
+	float nativeScale = ((uiWindow != NULL && uiWindow->isOpen) ? uiWindow->window.Get() : swindow)->GetDPIScaleFactor();
 	if(nativeScale != globalState.defaults->guiScale){
 		if(globalState.defaults->guiScale == globalState.guiScale){
 			globalState.guiScale = nativeScale;
@@ -268,17 +268,21 @@ void AImGuiUI::Tick(float deltaTime)
 				//ImGui::SetWindowCollapsed(true);
 				ExternalWindow();
 			}
-			if (ImGui::Button("Send To Brazil")) {
+			if (ImGui::Button("External win")) {
 				ExternalWindow();
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("Escape Brazil")) {
+			if (ImGui::Button("Internal win")) {
 				// this was thought to be impossible
 				InternalWindow();
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Files")) {
 				ChooseFiles();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Unlock")) {
+				UnlockMouse();
 			}
 			ImGui::Text("Custom float input:");
 			CustomFloatInput("test float", 0, 3, &globalState.testFloat);
@@ -337,24 +341,30 @@ void AImGuiUI::Tick(float deltaTime)
 
 
 void AImGuiUI::LockMouse() {
+	fprintf(stderr, "Locking mouse\n");
 	FImGuiModule::Get().GetProperties().SetInputEnabled(false);
 	//GetWorld()->GetGameViewport()->Viewport->;
 	GetWorld()->GetGameViewport()->Viewport->CaptureMouse(true);
 	GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeGameOnly());
-	ImGuiIO& io = ImGui::GetIO();
+	//ImGuiIO& io = ImGui::GetIO();
 }
 
 void AImGuiUI::UnlockMouse() {
+	fprintf(stderr, "Unlocking mouse\n");
 	FImGuiModule::Get().GetProperties().SetInputEnabled(true);
+	FImGuiModule::Get().GetProperties().SetGamepadNavigationEnabled(false);
+	FImGuiModule::Get().GetProperties().SetMouseInputShared(false);
+	FImGuiModule::Get().GetProperties().SetGamepadInputShared(true);
 	ImGui::SetWindowFocus();
-	FImGuiModule::Get().GetProperties().SetMouseInputShared(true);
 	//GetWorld()->GetGameViewport()->Viewport->SetUserFocus(true);
 	//FImGuiModule::Get().SetInputMode
-	ImGuiIO& io = ImGui::GetIO();
-	io.ClearInputKeys();
-	io.ClearInputCharacters();
-	io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
-	io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
+	//ImGuiIO& io = ImGui::GetIO();
+	//io.ClearInputKeys();
+	//io.ClearInputCharacters();
+	//io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+	//io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
+	//GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeGameOnly());
+	GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeGameAndUI());
 }
 
 void AImGuiUI::ligma(bool Value)
@@ -379,7 +389,15 @@ void AImGuiUI::InitializeConsole()
 }
 
 void AImGuiUI::ExternalWindow() {
+	if (uiWindow != NULL) {
+		if (!uiWindow->isOpen) {
+			// already closed
+			delete uiWindow;
+			uiWindow = NULL;
+		}
+	}
 	if(uiWindow == NULL){
+		GEngine->Exec(GetWorld(), TEXT("Slate.bAllowThrottling 0"));
 		uiWindow = new UIWindow(GetWorld()->GetGameViewport());
 	}
 }

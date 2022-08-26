@@ -11,11 +11,34 @@
 #include "Widgets/SViewport.h"
 //#include "SToolTip.h"
 #include "Widgets/SWindow.h"
+#include "Widgets/Images/SImage.h"
+#include "Brushes/SlateColorBrush.h"
+#include "Math/Color.h"
 
 #include "ImGuiModule.h"
 #include "ImGuiDelegates.h"
 #include "imgui.h"
 //#include "../../../Plugins/UnrealImGui/Source/ImGui/Private/Widgets/SImGuiLayout.h"
+
+
+class SInputProxy : public SOverlay {
+public:
+	
+	TSharedPtr<SViewport> viewport;
+	virtual FReply OnAnalogValueChanged(const FGeometry& MyGeometry, const FAnalogInputEvent& InAnalogInputEvent) {
+		if (viewport == NULL) {
+			return FReply::Unhandled();
+		}
+		// pass on controller input to main viewport
+		return viewport->OnAnalogValueChanged(MyGeometry, InAnalogInputEvent);
+	}
+	void SetViewport(UGameViewportClient* viewportClient) {
+		viewport = viewportClient->GetGameViewportWidget();
+	}
+};
+
+
+
 
 UIWindow::UIWindow(UGameViewportClient* gameViewport){
 	window = SNew(SWindow)
@@ -26,8 +49,23 @@ UIWindow::UIWindow(UGameViewportClient* gameViewport){
 	//SWindow* swindow = window.Get();
 	FSlateApplication::Get().AddWindow(window.ToSharedRef());
 
+	window->SetOnWindowClosed(FOnWindowClosed::CreateRaw(this, &UIWindow::CloseDelegate));
 	//FImGuiModule* newModule = new FImGuiModule();
 	
+
+
+	// set window content
+	SAssignNew(windowContent, SInputProxy);
+	window->SetContent(windowContent.ToSharedRef());
+	windowContent->SetViewport(gameViewport);
+
+
+	// create background
+	TSharedPtr<class SImage> background;
+	SAssignNew(background, SImage);
+	windowContent->AddSlot(-1)[background.ToSharedRef()];
+	backgroundBrush = new FSlateColorBrush(FLinearColor(0.01, 0.01, 0.01, 1));
+	background->SetImage(backgroundBrush);
 
 	// Fish the SOverlay widget out of the viewport
 	TSharedPtr<class SBox> dummyWidget;
@@ -45,17 +83,15 @@ UIWindow::UIWindow(UGameViewportClient* gameViewport){
 		fprintf(stderr, "child %s\n", TCHAR_TO_ANSI(*child->GetType().ToString()));
 		if (child->GetType() == "SImGuiLayout")
 		{
-			fprintf(stderr, "I found you imgui, you are going to brazil.\n");
+			fprintf(stderr, "I found you imgui, you are going to UIWindow.\n");
 			imGuiWidget = child;
 			// remove from main viewport
 			mainViewportOverlayWidget->RemoveSlot(child);
 			// place in window
-			window->SetFullWindowOverlayContent(child);
+			windowContent->AddSlot(10)[child];
 		}
 	}
 
-
-	//TSharedPtr<class SOverlay>
 
 	window->BringToFront();
 	isOpen = true;
@@ -64,7 +100,9 @@ UIWindow::UIWindow(UGameViewportClient* gameViewport){
 UIWindow::~UIWindow(){
 	// avoid moving ImGui during cleanup to prevent crashing
 	imGuiWidget = NULL;
+	window->SetOnWindowClosed(NULL);
 	Close();
+	delete backgroundBrush;
 }
 
 
@@ -72,7 +110,8 @@ UIWindow::~UIWindow(){
 void UIWindow::ReturnImGui() {
 	if (imGuiWidget.IsValid() && mainViewportOverlayWidget.IsValid()) {
 		// remove from window
-		window->RemoveOverlaySlot(imGuiWidget.ToSharedRef());
+		windowContent->RemoveSlot(imGuiWidget.ToSharedRef());
+		//window->RemoveOverlaySlot(imGuiWidget.ToSharedRef());
 		// place back into main viewport
 		mainViewportOverlayWidget->AddSlot(10001)[imGuiWidget.ToSharedRef()];
 		imGuiWidget = NULL;
@@ -85,8 +124,8 @@ void UIWindow::Close() {
 	ReturnImGui();
 
 	if(isOpen && window.IsValid()){
-		FSlateApplication::Get().RequestDestroyWindow(window.ToSharedRef());//.(window)
 		isOpen = false;
+		FSlateApplication::Get().RequestDestroyWindow(window.ToSharedRef());//.(window)
 	}
 }
 
@@ -98,4 +137,8 @@ void UIWindow::Tick(){
 		}
 	}
 	ImGui::End();
+}
+
+void UIWindow::CloseDelegate(const TSharedRef<SWindow>& windowRef){
+	Close();
 }
