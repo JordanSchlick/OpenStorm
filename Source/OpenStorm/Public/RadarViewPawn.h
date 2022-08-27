@@ -3,6 +3,7 @@
 #pragma once
 #include "RadarVolumeRender.h"
 #include "../UI/ImGuiUI.h"
+#include "../UI/Slate/HUD.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Camera/CameraComponent.h"
@@ -17,6 +18,7 @@ class OPENSTORM_API ARadarViewPawn : public APawn
 public:
 	// Sets default values for this pawn's properties
 	ARadarViewPawn();
+	~ARadarViewPawn();
 
 protected:
 	// Called when the game starts or when spawned
@@ -71,4 +73,6 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 		UCameraComponent * camera = NULL;
+		
+	HUD* hud = NULL;
 };
