@@ -1,0 +1,17 @@
+#include "SlateUIResources.h"
+
+USlateUIResources::USlateUIResources(){
+	crosshairTexture = ConstructorHelpers::FObjectFinder<UTexture2D>(TEXT("Texture2D'/Game/Textures/crosshair.crosshair'")).Object;
+	Instance = this;
+}
+
+USlateUIResources::~USlateUIResources(){
+	
+}
+
+USlateUIResources* USlateUIResources::Instance = NULL;
+
+/*
+USlateUIResources* USlateUIResources::Get() {
+	return Instance;
+}*/

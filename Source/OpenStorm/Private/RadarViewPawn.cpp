@@ -48,7 +48,9 @@ void ARadarViewPawn::BeginPlay()
 	//mainVolumeRender = ARadarVolumeRender::instance;
 	mainVolumeRender = FindActor<ARadarVolumeRender>();
 	gui = FindActor<AImGuiUI>();
-	hud = new HUD(GetWorld()->GetGameViewport());
+	//hud = new HUD(GetWorld()->GetGameViewport());
+	hud = NewObject<class USlateUI>(this);
+	hud->AddToViewport(GetWorld()->GetGameViewport());
 }
 
 // Called every frame
@@ -93,10 +95,10 @@ void ARadarViewPawn::Tick(float deltaTime)
 }
 
 ARadarViewPawn::~ARadarViewPawn(){
-	if(hud != NULL){
+	/*if (hud != NULL) {
 		delete hud;
 		hud = NULL;
-	}
+	}*/
 }
 
 template <class T>

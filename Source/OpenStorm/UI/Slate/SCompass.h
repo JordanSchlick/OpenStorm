@@ -17,6 +17,11 @@ public:
 	TSharedPtr<STextBlock> westText;
 	TSharedPtr<SImage> rose;
 
+	FSlateBrush roseBrush;
+
+	//TSharedPtr<UTexture2D> roseTexture;
+
+	SCompass();
 	void Construct(const FArguments& inArgs);
 	virtual FVector2D ComputeDesiredSize(float layoutScaleMultiplier) const override;
 	void Rotate(float rotation);

@@ -3,7 +3,7 @@
 #pragma once
 #include "RadarVolumeRender.h"
 #include "../UI/ImGuiUI.h"
-#include "../UI/Slate/HUD.h"
+#include "../UI/Slate/SlateUI.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Camera/CameraComponent.h"
@@ -73,6 +73,7 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 		UCameraComponent * camera = NULL;
-		
-	HUD* hud = NULL;
+
+	UPROPERTY(EditAnywhere)
+		USlateUI* hud = NULL;
 };
