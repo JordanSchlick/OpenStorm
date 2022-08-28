@@ -1,6 +1,5 @@
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
-
 #include "Engine/Texture2D.h"
 #include "SlateUIResources.generated.h"
 

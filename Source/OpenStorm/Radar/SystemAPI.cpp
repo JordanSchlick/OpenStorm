@@ -11,10 +11,12 @@
 
 //#include "Unix/UnixPlatformTime.h"
 #ifdef PLATFORM_WINDOWS
-#include "Windows/WindowsPlatformTime.h"
+//#include "Windows/WindowsPlatformTime.h"
+#include "Windows/WindowsPlatformFile.h"
 #endif
 
-#include "GenericPlatform/GenericPlatformTime.h"
+//#include "GenericPlatform/GenericPlatformTime.h"
+#include "GenericPlatform/GenericPlatformFile.h"
 
 
 #include "CoreMinimal.h"
@@ -34,7 +36,11 @@
 
 
 double SystemAPI::CurrentTime() {
-	return FPlatformTime::Seconds();
+	//return FPlatformTime::Seconds();
+    FDateTime now = FDateTime::UtcNow();
+    //fprintf(stderr," %f %f\n", (now.GetTicks() % 10000000) / 10000000.0, now.GetMillisecond() / 1000.0);
+    //return (double)now.ToUnixTimestamp() + now.GetMillisecond() / 1000.0;
+    return (double)now.ToUnixTimestamp() + (now.GetTicks() % 10000000) / 10000000.0;
 }
 
 std::vector<std::string> SystemAPI::ReadDirectory(std::string path) {
@@ -62,6 +68,19 @@ std::vector<std::string> SystemAPI::ReadDirectory(std::string path) {
     }
     closedir(dirFd);
 #endif*/
+}
+
+SystemAPI::FileStats SystemAPI::GetFileStats(std::string path){
+    FileStats stats = {};
+    FString FullPathFilename(path.c_str());
+    FFileStatData statData = IFileManager::Get().GetStatData(*FullPathFilename);
+    if(!statData.bIsValid){
+        return stats;
+    }
+    stats.isDirectory = statData.bIsDirectory;
+    stats.size = (statData.FileSize == -1) ? 0 : statData.FileSize;
+    stats.mtime = (double)statData.ModificationTime.ToUnixTimestamp() + statData.ModificationTime.GetMillisecond() / 1000.0;
+    return stats;
 }
 
 #endif

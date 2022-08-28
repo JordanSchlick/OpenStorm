@@ -138,6 +138,7 @@ void RadarCollection::Clear() {
 	}
 	asyncTasks.clear();
 	radarFiles.clear();
+	radarFilesCache.clear();
 	if(cache != NULL){
 		for(int i = 0; i < cacheSize; i++){
 			cache[i].Unload();
@@ -146,7 +147,6 @@ void RadarCollection::Clear() {
 	// reset variables
 	currentPosition = cacheSize / 2;
 	cachedAfter = 0;
-	cachedBefore = 0;
 	cachedBefore = 0;
 	lastMoveDirection = 1;
 	firstItemTime = -1;
@@ -194,8 +194,8 @@ void RadarCollection::EventLoop() {
 		Emit(holder);
 		needToEmit = false;
 	}
+	double now = SystemAPI::CurrentTime();
 	if(automaticallyAdvance){
-		double now = SystemAPI::CurrentTime();
 		if(nextAdvanceTime <= now){
 			if(lastItemIndex == radarFiles.size() - 1 && cachedAfter == 0){
 				lastMoveDirection = -1;
@@ -211,6 +211,14 @@ void RadarCollection::EventLoop() {
 	}else{
 		nextAdvanceTime = 0;
 	}
+	if(poll){
+		if(nextPollTime <= now){
+			nextPollTime = now + pollInterval;
+			PollFiles();
+		}
+	}else{
+		nextPollTime = 0;
+	}
 }
 
 void RadarCollection::RegisterListener(std::function<void(RadarUpdateEvent)> callback) {
@@ -218,12 +226,6 @@ void RadarCollection::RegisterListener(std::function<void(RadarUpdateEvent)> cal
 }
 
 void RadarCollection::ReadFiles(std::string path) {
-	if(radarFiles.size() > 0){
-		// TODO: implement reloading files by replacing radarFiles and changing firstItemIndex and lastItemIndex to reflect the new vector
-		fprintf(stderr, "file reloading is not implemented yet\n");
-		return;
-	}
-	
 	std::string lastCharecter = path.substr(path.length() - 1,1);
 	bool isDirectory = lastCharecter == "/" || lastCharecter == "\\";
 	int lastSlash = std::max(std::max((int)path.find_last_of('/'), (int)path.find_last_of('\\')), 0);
@@ -233,42 +235,160 @@ void RadarCollection::ReadFiles(std::string path) {
 	//fprintf(stderr, "Path var %s\n", path.c_str());
 	//fprintf(stderr, "filePath var %s\n", filePath.c_str());
 	
+	Clear();
+	PollFiles(isDirectory ? "" : inputFilename);
+}
+
+void RadarCollection::PollFiles(std::string defaultFilename) {
+	if(filePath == ""){
+		// no path to read from
+		return;
+	}
+	std::vector<RadarFile> radarFilesNew = {};
 	auto files = SystemAPI::ReadDirectory(filePath);
 	//fprintf(stderr, "files %i\n", (int)files.size());
-	float i = 1;
+	float aReallyBadWayOfAssigningAnArbitraryTime = 1;
+	double now = SystemAPI::CurrentTime();
+	//fprintf(stderr, "now: %f\n", now);
 	for (auto filename : files) {
 		//fprintf(stderr, "%s\n", (filePath + filename).c_str());
 		if(filename == ".gitkeep"){
 			continue;
 		}
-		RadarFile radarFile = {};
-		radarFile.path = filePath + filename;
-		radarFile.name = filename;
-		radarFile.time = i++;
-		radarFiles.push_back(radarFile);
-	}
-	if(lastItemIndex == -1){
-		if(!isDirectory){
-			
-			// start on chosen file
-			int index = 0;
-			for (auto file: radarFiles) {
-				fprintf(stderr, "%s %s\n",file.name.c_str() , inputFilename.c_str());
-				if(file.name == inputFilename){
-					lastItemIndex = index;
-					firstItemIndex = lastItemIndex;
-					break;
+		std::string path = filePath + filename;
+		
+		if(radarFilesCache.find(filename) != radarFilesCache.end()){
+			RadarFile radarFile = radarFilesCache[filename];
+			radarFile.time = aReallyBadWayOfAssigningAnArbitraryTime++;
+			if(now - radarFile.mtime < 3600){
+				// only stat files that have been modified in the last hour for changes
+				//fprintf(stderr, "file: %f %f\n", now, radarFile.mtime);
+				SystemAPI::FileStats stats = SystemAPI::GetFileStats(path);
+				if(stats.isDirectory){
+					continue;
 				}
-				index++;
+				radarFile.mtime = stats.mtime;
+				radarFile.size = stats.size;
+			}
+			radarFilesNew.push_back(radarFile);
+		}else{
+			RadarFile radarFile = {};
+			radarFile.path = path;
+			radarFile.name = filename;
+			radarFile.time = aReallyBadWayOfAssigningAnArbitraryTime++;
+			SystemAPI::FileStats stats = SystemAPI::GetFileStats(path);
+			if(stats.isDirectory){
+				continue;
+			}
+			radarFile.size = stats.size;
+			radarFile.mtime = stats.mtime;
+			radarFilesNew.push_back(radarFile);
+			radarFilesCache[filename] = radarFile;
+		}
+		
+	}
+	
+	// TODO: read propper file time and sort accordingly
+	
+	bool moveToEnd = false;
+	
+	if(radarFiles.size() > 0){
+		// TODO: implement reloading files by replacing radarFiles and changing firstItemIndex and lastItemIndex to reflect the new vector
+		//fprintf(stderr, "file reloading is not implemented yet\n");
+		//return;
+		// keep current location at the end if it is there before loading new files
+		moveToEnd = lastItemIndex == radarFiles.size() - 1 && cachedAfter == 0;
+		std::string firstItemName = radarFiles[firstItemIndex].name;
+		std::string lastItemName = radarFiles[lastItemIndex].name;
+		int newFirstItemIndex = -1;
+		int newLastItemIndex = -1;
+		int filesCountNew = radarFilesNew.size();
+		int offset = firstItemIndex;
+		for(int i = 0; i < filesCountNew && (newFirstItemIndex == -1 || newLastItemIndex == -1); i++){
+			// start with offset so minimal loops are needed if files are just being added to a large directory
+			int location = (i + offset) % filesCountNew;
+			RadarFile* fileNew = &radarFilesNew[location];
+			if(newFirstItemIndex == -1 && firstItemName == fileNew->name){
+				newFirstItemIndex = location;
+			}
+			if(newLastItemIndex == -1 && lastItemName == fileNew->name){
+				newLastItemIndex = location;
 			}
 		}
-		if(lastItemIndex == -1){
+		if(lastItemIndex - firstItemIndex == newLastItemIndex - newFirstItemIndex){
+			// nothing has been added or removed form the loaded range so just update indexes
+			int indexOffset = newLastItemIndex - lastItemIndex;
+			// reload files whose sizes have changed starting from currentPosition and going forward
+			for(int i = 0; i <= cachedAfter; i++){
+				int location = lastItemIndex - cachedAfter + i;
+				if(radarFiles[location].size != radarFilesNew[location + indexOffset].size){
+					ReloadFile((currentPosition + i) % cacheSize);
+				}
+			}
+			// reload files whose sizes have changed in the other direction from currentPosition
+			for(int i = 1; i <= cachedBefore; i++){
+				int location = firstItemIndex + cachedBefore - i;
+				if(radarFiles[location].size != radarFilesNew[location + indexOffset].size){
+					ReloadFile((currentPosition - i + cacheSize) % cacheSize);
+				}
+			}
+			lastItemIndex = newLastItemIndex;
+			firstItemIndex = newFirstItemIndex;
+			radarFiles = radarFilesNew;
+		}else{
+			// loaded range has been modified on disk and needs to be completely reloaded
+			Clear();
+			radarFiles = radarFilesNew;
 			lastItemIndex = radarFiles.size() - 1;
 			firstItemIndex = lastItemIndex;
+		}
+	}else{
+		radarFiles = radarFilesNew;
+		if(lastItemIndex == -1){
+			if(defaultFilename != ""){
+				// start on chosen file
+				int index = 0;
+				for (auto file : radarFiles) {
+					if(file.name == defaultFilename){
+						lastItemIndex = index;
+						firstItemIndex = lastItemIndex;
+						break;
+					}
+					index++;
+				}
+			}
+			if(lastItemIndex == -1){
+				lastItemIndex = radarFiles.size() - 1;
+				firstItemIndex = lastItemIndex;
+			}
 		}
 	}
 	UnloadOldData();
 	LoadNewData();
+	if(moveToEnd){
+		// a better place for keeping the current position at the end might be in LoadNewData with a global state set on Move
+		Move(cachedAfter);
+	}
+}
+
+void RadarCollection::ReloadFile(int index) {
+	if(index < 0){
+		index = currentPosition;
+	}
+	RadarDataHolder* holder = &cache[index];
+	if(holder->state != RadarDataHolder::State::DataStateUnloaded){
+		fprintf(stderr, "Reloading");
+		std::string originalFilePath = holder->filePath;
+		holder->Unload();
+		asyncTasks.push_back(new RadarLoader(
+			originalFilePath,
+			radarDataSettings,
+			holder
+		));
+		if(index == currentPosition){
+			needToEmit = true;
+		}
+	}
 }
 
 void RadarCollection::UnloadOldData() {
@@ -277,14 +397,14 @@ void RadarCollection::UnloadOldData() {
 		return;
 	}
 	
-	LogState();
+	//LogState();
 	
 	
 	int maxSideSize = (cacheSizeSide + cacheSizeSide - reservedCacheSize);
-	fprintf(stderr, "remove %i %i %i\n",cachedBefore,cachedAfter,maxSideSize);
+	//fprintf(stderr, "remove %i %i %i\n",cachedBefore,cachedAfter,maxSideSize);
 	
 	int amountToRemoveBefore = cachedBefore - maxSideSize;
-	fprintf(stderr, "amountToRemoveBefore %i\n", amountToRemoveBefore);
+	//fprintf(stderr, "amountToRemoveBefore %i\n", amountToRemoveBefore);
 	if(amountToRemoveBefore > 0){
 		for(int i = 0; i < amountToRemoveBefore; i++){
 			RadarDataHolder* holder = &cache[modulo(currentPosition - cachedBefore, cacheSize)];
@@ -297,7 +417,7 @@ void RadarCollection::UnloadOldData() {
 	
 	
 	int amountToRemoveAfter = cachedAfter - maxSideSize;
-	fprintf(stderr, "amountToRemoveAfter %i\n", amountToRemoveAfter);
+	//fprintf(stderr, "amountToRemoveAfter %i\n", amountToRemoveAfter);
 	if(amountToRemoveAfter > 0){
 		for(int i = 0; i < amountToRemoveAfter; i++){
 			RadarDataHolder* holder = &cache[modulo(currentPosition + cachedAfter, cacheSize)];
@@ -308,7 +428,7 @@ void RadarCollection::UnloadOldData() {
 		lastItemTime = radarFiles[lastItemIndex].time;
 	}
 	
-	LogState();
+	//LogState();
 }
 
 
@@ -340,6 +460,7 @@ void RadarCollection::LoadNewData() {
 		}
 	}
 	if(cache[currentPosition].state == RadarDataHolder::State::DataStateUnloaded){
+		// load current position if not loaded
 		asyncTasks.push_back(new RadarLoader(
 			radarFiles[lastItemIndex - cachedAfter].path,
 			radarDataSettings,
@@ -354,6 +475,7 @@ void RadarCollection::LoadNewData() {
 	int side = lastMoveDirection;
 	bool forwardEnded = false;
 	bool backwardEnded = false;
+	// iterate outward starting from both sides of the current position to find slots in the cache to load
 	while(availableSlots > 0 && maxLoops > 0){
 		//fprintf(stderr,"state %i %i %i\n",cachedBefore,cachedAfter,availableSlots);
 		
@@ -369,7 +491,7 @@ void RadarCollection::LoadNewData() {
 				RadarDataHolder* holder = &cache[modulo(currentPosition + loopRun,cacheSize)];
 				
 				if(holder->state != RadarDataHolder::State::DataStateUnloaded){
-					// already loaded
+					// already loaded or loading
 					availableSlots -= 1;
 				}else{
 					if(lastItemIndex - cachedAfter + loopRun < radarFiles.size()){
@@ -399,7 +521,7 @@ void RadarCollection::LoadNewData() {
 			if(!backwardEnded){
 				RadarDataHolder* holder = &cache[modulo(currentPosition - loopRun,cacheSize)];
 				if(holder->state != RadarDataHolder::State::DataStateUnloaded){
-					// already loaded
+					// already loaded or loading
 					availableSlots -= 1;
 				}else{
 					if(firstItemIndex + cachedBefore - loopRun >= 0){
@@ -437,8 +559,9 @@ void RadarCollection::LoadNewData() {
 		// Actually, I think this can be reached if there are too few files
 		fprintf(stderr, "You fool! You have made the loop run to long.\n");
 	}
-	
-	LogState();
+	if(verbose){
+		LogState();
+	}
 	//new LogStateDelayed(this,1);
 	//new LogStateDelayed(this,3);
 	//new LogStateDelayed(this,5);
@@ -446,8 +569,10 @@ void RadarCollection::LoadNewData() {
 }
 
 void RadarCollection::Emit(RadarDataHolder* holder) {
-	fprintf(stderr, "Emitting %s\n", holder->filePath.c_str());
-	LogState();
+	if(verbose){
+		fprintf(stderr, "Emitting %s\n", holder->filePath.c_str());
+		LogState();
+	}
 	RadarUpdateEvent event = {};
 	event.data = holder->radarData;
 	if(automaticallyAdvance){

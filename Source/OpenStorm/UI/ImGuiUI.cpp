@@ -284,6 +284,10 @@ void AImGuiUI::Tick(float deltaTime)
 			if (ImGui::Button("Unlock")) {
 				UnlockMouse();
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Reload File")) {
+				globalState.EmitEvent("DevReloadFile");
+			}
 			ImGui::Text("Custom float input:");
 			CustomFloatInput("test float", 0, 3, &globalState.testFloat);
 			CustomFloatInput("test float##2", 0, 2, &globalState.testFloat, &globalState.defaults->testFloat);
@@ -323,7 +327,7 @@ void AImGuiUI::Tick(float deltaTime)
 	}
 	
 	if(fileChooser != NULL){
-		// check if user has taken action
+		// check if user has taken action on file dialog
 		if(fileChooser->ready()){
 			std::vector<std::string> files = fileChooser->result();
 			if(files.size() > 0){

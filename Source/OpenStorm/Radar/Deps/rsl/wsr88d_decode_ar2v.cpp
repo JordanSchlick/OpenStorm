@@ -230,6 +230,8 @@ void uncompress_pipe_ar2v_thread(FILE* inFile, FILE* outFile) {
 			fwrite(oblock, 1, olength, outFile);
 		}
 	}
+	free(oblock);
+	free(block);
 	fclose(inFile);
 	fclose(outFile);
 }

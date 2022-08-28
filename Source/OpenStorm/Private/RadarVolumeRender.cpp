@@ -251,8 +251,10 @@ void ARadarVolumeRender::BeginPlay()
 		radarCollection->MoveManual(-1);
 	}));
 	callbackIds.push_back(globalState->RegisterEvent("LoadDirectory",[this](std::string stringData, void* extraData){
-		radarCollection->Clear();
 		radarCollection->ReadFiles(stringData);
+	}));
+	callbackIds.push_back(globalState->RegisterEvent("DevReloadFile",[this](std::string stringData, void* extraData){
+		radarCollection->ReloadFile(-1);
 	}));
 	
 	//RandomizeTexture();
