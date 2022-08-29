@@ -225,6 +225,10 @@ void RadarCollection::RegisterListener(std::function<void(RadarUpdateEvent)> cal
 	listeners.push_back(callback);
 }
 
+RadarCollection::RadarDataHolder* RadarCollection::GetCurrentRadarData() {
+	return &cache[currentPosition];
+}
+
 void RadarCollection::ReadFiles(std::string path) {
 	std::string lastCharecter = path.substr(path.length() - 1,1);
 	bool isDirectory = lastCharecter == "/" || lastCharecter == "\\";
@@ -583,8 +587,39 @@ void RadarCollection::Emit(RadarDataHolder* holder) {
 	}
 }
 
+std::string RadarCollection::StateString(){
+	std::string state = "Radar Cache: [";
+	for(int i = 0; i < cacheSize; i++){
+		switch(cache[i].state){
+			case RadarDataHolder::State::DataStateUnloaded:
+				if(i == currentPosition){
+					state += ",";
+				}else{
+					state += ".";
+				}
+				break;
+			case RadarDataHolder::State::DataStateLoading:
+				if(i == currentPosition){
+					state += "l";
+				}else{
+					state += "-";
+				}
+				break;
+			case RadarDataHolder::State::DataStateLoaded:
+				if(i == currentPosition){
+					state += "|";
+				}else{
+					state += "=";
+				}
+				break;
+		}
+	}
+	state += "]";
+	return state;
+}
+
 void RadarCollection::LogState() {
-	fprintf(stderr,"Radar Cache: [");
+	/*fprintf(stderr,"Radar Cache: [");
 	for(int i = 0; i < cacheSize; i++){
 		switch(cache[i].state){
 			case RadarDataHolder::State::DataStateUnloaded:
@@ -610,8 +645,8 @@ void RadarCollection::LogState() {
 				break;
 		}
 	}
-	fprintf(stderr,"]\n");
-	
+	fprintf(stderr,"]\n");*/
+	fprintf(stderr, "%s\n", StateString().c_str());
 }
 
 class AsyncTaskTest : public AsyncTaskRunner{

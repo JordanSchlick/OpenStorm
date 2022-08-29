@@ -8,6 +8,7 @@
 #include "RadarGameStateBase.h"
 #include "../EngineHelpers/MaterialRenderTarget.h"
 
+#include "imgui.h"
 
 //#define VERBOSE 1
 #include "../Radar/RadarData.h"
@@ -336,6 +337,7 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	radarCollection->automaticallyAdvance = globalState->animate;
 	radarCollection->autoAdvanceInterval = 1.0f / globalState->animateSpeed;
+	radarCollection->poll = globalState->pollData;
 	
 	if(volumeMaterialRenderTarget != NULL){
 		volumeMaterialRenderTarget->Update();
@@ -382,6 +384,18 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 	}
 
 	radarCollection->EventLoop();
+	
+	if(globalState->devShowImGui && globalState->devShowCacheState){
+		if(ImGui::Begin("Cache State", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar)){
+			ImGuiIO& io = ImGui::GetIO();
+			ImGui::PushFont(io.Fonts->Fonts[1]);
+			ImGui::Text("%s", radarCollection->StateString().c_str());
+			RadarCollection::RadarDataHolder* holder = radarCollection->GetCurrentRadarData();
+			ImGui::Text("%s", holder->filePath.c_str());
+			ImGui::PopFont();
+		}
+		ImGui::End();
+	}
 }
 
 

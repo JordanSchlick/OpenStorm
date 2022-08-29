@@ -3200,12 +3200,13 @@ void LoadFonts(){
 	//ImFont* font = io.Fonts->AddFontDefault();
 	//ImFont* fontRoboto = io.Fonts->AddFontFromMemoryCompressedTTF(Roboto_compressed_data, Roboto_compressed_size, 32, &config);
 	ImFont* fontRoboto = io.Fonts->AddFontFromMemoryCompressedBase85TTF(Roboto_compressed_data_base85, 32, &config);
+    fontRoboto->Scale = 0.4;
     config.MergeMode = true;
 	//config.SizePixels = 0.1;
 	config.GlyphOffset = ImVec2(-2, 1.5);
 	//ImFont* fontOpenFontIcons = io.Fonts->AddFontFromMemoryCompressedTTF(OpenFontIcons_compressed_data, OpenFontIcons_compressed_size, 32, &config, OpenFontIcons_ranges);
-	ImFont* fontOpenFontIcons = io.Fonts->AddFontFromMemoryCompressedBase85TTF(FontAwesome_compressed_data_base85, 32, &config, FontAwesome_ranges);
-	
+	ImFont* fontIcons = io.Fonts->AddFontFromMemoryCompressedBase85TTF(FontAwesome_compressed_data_base85, 32, &config, FontAwesome_ranges);
+    fontIcons->Scale = 0.4;
 	//io.Fonts->Build();
     FImGuiModule::Get().RebuildFontAtlas();
 }

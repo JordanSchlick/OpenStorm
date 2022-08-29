@@ -14,8 +14,11 @@ public:
 	bool interpolation = false; // interpolate the scene
 	bool isMouseCaptured = false; // true if mouse is currently captured
 	bool vrMode = false; // true if in vr
+	bool pollData = false; // should th data ne polled for updates
+	bool devShowCacheState = false; // if the state of the cache buffer should be displayed on screen
+	bool devShowImGui = false; // if it is safe to show ImGui debuging windows
 	
-	int maxFPS = 60; // maximum frames per second
+	float maxFPS = 60; // maximum frames per second
 	
 	float animateSpeed = 3.0f; // speed of animation
 	float animateCutoffTime = 5.0f; // speed of animation

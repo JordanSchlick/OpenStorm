@@ -126,6 +126,11 @@ public:
 	// register a callback for when radar data, this can emit null if there was an error loading data
 	void RegisterListener(std::function<void(RadarUpdateEvent)> callback);
 	
+	RadarDataHolder* GetCurrentRadarData();
+	
+	// visually describe the state of the cache
+	std::string StateString();
+	
 	// visually describe the state of the cache in the console
 	void LogState();
 	

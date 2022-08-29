@@ -139,13 +139,15 @@ void AImGuiUI::Tick(float deltaTime)
 {
 	Super::Tick(deltaTime);
 
+	GlobalState &globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	if (unsafeFrames > 0) {
 		unsafeFrames--;
+		globalState.devShowImGui = false;
 		return;
 	}
+	globalState.devShowImGui = true;
 
 	ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>();
-	GlobalState &globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 
 	FViewport* veiwport = GetWorld()->GetGameViewport()->Viewport;
 	FIntPoint viewportSize = veiwport->GetSizeXY();
@@ -159,12 +161,12 @@ void AImGuiUI::Tick(float deltaTime)
 		globalState.defaults->guiScale = nativeScale;
 	}
 
-	float fontScale = 0.4;
-	fontScale *= globalState.guiScale;
+	float fontScale = globalState.guiScale;
 	ImGui::SetNextWindowBgAlpha(0.3);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), 0, ImVec2(0.0f, 0.0f));
 	//ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
-	
+	ImGuiIO& io = ImGui::GetIO();
+	io.FontGlobalScale = fontScale;
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, 100.0f), ImVec2(viewportSize.X / 2, viewportSize.Y));
 	if(ImGui::Begin("OpenStorm", NULL, ImGuiWindowFlags_NoMove | /*ImGuiWindowFlags_NoBackground |*/ ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar)){
 		if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1)){
@@ -174,9 +176,10 @@ void AImGuiUI::Tick(float deltaTime)
 			//}
 		}
 		if(scalabilityTest){
-			ImGui::SetWindowFontScale((cos(SystemAPI::CurrentTime() / 1) / 2 + 1.5) * fontScale);
+			//ImGui::SetWindowFontScale((cos(SystemAPI::CurrentTime() / 1) / 2 + 1.5) * fontScale);
+			ImGui::SetWindowFontScale((cos(SystemAPI::CurrentTime() / 1) / 2 + 1.5));
 		}else{
-			ImGui::SetWindowFontScale(fontScale);
+			ImGui::SetWindowFontScale(1);
 		}
 		
 		float frameHeight = ImGui::GetFrameHeight();
@@ -234,6 +237,14 @@ void AImGuiUI::Tick(float deltaTime)
 				CustomFloatInput("Cutoff Animation Time", 0.5, 10, &globalState.animateCutoffTime, &globalState.defaults->animateCutoffTime);
 				ImGui::TreePop();
 			}
+			ImGui::Separator();
+			if (ImGui::TreeNodeEx("Data", ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen)) {
+				ImGui::Checkbox("Poll Data", &globalState.pollData);
+				if (ImGui::Button("Load Files")) {
+					ChooseFiles();
+				}
+				ImGui::TreePop();
+			}
 			//ImGui::Separator();
 
 		}	
@@ -242,8 +253,28 @@ void AImGuiUI::Tick(float deltaTime)
 		}
 		
 		if (ImGui::CollapsingHeader("Settings")) {
-			ImGui::Text("Max FPS:");
-			ImGui::InputInt("##1", &GS->globalState.maxFPS, 10);
+			if (ImGui::TreeNodeEx("Display", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+				CustomFloatInput("Max FPS", 20, 120, &globalState.maxFPS, &globalState.defaults->maxFPS);
+				if (ImGui::Button("External Window")) {
+					if(uiWindow != NULL){
+						InternalWindow();
+					}else{
+						ExternalWindow();
+					}
+				}
+				ImGui::SameLine();
+				if (ToggleButton("VR " ICON_FA_VR_CARDBOARD, globalState.vrMode)) {
+					globalState.vrMode = !globalState.vrMode;
+					if(globalState.vrMode){
+						GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 1"));
+					}else{
+						GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 0"));
+					}
+					//ImGui::SetWindowCollapsed(true);
+					ExternalWindow();
+				}
+				ImGui::TreePop();
+			}
 		}
 		
 		if (ImGui::CollapsingHeader("Ligma")) {
@@ -257,17 +288,6 @@ void AImGuiUI::Tick(float deltaTime)
 				unsafeFrames = 10;
 				return;
 			}
-			ImGui::SameLine();
-			if (ToggleButton("VR " ICON_FA_VR_CARDBOARD, globalState.vrMode)) {
-				globalState.vrMode = !globalState.vrMode;
-				if(globalState.vrMode){
-					GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 1"));
-				}else{
-					GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 0"));
-				}
-				//ImGui::SetWindowCollapsed(true);
-				ExternalWindow();
-			}
 			if (ImGui::Button("External win")) {
 				ExternalWindow();
 			}
@@ -277,16 +297,18 @@ void AImGuiUI::Tick(float deltaTime)
 				InternalWindow();
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("Files")) {
-				ChooseFiles();
-			}
-			ImGui::SameLine();
 			if (ImGui::Button("Unlock")) {
 				UnlockMouse();
 			}
 			ImGui::SameLine();
+			if (ImGui::Button("Lock")) {
+				LockMouse();
+			}
 			if (ImGui::Button("Reload File")) {
 				globalState.EmitEvent("DevReloadFile");
+			}
+			if (ImGui::Button("Cache State")) {
+				globalState.devShowCacheState = !globalState.devShowCacheState;
 			}
 			ImGui::Text("Custom float input:");
 			CustomFloatInput("test float", 0, 3, &globalState.testFloat);
@@ -310,7 +332,7 @@ void AImGuiUI::Tick(float deltaTime)
 		ImGui:: ShowDemoWindow();
 	}
 	
-	ImGuiIO& io = ImGui::GetIO();
+	
 	if(!io.WantCaptureMouse){
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)){
 			// mouse release will not be received
