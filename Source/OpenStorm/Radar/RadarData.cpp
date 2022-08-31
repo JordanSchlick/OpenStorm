@@ -102,6 +102,7 @@ void RadarData::ReadNexrad(const char* filename) {
 			// do a pass of the data to find info
 			for (const auto pair : sweeps) {
 				if (sweepId >= sweepBufferCount) {
+					// ignore sweeps that wont fit in buffer
 					break;
 				}
 				Sweep* sweep = pair.second;
@@ -324,19 +325,23 @@ void RadarData::CopyFrom(RadarData* data) {
 		
 		usedBufferSize = 0;
 		
+		// allocate buffer
 		buffer = new float[fullBufferSize];
 		std::fill(buffer, buffer+fullBufferSize, -INFINITY);
 	}
+	// copy data
 	if(data->bufferCompressed != NULL){
 		SparseCompress::decompressToBuffer(buffer, data->bufferCompressed, fullBufferSize);
 	}else if(data->buffer != NULL){
 		memcpy(buffer, data->buffer, std::min(fullBufferSize, data->usedBufferSize) * 4);
 	}
+	// take used buffer size int account
 	if(data->usedBufferSize < usedBufferSize){
 		// fill newly unused space
 		std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, -INFINITY);
 	}
 	usedBufferSize = data->usedBufferSize;
+	// TODO: copy sweepInfo
 }
 
 

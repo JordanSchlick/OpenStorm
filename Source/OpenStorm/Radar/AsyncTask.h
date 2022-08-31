@@ -20,7 +20,7 @@ public:
 	void Start(bool autoDelete);
 	// cancel the task. the task may continue running in the backround
 	void Cancel();
-	// delete memory associated with task
+	// delete memory associated with task, it is not safe to access this object again
 	void Delete();
 
 

@@ -5,7 +5,7 @@
 - [X] Mouse grabbing and DPI support for UI
 - [X] Create settings window
 - [X] Implement directory polling
-- [ ] Allow variable radar sizes and angles
+- [X] Allow variable radar sizes and angles
 - [ ] Make temporal interpolation optional
 - [ ] Location markers
 - [ ] Fix ImGui input state
@@ -24,3 +24,4 @@
 - [ ] Top down radar view panning
 - [ ] Combining radar data from multiple points
 - [ ] Change radar decoder to one that is more performant and uses less memory
+- [ ] Display real time lightning

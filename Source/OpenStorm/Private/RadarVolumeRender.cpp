@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 
 // modulo that always returns positive
 inline int modulo(int i, int n) {
@@ -32,6 +33,23 @@ inline int modulo(int i, int n) {
 }
 
 #define PI2F 6.283185307179586f
+
+void UpdateTexture(UTexture2D* texture, uint8_t* buffer, size_t bufferSizeBytes, int pixelSizeBytes, std::function<void(uint8_t* buffer)> callback = [](uint8_t* buffer){}){
+	int width = texture->GetSizeX();
+	FUpdateTextureRegion2D* regions = new FUpdateTextureRegion2D[1]();
+	regions[0].DestX = 0;
+	regions[0].DestY = 0;
+	regions[0].SrcX = 0;
+	regions[0].SrcY = 0;
+	regions[0].Width = width;
+	regions[0].Height = std::min(bufferSizeBytes / pixelSizeBytes / width, (size_t)texture->GetSizeY());
+	
+	texture->UpdateTextureRegions(0, 1, regions, width * pixelSizeBytes, pixelSizeBytes, (uint8*)buffer, [callback](uint8* dataPtr, const FUpdateTextureRegion2D* regionsPtr) {
+		delete regionsPtr;
+		callback(dataPtr);
+	});
+}
+
 
 ARadarVolumeRender *ARadarVolumeRender::instance = NULL;
 // Sets default values
@@ -104,57 +122,56 @@ void ARadarVolumeRender::BeginPlay()
 	radarMaterialInstance->SetVectorParameterValue(TEXT("Center"), this->GetActorLocation());
 
 
-	FString radarFile = FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/Demo/KMKX_20220723_235820"));
+	//FString radarFile = FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/Demo/KMKX_20220723_235820"));
 	//FString radarFile = FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/Demo/KTLX20130531_231434_V06"));
-	FString fullPath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarFile);
-	const char* fileLocaition = StringCast<ANSICHAR>(*fullPath).Get();
+	//FString fullPath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarFile);
+	//const char* fileLocaition = StringCast<ANSICHAR>(*fullPath).Get();
 	radarData = new RadarData();
-	radarData->ReadNexrad(fileLocaition);
+	//radarData->ReadNexrad(fileLocaition);
 	//radarData->Compress();
 	
-	if (radarData->radiusBufferCount == 0) {
-		fprintf(stderr, "Could not open %s\n", fileLocaition);
-		return;
-	}
+	//if (radarData->radiusBufferCount == 0) {
+	//	fprintf(stderr, "Could not open %s\n", fileLocaition);
+	//	return;
+	//}
 
 	// PF_B8G8R8A8 - 4 uint8 values per pixel
 	// PF_R32_FLOAT - single float value per pixel
 	// PF_A32B32G32R32F - 4 float values per pixel
 
-	InitializeTextures();
+	//InitializeTextures();
 	
 
-	radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), radarData->innerDistance);
+	radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), 0);
 
-	RadarData::TextureBuffer imageBuffer = radarData->CreateTextureBufferReflectivity2();
-	float* RawImageData = (float*)volumeImageData->Lock(LOCK_READ_WRITE);
-	memcpy(RawImageData, imageBuffer.data, imageBuffer.byteSize);
-	volumeImageData->Unlock();
-	volumeTexture->UpdateResource();
-	imageBuffer.Delete();
+	// RadarData::TextureBuffer imageBuffer = radarData->CreateTextureBufferReflectivity2();
+	// float* RawImageData = (float*)volumeImageData->Lock(LOCK_READ_WRITE);
+	// memcpy(RawImageData, imageBuffer.data, imageBuffer.byteSize);
+	// volumeImageData->Unlock();
+	// volumeTexture->UpdateResource();
+	// imageBuffer.Delete();
 
 
-	imageBuffer = radarData->CreateAngleIndexBuffer();
-	float* rawAngleIndexImageData = (float*)angleIndexImageData->Lock(LOCK_READ_WRITE);
-	memcpy(rawAngleIndexImageData, imageBuffer.data, imageBuffer.byteSize);
-	angleIndexImageData->Unlock();
-	angleIndexTexture->UpdateResource();
-	imageBuffer.Delete();
+	// imageBuffer = radarData->CreateAngleIndexBuffer();
+	// float* rawAngleIndexImageData = (float*)angleIndexImageData->Lock(LOCK_READ_WRITE);
+	// memcpy(rawAngleIndexImageData, imageBuffer.data, imageBuffer.byteSize);
+	// angleIndexImageData->Unlock();
+	// angleIndexTexture->UpdateResource();
+	// imageBuffer.Delete();
 	
 
-	RadarColorIndex::Params colorParams = {};
-	colorParams.fromRadarData(radarData);
-	//colorParams.minValue = 0; colorParams.maxValue = 1;
-	//RadarColorIndex::Result valueIndex = RadarColorIndex::relativeHue(colorParams);
-	radarColorResult = RadarColorIndex::reflectivityColors(colorParams, &radarColorResult);
-	float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
-	//memcpy(rawValueIndexImageData, valueIndex.data, 16384);
-	memcpy(rawValueIndexImageData, radarColorResult.data, radarColorResult.byteSize);
-	valueIndexImageData->Unlock();
-	valueIndexTexture->UpdateResource();
-	// set value bounds
-	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexLower"), radarColorResult.lower);
-	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexUpper"), radarColorResult.upper);
+	// RadarColorIndex::Params colorParams = {};
+	// colorParams.fromRadarData(radarData);
+	// //colorParams.minValue = 0; colorParams.maxValue = 1;
+	// //RadarColorIndex::Result valueIndex = RadarColorIndex::relativeHue(colorParams);
+	// radarColorResult = RadarColorIndex::reflectivityColors(colorParams, &radarColorResult);
+	// float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
+	// memcpy(rawValueIndexImageData, radarColorResult.data, radarColorResult.byteSize);
+	// valueIndexImageData->Unlock();
+	// valueIndexTexture->UpdateResource();
+	// // set value bounds
+	// radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexLower"), radarColorResult.lower);
+	// radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexUpper"), radarColorResult.upper);
 
 	
 
@@ -190,14 +207,14 @@ void ARadarVolumeRender::BeginPlay()
 			// });
 			
 			radarData->CopyFrom(event.data);
-			RadarData::TextureBuffer buffer = radarData->CreateTextureBufferReflectivity2();
-			FUpdateTextureRegion2D* regions = new FUpdateTextureRegion2D[1]();
-			regions[0].DestX = 0;
-			regions[0].DestY = 0;
-			regions[0].SrcX = 0;
-			regions[0].SrcY = 0;
-			regions[0].Width = radarData->radiusBufferCount;
-			regions[0].Height = radarData->fullBufferSize / radarData->thetaBufferSize;
+			InitializeTextures();
+			// FUpdateTextureRegion2D* regions = new FUpdateTextureRegion2D[1]();
+			// regions[0].DestX = 0;
+			// regions[0].DestY = 0;
+			// regions[0].SrcX = 0;
+			// regions[0].SrcY = 0;
+			// regions[0].Width = radarData->radiusBufferCount;
+			// regions[0].Height = radarData->fullBufferSize / radarData->thetaBufferSize;
 			
 			
 			UTexture2D* textureToUpdate = volumeTexture;
@@ -220,8 +237,22 @@ void ARadarVolumeRender::BeginPlay()
 				
 			}
 			
-			textureToUpdate->UpdateTextureRegions(0, 1, regions, radarData->radiusBufferCount * 4, 4, (uint8*)buffer.data, [](uint8* dataPtr, const FUpdateTextureRegion2D* regionsPtr) {
-				delete regionsPtr;
+			// textureToUpdate->UpdateTextureRegions(0, 1, regions, radarData->radiusBufferCount * 4, 4, (uint8*)radarData->buffer, [](uint8* dataPtr, const FUpdateTextureRegion2D* regionsPtr) {
+			// 	delete regionsPtr;
+			// });
+			
+			UpdateTexture(textureToUpdate, (uint8_t*)radarData->buffer, radarData->fullBufferSize * sizeof(float), sizeof(float));
+			
+			
+			radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), event.data->innerDistance);
+			
+			RadarData::TextureBuffer imageBuffer = event.data->CreateAngleIndexBuffer();
+			//float* rawAngleIndexImageData = (float*)angleIndexImageData->Lock(LOCK_READ_WRITE);
+			//memcpy(rawAngleIndexImageData, imageBuffer.data, imageBuffer.byteSize);
+			//angleIndexImageData->Unlock();
+			//angleIndexTexture->UpdateResource();
+			UpdateTexture(angleIndexTexture, (uint8_t*)imageBuffer.data, imageBuffer.byteSize, sizeof(float), [](uint8_t* buffer){
+				delete[] buffer;
 			});
 			
 		}
@@ -272,6 +303,15 @@ void ARadarVolumeRender::EndPlay(const EEndPlayReason::Type endPlayReason) {
 void ARadarVolumeRender::InitializeTextures() {
 	int textureWidth = radarData->radiusBufferCount;
 	int textureHeight = (radarData->thetaBufferCount + 2) * radarData->sweepBufferCount;
+	if (textureWidth == 0 || textureHeight == 0) {
+		// zero size textures will not be properly allocated and can cause crashes
+		textureWidth = 8;
+		textureHeight = 8;
+	}
+	if(volumeTexture != NULL && textureWidth == volumeTexture->GetSizeX() && textureHeight == volumeTexture->GetSizeY() && (volumeMaterialRenderTarget != NULL) == doTimeInterpolation){
+		// nothing changed so no need to reallocate
+		return;
+	}
 	EPixelFormat pixelFormat = PF_R32_FLOAT;
 	
 	// the volume texture contains an array that is interperted as a three dimensional volume of values
@@ -305,17 +345,19 @@ void ARadarVolumeRender::InitializeTextures() {
 	
 	// the angle index texture maps the angle from the ground to a sweep
 	// pixel 65536 is strait up, pixel 32768 is parallel with the ground, pixel 0 is strait down
-	// values less than zero mean no sweep, value 0.0-255.0 specify the index of the sweep, value 0.0 specifies first sweep, values in-between intagers will interpolate sweeps
+	// values less than zero mean no sweep, value 0.0-255.0 specify the index of the sweep, value 0.0 specifies first sweep, values in-between integers will interpolate sweeps
 	angleIndexTexture = UTexture2D::CreateTransient(256, 256, PF_R32_FLOAT);
 	MipMap = &(angleIndexTexture->PlatformData->Mips[0]);
 	angleIndexImageData = &(MipMap->BulkData);
 	radarMaterialInstance->SetTextureParameterValue(TEXT("AngleIndex"), angleIndexTexture);
+	angleIndexTexture->UpdateResource();
 	
-	// th value index texture maps the real values of the radar to color and alpha values
+	// the value index texture maps the real values of the radar to color and alpha values
 	valueIndexTexture = UTexture2D::CreateTransient(128, 128, PF_A32B32G32R32F);
 	MipMap = &(valueIndexTexture->PlatformData->Mips[0]);
 	valueIndexImageData = &(MipMap->BulkData);
 	radarMaterialInstance->SetTextureParameterValue(TEXT("ValueIndex"), valueIndexTexture);
+	valueIndexTexture->UpdateResource();
 }
 
 
@@ -338,63 +380,66 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 	radarCollection->automaticallyAdvance = globalState->animate;
 	radarCollection->autoAdvanceInterval = 1.0f / globalState->animateSpeed;
 	radarCollection->poll = globalState->pollData;
-	
-	if(volumeMaterialRenderTarget != NULL){
-		volumeMaterialRenderTarget->Update();
-	}
-	
-	if(interpolationAnimating){
-		if(interpolationEndTime == interpolationStartTime){
-			interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), interpolationEndValue);
-			interpolationAnimating = false;
-		}else{
-			float animationProgress = std::clamp((now - interpolationStartTime) / (interpolationEndTime - interpolationStartTime), 0.0, 1.0);
-			float animationValue = interpolationStartValue * (1.0f - animationProgress) + interpolationEndValue * animationProgress;
-			interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), animationValue);
-			//fprintf(stderr, "%f\n", animationValue);
-			if(animationProgress == 1){
-				interpolationAnimating = false;
-			}
-		}
-	}
-	//return;
-	//*
-	RadarColorIndex::Params colorParams = {};
-	colorParams.fromRadarData(radarData);
-	radarColorResult = RadarColorIndex::reflectivityColors(colorParams, &radarColorResult);
-	float cutoff = globalState->cutoff;
-	if(globalState->animateCutoff){
-		cutoff = (sin(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * PI2F) + 1) / 2 * cutoff;
-		//cutoff = abs(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * -2 + 1) * cutoff;
-	}
-	RadarColorIndex::Cutoff(cutoff, &radarColorResult);
-	float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
-	//memcpy(rawValueIndexImageData, valueIndex.data, 16384);
-	
-	memcpy(rawValueIndexImageData, radarColorResult.data, radarColorResult.byteSize);
-	valueIndexImageData->Unlock();
-	valueIndexTexture->UpdateResource();
-
-	// set value bounds
-	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexLower"), radarColorResult.lower);
-	radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexUpper"), radarColorResult.upper);
-	
-	if (doTimeInterpolation) {
-		interpolationMaterialInstance->SetScalarParameterValue(TEXT("Minimum"), radarColorResult.lower);
-	}
 
 	radarCollection->EventLoop();
 	
-	if(globalState->devShowImGui && globalState->devShowCacheState){
-		if(ImGui::Begin("Cache State", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar)){
-			ImGuiIO& io = ImGui::GetIO();
-			ImGui::PushFont(io.Fonts->Fonts[1]);
-			ImGui::Text("%s", radarCollection->StateString().c_str());
-			RadarCollection::RadarDataHolder* holder = radarCollection->GetCurrentRadarData();
-			ImGui::Text("%s", holder->filePath.c_str());
-			ImGui::PopFont();
+	if (volumeTexture != NULL) {
+		if (volumeMaterialRenderTarget != NULL) {
+			volumeMaterialRenderTarget->Update();
 		}
-		ImGui::End();
+
+		if (interpolationAnimating) {
+			if (interpolationEndTime == interpolationStartTime) {
+				interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), interpolationEndValue);
+				interpolationAnimating = false;
+			} else {
+				float animationProgress = std::clamp((now - interpolationStartTime) / (interpolationEndTime - interpolationStartTime), 0.0, 1.0);
+				float animationValue = interpolationStartValue * (1.0f - animationProgress) + interpolationEndValue * animationProgress;
+				interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), animationValue);
+				//fprintf(stderr, "%f\n", animationValue);
+				if (animationProgress == 1) {
+					interpolationAnimating = false;
+				}
+			}
+		}
+		//return;
+		//*
+		RadarColorIndex::Params colorParams = {};
+		colorParams.fromRadarData(radarData);
+		radarColorResult = RadarColorIndex::reflectivityColors(colorParams, &radarColorResult);
+		float cutoff = globalState->cutoff;
+		if (globalState->animateCutoff) {
+			cutoff = (sin(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * PI2F) + 1) / 2 * cutoff;
+			//cutoff = abs(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * -2 + 1) * cutoff;
+		}
+		RadarColorIndex::Cutoff(cutoff, &radarColorResult);
+		//float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
+		//memcpy(rawValueIndexImageData, valueIndex.data, 16384);
+		//memcpy(rawValueIndexImageData, radarColorResult.data, radarColorResult.byteSize);
+		//valueIndexImageData->Unlock();
+		//valueIndexTexture->UpdateResource();
+		UpdateTexture(valueIndexTexture, (uint8_t*)radarColorResult.data, radarColorResult.byteSize, sizeof(float) * 4);
+
+		// set value bounds
+		radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexLower"), radarColorResult.lower);
+		radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexUpper"), radarColorResult.upper);
+
+		if (doTimeInterpolation) {
+			interpolationMaterialInstance->SetScalarParameterValue(TEXT("Minimum"), radarColorResult.lower);
+		}
+
+
+		if (globalState->devShowImGui && globalState->devShowCacheState) {
+			if (ImGui::Begin("Cache State", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar)) {
+				ImGuiIO& io = ImGui::GetIO();
+				ImGui::PushFont(io.Fonts->Fonts[1]);
+				ImGui::Text("%s", radarCollection->StateString().c_str());
+				RadarCollection::RadarDataHolder* holder = radarCollection->GetCurrentRadarData();
+				ImGui::Text("%s", holder->filePath.c_str());
+				ImGui::PopFont();
+			}
+			ImGui::End();
+		}
 	}
 }
 
