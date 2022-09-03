@@ -206,7 +206,7 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	// integers represent the center of the band so offset by 0.5 because casting to int is a floor function
 	int sweepInt = sweep + 0.5;
 	
-	if(sweep <= 0 || radiusInt >= radiusSize){
+	if(sweep < 0 || radiusInt >= radiusSize){
 		continue;
 	}
 	

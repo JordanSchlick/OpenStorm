@@ -439,23 +439,26 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity2(){
 
 
 RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
-	float* textureBuffer = new float[65536]();
-	int divider = (maxValue - minValue) / 256 + 1;
-	for (int sweepIndex = 1; sweepIndex < sweepBufferCount; sweepIndex++) {
-		RadarData::SweepInfo info1 = sweepInfo[sweepIndex - 1];
-		RadarData::SweepInfo info2 = sweepInfo[sweepIndex];
-		if(info2.id == -1){
-			break;
-		}
-		int startLocation = info1.elevation * 32768 / 90 + 32768;
-		int endLocation = info2.elevation * 32768 / 90 + 32768;
-		int delta = endLocation - startLocation;
-		float deltaF = delta;
-		//fprintf(stderr, "delta: %i %f\n", delta, info1.elevation);
-		float firstSweepIndex = sweepIndex - 1.0f;
-		for (int i = 0; i <= delta; i++) {
-			float subLocation = (float)i / deltaF;
-			textureBuffer[startLocation + i] = firstSweepIndex + subLocation;
+	float* textureBuffer = new float[65536];
+	std::fill(textureBuffer, textureBuffer + 65536, -1.0f);
+	if(sweepInfo != NULL){
+		int divider = (maxValue - minValue) / 256 + 1;
+		for (int sweepIndex = 1; sweepIndex < sweepBufferCount; sweepIndex++) {
+			RadarData::SweepInfo info1 = sweepInfo[sweepIndex - 1];
+			RadarData::SweepInfo info2 = sweepInfo[sweepIndex];
+			if(info2.id == -1){
+				break;
+			}
+			int startLocation = info1.elevation * 32768 / 90 + 32768;
+			int endLocation = info2.elevation * 32768 / 90 + 32768;
+			int delta = endLocation - startLocation;
+			float deltaF = delta;
+			//fprintf(stderr, "delta: %i %f\n", delta, info1.elevation);
+			float firstSweepIndex = sweepIndex - 1.0f;
+			for (int i = 0; i <= delta; i++) {
+				float subLocation = (float)i / deltaF;
+				textureBuffer[startLocation + i] = firstSweepIndex + subLocation;
+			}
 		}
 	}
 
