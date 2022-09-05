@@ -165,7 +165,7 @@ RadarColorIndex::Result RadarColorIndex::reflectivityColors(RadarColorIndex::Par
 	//yellow
 	colorRangeHSL(result.data, valueToIndex(l,u,40), valueToIndex(l,u,50),  0.25,1,0.5,  0.166,1,0.5);
 	//red
-	colorRangeHSL(result.data, valueToIndex(l,u,50), valueToIndex(l,u,60),  0.02,1,0.5,  0,1,0.5);
+	colorRangeHSL(result.data, valueToIndex(l,u,50), valueToIndex(l,u,60),  0,1,0.5,  0,1,0.5);
 	//purple
 	colorRangeHSL(result.data, valueToIndex(l,u,60), valueToIndex(l,u,70),  0.92,1,0.5,  0.83,1,0.5);
 	//white
