@@ -288,6 +288,9 @@ void ARadarVolumeRender::BeginPlay()
 	callbackIds.push_back(globalState->RegisterEvent("DevReloadFile",[this](std::string stringData, void* extraData){
 		radarCollection->ReloadFile(-1);
 	}));
+	callbackIds.push_back(globalState->RegisterEvent("UpdateVolumeParameters",[this, globalState](std::string stringData, void* extraData){	
+		radarMaterialInstance->SetScalarParameterValue(TEXT("Mode"), globalState->spatialInterpolation ? 1 : 0);
+	}));
 	
 	//RandomizeTexture();
 }
@@ -305,59 +308,82 @@ void ARadarVolumeRender::InitializeTextures() {
 	int textureHeight = (radarData->thetaBufferCount + 2) * radarData->sweepBufferCount;
 	if (textureWidth == 0 || textureHeight == 0) {
 		// zero size textures will not be properly allocated and can cause crashes
-		textureWidth = 8;
-		textureHeight = 8;
+		textureWidth = 16;
+		textureHeight = 16;
 	}
-	if(volumeTexture != NULL && textureWidth == volumeTexture->GetSizeX() && textureHeight == volumeTexture->GetSizeY() && (volumeMaterialRenderTarget != NULL) == doTimeInterpolation){
+	if (volumeTexture != NULL && textureWidth == volumeTexture->GetSizeX() && textureHeight == volumeTexture->GetSizeY() && (volumeMaterialRenderTarget != NULL) == doTimeInterpolation) {
 		// nothing changed so no need to reallocate
 		return;
 	}
 	EPixelFormat pixelFormat = PF_R32_FLOAT;
 	
-	// the volume texture contains an array that is interperted as a three dimensional volume of values
-	// it corresponds to the real values of the radar
-	volumeTexture = UTexture2D::CreateTransient(textureWidth, textureHeight, pixelFormat);
-	FTexture2DMipMap* MipMap = &(volumeTexture->PlatformData->Mips[0]);
-	volumeImageData = &(MipMap->BulkData);
-	volumeTexture->UpdateResource();
-	radarMaterialInstance->SetTextureParameterValue(TEXT("Volume"), volumeTexture);
-	usePrimaryTexture = true;
+	// immediately begin destroying to free up gpu memory
+	if (volumeTexture2 != NULL) {
+		volumeTexture2->ConditionalBeginDestroy();
+	}
+	if (volumeMaterialRenderTarget != NULL) {
+		volumeMaterialRenderTarget->ConditionalBeginDestroy();
+	}
+	
+	// reuse the volume texture to save gpu memory when going from non-interpolated to interpolated and back
+	if (volumeTexture == NULL || textureWidth != volumeTexture->GetSizeX() || textureHeight != volumeTexture->GetSizeY()) {
+		if (volumeTexture != NULL) {
+			volumeTexture->ConditionalBeginDestroy();
+		}
+		// the volume texture contains an array that is interperted as a three dimensional volume of values
+		// it corresponds to the real values of the radar
+		volumeTexture = UTexture2D::CreateTransient(textureWidth, textureHeight, pixelFormat);
+		//FTexture2DMipMap* MipMap = &(volumeTexture->PlatformData->Mips[0]);
+		//volumeImageData = &(MipMap->BulkData);
+		volumeTexture->UpdateResource();
+		radarMaterialInstance->SetTextureParameterValue(TEXT("Volume"), volumeTexture);
+		usePrimaryTexture = true;
+	}
+	
 	
 	if (doTimeInterpolation) {
 		volumeMaterialRenderTarget = UMaterialRenderTarget::Create(textureWidth, textureHeight, pixelFormat, interpolationMaterialInstance, this);
-		radarMaterialInstance->SetTextureParameterValue(TEXT("Volume"), volumeMaterialRenderTarget);
 		volumeMaterialRenderTarget->Update();
 		
 		volumeTexture2 = UTexture2D::CreateTransient(textureWidth, textureHeight, pixelFormat);
-		MipMap = &(volumeTexture2->PlatformData->Mips[0]);
-		volumeImageData2 = &(MipMap->BulkData);
+		//MipMap = &(volumeTexture2->PlatformData->Mips[0]);
+		//volumeImageData2 = &(MipMap->BulkData);
 		volumeTexture2->UpdateResource();
 
 		interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), 0);
 		interpolationMaterialInstance->SetTextureParameterValue(TEXT("Texture1"), volumeTexture);
 		interpolationMaterialInstance->SetTextureParameterValue(TEXT("Texture2"), volumeTexture2);
+		radarMaterialInstance->SetTextureParameterValue(TEXT("Volume"), volumeMaterialRenderTarget);
 	}else{
 		volumeMaterialRenderTarget = NULL;
-		volumeImageData2 = NULL;
+		volumeTexture2 = NULL;
+		radarMaterialInstance->SetTextureParameterValue(TEXT("Volume"), volumeTexture);
 	}
 	interpolationAnimating = false;
 	
 	
-	// the angle index texture maps the angle from the ground to a sweep
-	// pixel 65536 is strait up, pixel 32768 is parallel with the ground, pixel 0 is strait down
-	// values less than zero mean no sweep, value 0.0-255.0 specify the index of the sweep, value 0.0 specifies first sweep, values in-between integers will interpolate sweeps
-	angleIndexTexture = UTexture2D::CreateTransient(256, 256, PF_R32_FLOAT);
-	MipMap = &(angleIndexTexture->PlatformData->Mips[0]);
-	angleIndexImageData = &(MipMap->BulkData);
-	radarMaterialInstance->SetTextureParameterValue(TEXT("AngleIndex"), angleIndexTexture);
-	angleIndexTexture->UpdateResource();
 	
-	// the value index texture maps the real values of the radar to color and alpha values
-	valueIndexTexture = UTexture2D::CreateTransient(128, 128, PF_A32B32G32R32F);
-	MipMap = &(valueIndexTexture->PlatformData->Mips[0]);
-	valueIndexImageData = &(MipMap->BulkData);
-	radarMaterialInstance->SetTextureParameterValue(TEXT("ValueIndex"), valueIndexTexture);
-	valueIndexTexture->UpdateResource();
+	
+	
+	if(angleIndexTexture == NULL){
+		// the angle index texture maps the angle from the ground to a sweep
+		// pixel 65536 is strait up, pixel 32768 is parallel with the ground, pixel 0 is strait down
+		// values less than zero mean no sweep, value 0.0-255.0 specify the index of the sweep, value 0.0 specifies first sweep, values in-between integers will interpolate sweeps
+		angleIndexTexture = UTexture2D::CreateTransient(256, 256, PF_R32_FLOAT);
+		//MipMap = &(angleIndexTexture->PlatformData->Mips[0]);
+		//angleIndexImageData = &(MipMap->BulkData);
+		radarMaterialInstance->SetTextureParameterValue(TEXT("AngleIndex"), angleIndexTexture);
+		angleIndexTexture->UpdateResource();
+	}
+	
+	if(valueIndexTexture == NULL){
+		// the value index texture maps the real values of the radar to color and alpha values
+		valueIndexTexture = UTexture2D::CreateTransient(128, 128, PF_A32B32G32R32F);
+		//MipMap = &(valueIndexTexture->PlatformData->Mips[0]);
+		//valueIndexImageData = &(MipMap->BulkData);
+		radarMaterialInstance->SetTextureParameterValue(TEXT("ValueIndex"), valueIndexTexture);
+		valueIndexTexture->UpdateResource();
+	}
 }
 
 
@@ -380,8 +406,14 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 	radarCollection->automaticallyAdvance = globalState->animate;
 	radarCollection->autoAdvanceInterval = 1.0f / globalState->animateSpeed;
 	radarCollection->poll = globalState->pollData;
+	if(globalState->temporalInterpolation != doTimeInterpolation){
+		doTimeInterpolation = globalState->temporalInterpolation;
+		InitializeTextures();
+	}
 
 	radarCollection->EventLoop();
+	
+	
 	
 	if (volumeTexture != NULL) {
 		if (volumeMaterialRenderTarget != NULL) {
@@ -443,37 +475,6 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 	}
 }
 
-
-void ARadarVolumeRender::RandomizeTexture() {
-
-	uint8* RawImageData = (uint8*)volumeImageData->Lock(LOCK_READ_WRITE);
-	float* RawImageDataFloat = (float*)RawImageData;
-
-	uint8_t intensity = deadbeefRand();
-	//RawImageData[0] = FMath::RandRange(0, 255);
-	//*
-	for (int x = 1; x < 128 * 128 * 8 * 4; x++) {
-		//RawImageData[x] = FMath::RandRange(0, 255);
-		RawImageData[x] = deadbeefRand();
-		//RawImageData[x] = intensity;
-	}
-	for (int x = 0; x < 128 * 128 * 8 * 4; x+=4) {
-		//RawImageData[x] = FMath::RandRange(0, 255);
-		RawImageData[x+3] = 255;
-		//RawImageData[x] = intensity;
-	}
-	//*/
-
-	/*
-	for (int x = 1; x < 128 * 128 * 8; x++) {
-		//RawImageData[x] = FMath::RandRange(0, 255);
-		RawImageDataFloat[x] = deadbeefRand() > 0xEFFFFFFF ? (float)deadbeefRand() / (float)0xFFFFFFFF : 0;
-	}
-	//*/
-
-	volumeImageData->Unlock();
-	volumeTexture->UpdateResource();
-}
 
 ARadarVolumeRender::~ARadarVolumeRender()
 {

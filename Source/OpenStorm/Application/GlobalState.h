@@ -11,7 +11,8 @@ public:
 	bool fade = false; // animate fade
 	bool animate = false; // animate the scene
 	bool animateCutoff = false; // animate the cotoff
-	bool interpolation = false; // interpolate the scene
+	bool temporalInterpolation = true; // interpolate data over time when animating
+	bool spatialInterpolation = true; // interpolate data over time when animating
 	bool isMouseCaptured = false; // true if mouse is currently captured
 	bool vrMode = false; // true if in vr
 	bool pollData = false; // should th data ne polled for updates

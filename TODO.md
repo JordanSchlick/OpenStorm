@@ -6,7 +6,7 @@
 - [X] Create settings window
 - [X] Implement directory polling
 - [X] Allow variable radar sizes and angles
-- [ ] Make temporal interpolation optional
+- [X] Make temporal interpolation optional
 - [ ] Location markers
 - [ ] Fix ImGui input state
 - [ ] Initial public release

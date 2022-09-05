@@ -205,6 +205,13 @@ void AImGuiUI::Tick(float deltaTime)
 			
 			if (ImGui::TreeNodeEx("Radar", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				CustomFloatInput("Cutoff", 0, 1, &globalState.cutoff, &globalState.defaults->cutoff, CustomFloatInput_SliderOnly);
+				
+				bool spatialInterpolationOldValue = globalState.spatialInterpolation;
+				ImGui::Checkbox("Spatial Interpolation", &globalState.spatialInterpolation);
+				if(spatialInterpolationOldValue != globalState.spatialInterpolation){
+					globalState.EmitEvent("UpdateVolumeParameters");
+				}
+				
 				ImGui::TreePop();
 			}
 			ImGui::Separator();
@@ -230,7 +237,7 @@ void AImGuiUI::Tick(float deltaTime)
 			if (ImGui::TreeNodeEx("Animation", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				ImGui::Checkbox("Time", &GS->globalState.animate);
 				ImGui::Checkbox("Cuttoff", &GS->globalState.animateCutoff);
-				ImGui::Checkbox("Interpolation", &GS->globalState.interpolation);
+				ImGui::Checkbox("Temporal Interpolation", &GS->globalState.temporalInterpolation);
 				//ImGui::Text("Animation Speed:");
 				//ImGui::SliderFloat("##1", &GS->globalState.animateSpeed, 0.0f, 5.0f);
 				CustomFloatInput("Time Animation Speed", 1, 15, &globalState.animateSpeed, &globalState.defaults->animateSpeed);

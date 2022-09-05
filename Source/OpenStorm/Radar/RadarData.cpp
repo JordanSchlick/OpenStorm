@@ -443,9 +443,19 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 	std::fill(textureBuffer, textureBuffer + 65536, -1.0f);
 	if(sweepInfo != NULL){
 		int divider = (maxValue - minValue) / 256 + 1;
-		for (int sweepIndex = 1; sweepIndex < sweepBufferCount; sweepIndex++) {
-			RadarData::SweepInfo info1 = sweepInfo[sweepIndex - 1];
-			RadarData::SweepInfo info2 = sweepInfo[sweepIndex];
+		int firstIndex = sweepBufferCount;
+		int lastIndex = -1;
+		for (int sweepIndex = 0; sweepIndex < sweepBufferCount; sweepIndex++) {
+			RadarData::SweepInfo &info = sweepInfo[sweepIndex];
+			if(info.id != -1){
+				firstIndex = std::min(firstIndex, sweepIndex);
+				lastIndex = std::max(lastIndex, sweepIndex);
+			}
+			
+		}
+		for (int sweepIndex = firstIndex + 1; sweepIndex < sweepBufferCount; sweepIndex++) {
+			RadarData::SweepInfo &info1 = sweepInfo[sweepIndex - 1];
+			RadarData::SweepInfo &info2 = sweepInfo[sweepIndex];
 			if(info2.id == -1){
 				break;
 			}
@@ -458,6 +468,17 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 			for (int i = 0; i <= delta; i++) {
 				float subLocation = (float)i / deltaF;
 				textureBuffer[startLocation + i] = firstSweepIndex + subLocation;
+			}
+		}
+		if(firstIndex == lastIndex){
+			// display the single sweep with a width of 0.4 degrees
+			RadarData::SweepInfo &info = sweepInfo[firstIndex];
+			int startLocation = (info.elevation - 0.2) * 32768 / 90 + 32768;
+			int endLocation = (info.elevation + 0.2) * 32768 / 90 + 32768;
+			int delta = endLocation - startLocation;
+			float firstSweepIndex = firstIndex;
+			for (int i = 0; i <= delta; i++) {
+				textureBuffer[startLocation + i] = firstSweepIndex;
 			}
 		}
 	}

@@ -237,6 +237,11 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	if(intMode == 1){
 		// linear interpolate pixel
 		
+		// offset to retain precise position fue to differences in floor rounding and normal rounding
+		radius -= 0.5;
+		radiusInt = radius;
+		theta -= 0.5;
+		thetaInt = theta;
 		sweepInt = sweep;
 		float localValue000 = volume[uint2(radiusInt,     thetaInt +     (sweepInt    ) * thetaSize2)].r;
 		float localValue100 = volume[uint2(radiusInt + 1, thetaInt +     (sweepInt    ) * thetaSize2)].r;

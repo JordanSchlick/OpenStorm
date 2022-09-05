@@ -47,8 +47,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	UMaterial* storedInterpolationMaterial = NULL;
 	
-	// if time interpolation is enabled
-	bool doTimeInterpolation = true;
+	// true if time interpolation is enabled. call InitializeTextures after changing
+	bool doTimeInterpolation = false;
 	
 	// if interpolation is being animated
 	bool interpolationAnimating = false;
@@ -61,20 +61,20 @@ public:
 	bool usePrimaryTexture = true;
 	UPROPERTY(VisibleAnywhere)
 	UTexture2D* volumeTexture = NULL;
-	FByteBulkData* volumeImageData;
+	//FByteBulkData* volumeImageData;
 	UPROPERTY(VisibleAnywhere)
 	UTexture2D* volumeTexture2 = NULL;
-	FByteBulkData* volumeImageData2;
+	//FByteBulkData* volumeImageData2;
 	UPROPERTY(VisibleAnywhere)
 	UMaterialRenderTarget* volumeMaterialRenderTarget = NULL;
 
 	FRenderTarget* volumeRenderTarget;
 	UPROPERTY(VisibleAnywhere)
 	UTexture2D* angleIndexTexture = NULL;
-	FByteBulkData* angleIndexImageData;
+	//FByteBulkData* angleIndexImageData;
 	UPROPERTY(VisibleAnywhere)
 	UTexture2D* valueIndexTexture = NULL;
-	FByteBulkData* valueIndexImageData;
+	//FByteBulkData* valueIndexImageData;
 	static ARadarVolumeRender* instance;
 	RadarCollection* radarCollection = NULL;
 	RadarData* radarData;
