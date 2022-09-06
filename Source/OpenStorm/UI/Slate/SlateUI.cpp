@@ -4,38 +4,57 @@
 #include "UObject/UObjectGlobals.h"
 #include "Engine/GameViewportClient.h"
 #include "Widgets/SOverlay.h"
+#include "Widgets/Layout/SDPIScaler.h"
 #include "SCompass.h"
 
 
-USlateUI::USlateUI(){
+ASlateUI::ASlateUI(){
 	resources = CreateDefaultSubobject<USlateUIResources>(TEXT("SlateUIResources"));
 	//NewObject<class USlateUIResources>(this);
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
 }
 
-void USlateUI::AddToViewport(UGameViewportClient* gameViewport) {
+void ASlateUI::AddToViewport(UGameViewportClient* gameViewport) {
+	SAssignNew(scaleWidget, SDPIScaler);
 	SAssignNew(hudWidget, SOverlay);
 	SAssignNew(compass, SCompass);
 
 	hudWidget->AddSlot()[compass.ToSharedRef()].HAlign(HAlign_Right).VAlign(VAlign_Bottom);
 
 
-	gameViewport->AddViewportWidgetContent(hudWidget.ToSharedRef(), 5);
+	scaleWidget->SetContent(hudWidget.ToSharedRef());
+	gameViewport->AddViewportWidgetContent(scaleWidget.ToSharedRef(), 5);
 }
 
-USlateUI::~USlateUI(){
+ASlateUI::~ASlateUI(){
 	if(hudWidget.IsValid()){
 		// the dumb/smart way to remove element from the viewport
-		auto overlay = StaticCastSharedPtr<SOverlay>(hudWidget->GetParentWidget());
+		auto overlay = StaticCastSharedPtr<SOverlay>(scaleWidget->GetParentWidget());
 		if (overlay.IsValid()) {
-			overlay->RemoveSlot(hudWidget.ToSharedRef());
+			overlay->RemoveSlot(scaleWidget.ToSharedRef());
 		}
 			
 		//gameViewport->RemoveViewportWidgetContent(hudWidget.ToSharedRef());
 	}
 }
 
-void USlateUI::SetCompassRotation(float rotation) {
+void ASlateUI::SetCompassRotation(float rotation) {
 	if (compass.IsValid()) {
 		compass->Rotate(rotation);
+	}
+}
+
+void ASlateUI::BeginPlay() {
+	Super::BeginPlay();
+	AddToViewport(GetWorld()->GetGameViewport());
+}
+
+void ASlateUI::Tick(float DeltaTime){
+	// update scale based on system scalling
+	if (scaleWidget.IsValid()) {
+		SWindow* swindow = GetWorld()->GetGameViewport()->GetWindow().Get();
+		float nativeScale = swindow->GetDPIScaleFactor();
+		scaleWidget->SetDPIScale(nativeScale);
 	}
 }

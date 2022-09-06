@@ -75,5 +75,5 @@ private:
 		UCameraComponent * camera = NULL;
 
 	UPROPERTY(EditAnywhere)
-		USlateUI* hud = NULL;
+		ASlateUI* hud = NULL;
 };

@@ -48,9 +48,11 @@ void ARadarViewPawn::BeginPlay()
 	//mainVolumeRender = ARadarVolumeRender::instance;
 	mainVolumeRender = FindActor<ARadarVolumeRender>();
 	gui = FindActor<AImGuiUI>();
+	hud = FindActor<ASlateUI>();
 	//hud = new HUD(GetWorld()->GetGameViewport());
-	hud = NewObject<class USlateUI>(this);
-	hud->AddToViewport(GetWorld()->GetGameViewport());
+	//hud = NewObject<class ASlateUI>(this);
+	//hud = GetWorld()->SpawnActor<ASlateUI>(ASlateUI::StaticClass());;
+	//hud->AddToViewport(GetWorld()->GetGameViewport());
 }
 
 // Called every frame
@@ -86,7 +88,9 @@ void ARadarViewPawn::Tick(float deltaTime)
 		horizontalRotationAmount = 0;
 		rotation.Roll = 0;
 		SetActorRotation(rotation);
-		hud->SetCompassRotation(rotation.Yaw / 360.0f);
+		if (hud != NULL) {
+			hud->SetCompassRotation(rotation.Yaw / 360.0f);
+		}
 		//GS->globalState.testFloat = forwardMovement;
 	}
 	meshComponent->SetRelativeLocation(camera->GetRelativeLocation());
