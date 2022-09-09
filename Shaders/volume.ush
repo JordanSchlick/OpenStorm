@@ -185,12 +185,13 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	}
 	
 	float radius = sqrt(location.x * location.x + location.y * location.y + location.z * location.z);
-	float theta = atan2(-location.y, -location.x);
+	float theta = atan2(location.y, location.x);
 	float phi = acos(location.z / radius);
 	
 	// normalize
 	radius = radius;
-	theta = (theta / PI2 + 0.5);
+	theta = (theta / PI2 + 0.25);
+	theta = theta < 0 ? theta + 1 : theta;
 	phi = (1.0 - phi / PI);
 	
 	// convert to volume texture coordinates

@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 
+class Globe;
 
 class GlobalState{
 public:
@@ -30,6 +31,7 @@ public:
 	float guiScale = 1.0f; // scale of gui for high dpi displays
 
 	
+	
 	// register a callback for the given event name. returns a uid to remove callback
 	uint64_t RegisterEvent(std::string name, std::function<void(std::string, void*)> callback);
 	// remove callback
@@ -40,6 +42,7 @@ public:
 	
 	
 	GlobalState* defaults = NULL;
+	Globe* globe;
 	
 	//Testing
 	float testFloat = 1; // test float

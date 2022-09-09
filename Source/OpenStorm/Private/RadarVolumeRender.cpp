@@ -184,37 +184,10 @@ void ARadarVolumeRender::BeginPlay()
 
 	radarCollection->RegisterListener([this](RadarCollection::RadarUpdateEvent event) {
 		if (event.data != NULL) {
-			//RadarData::TextureBuffer buffer = data->CreateTextureBufferReflectivity2();
-			//float* RawImageData = (float*)volumeImageData->Lock(LOCK_READ_WRITE);
-			//memcpy(RawImageData, buffer.data, buffer.byteSize);
-			//volumeImageData->Unlock();
-			//volumeTexture->UpdateResource();
-			//if(buffer.data != NULL){
-			//	delete[] buffer.data;
-			//}
 			
-			// RadarData::TextureBuffer buffer = data->CreateTextureBufferReflectivity2();
-			// FUpdateTextureRegion2D* regions = new FUpdateTextureRegion2D[1]();
-			// regions[0].DestX = 0;
-			// regions[0].DestY = 0;
-			// regions[0].SrcX = 0;
-			// regions[0].SrcY = 0;
-			// regions[0].Width = data->radiusBufferCount;
-			// regions[0].Height = data->fullBufferSize / data->thetaBufferSize;
-
-			// volumeTexture->UpdateTextureRegions(0, 1, regions, data->radiusBufferCount * 4, 4, (uint8*)buffer.data, [](uint8* dataPtr, const FUpdateTextureRegion2D* regionsPtr) {
-			// 	delete regionsPtr;
-			// });
-			
+			// copy to local buffer to decompress and retain data
 			radarData->CopyFrom(event.data);
 			InitializeTextures();
-			// FUpdateTextureRegion2D* regions = new FUpdateTextureRegion2D[1]();
-			// regions[0].DestX = 0;
-			// regions[0].DestY = 0;
-			// regions[0].SrcX = 0;
-			// regions[0].SrcY = 0;
-			// regions[0].Width = radarData->radiusBufferCount;
-			// regions[0].Height = radarData->fullBufferSize / radarData->thetaBufferSize;
 			
 			
 			UTexture2D* textureToUpdate = volumeTexture;
@@ -232,25 +205,16 @@ void ARadarVolumeRender::BeginPlay()
 				interpolationStartTime = now;
 				interpolationEndTime = now + (double)event.minTimeTillNext;
 				interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), interpolationStartValue);
-				//interpolationMaterialInstance->SetScalarParameterValue(TEXT("Minimum"), radarColorResult.lower);
 				usePrimaryTexture = !usePrimaryTexture;
 				
 			}
 			
-			// textureToUpdate->UpdateTextureRegions(0, 1, regions, radarData->radiusBufferCount * 4, 4, (uint8*)radarData->buffer, [](uint8* dataPtr, const FUpdateTextureRegion2D* regionsPtr) {
-			// 	delete regionsPtr;
-			// });
-			
 			UpdateTexture(textureToUpdate, (uint8_t*)radarData->buffer, radarData->fullBufferSize * sizeof(float), sizeof(float));
 			
 			
-			radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), event.data->innerDistance);
+			radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), event.data->stats.innerDistance);
 			
 			RadarData::TextureBuffer imageBuffer = event.data->CreateAngleIndexBuffer();
-			//float* rawAngleIndexImageData = (float*)angleIndexImageData->Lock(LOCK_READ_WRITE);
-			//memcpy(rawAngleIndexImageData, imageBuffer.data, imageBuffer.byteSize);
-			//angleIndexImageData->Unlock();
-			//angleIndexTexture->UpdateResource();
 			UpdateTexture(angleIndexTexture, (uint8_t*)imageBuffer.data, imageBuffer.byteSize, sizeof(float), [](uint8_t* buffer){
 				delete[] buffer;
 			});
@@ -273,6 +237,7 @@ void ARadarVolumeRender::BeginPlay()
 
 	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	
+	// register global events
 	callbackIds.push_back(globalState->RegisterEvent("Test",[this](std::string stringData, void* extraData){
 		fprintf(stderr, "Test event received in RadarVolumeRender\n");
 	}));
@@ -297,12 +262,13 @@ void ARadarVolumeRender::BeginPlay()
 
 void ARadarVolumeRender::EndPlay(const EEndPlayReason::Type endPlayReason) {
 	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+	// unregister all events
 	for(auto id : callbackIds){
 		globalState->UnregisterEvent(id);
 	}
 }
 
-//=======================================================================================================
+//Initialize all textures or reinitialize ones that need it
 void ARadarVolumeRender::InitializeTextures() {
 	int textureWidth = radarData->radiusBufferCount;
 	int textureHeight = (radarData->thetaBufferCount + 2) * radarData->sweepBufferCount;

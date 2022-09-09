@@ -96,8 +96,8 @@ void RadarData::ReadNexrad(const char* filename) {
 			int sweepId = 0;
 			int maxTheta = 0;
 			int maxRadius = 0;
-			minValue = INFINITY;
-			maxValue = -INFINITY;
+			stats.minValue = INFINITY;
+			stats.maxValue = -INFINITY;
 			
 			// do a pass of the data to find info
 			for (const auto pair : sweeps) {
@@ -109,7 +109,7 @@ void RadarData::ReadNexrad(const char* filename) {
 				sweepInfo[sweepId].id = sweepId;
 				sweepInfo[sweepId].elevation = sweep->h.elev;
 				sweepInfo[sweepId].actualRayCount = sweep->h.nrays;
-				innerDistance = (float)sweep->ray[0]->h.range_bin1 / (float)sweep->ray[0]->h.gate_size;
+				stats.innerDistance = (float)sweep->ray[0]->h.range_bin1 / (float)sweep->ray[0]->h.gate_size;
 				//fprintf(stderr, "innerDistance: %f\n", innerDistance);
 
 				int thetaSize = sweep->h.nrays;
@@ -124,9 +124,9 @@ void RadarData::ReadNexrad(const char* filename) {
 							int value = ray->h.f(ray->range[radius]);
 							//int value = ray->range[radius];
 							if (value != 131072) {
-								minValue = value != 0 ? (value < minValue ? value : minValue) : minValue;
+								stats.minValue = value != 0 ? (value < stats.minValue ? value : stats.minValue) : stats.minValue;
 								//minValue = value < minValue ? value : minValue;
-								maxValue = value > maxValue ? value : maxValue;
+								stats.maxValue = value > stats.maxValue ? value : stats.maxValue;
 							}
 						}
 					}
@@ -135,9 +135,9 @@ void RadarData::ReadNexrad(const char* filename) {
 				sweepId++;
 			}
 			
-			if (minValue == INFINITY) {
-				minValue = 0;
-				maxValue = 1;
+			if (stats.minValue == INFINITY) {
+				stats.minValue = 0;
+				stats.maxValue = 1;
 			}
 			if (radiusBufferCount == 0) {
 				radiusBufferCount = maxRadius;
@@ -147,7 +147,7 @@ void RadarData::ReadNexrad(const char* filename) {
 			}
 
 
-			fprintf(stderr, "min: %f   max: %f\n", minValue, maxValue);
+			fprintf(stderr, "min: %f   max: %f\n", stats.minValue, stats.maxValue);
 			
 			// sizes of sections of the buffer
 			thetaBufferSize = radiusBufferCount;
@@ -341,6 +341,7 @@ void RadarData::CopyFrom(RadarData* data) {
 		std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, -INFINITY);
 	}
 	usedBufferSize = data->usedBufferSize;
+	stats = data->stats;
 	// TODO: copy sweepInfo
 }
 
@@ -365,7 +366,7 @@ RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
 
 	float* textureBuffer = new float[fullBufferSize2]();
 	//int divider = (maxValue - minValue) / 256 + 1;
-	float divider = (maxValue - minValue);
+	//float divider = (stats.maxValue - stats.minValue);
 	for (int sweepIndex = 0; sweepIndex < sweepBufferCount; sweepIndex++) {
 		for (int theta = 0; theta < thetaBufferCount; theta++) {
 			for (int radius = 0; radius < radiusBufferCount; radius++) {
@@ -442,7 +443,7 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 	float* textureBuffer = new float[65536];
 	std::fill(textureBuffer, textureBuffer + 65536, -1.0f);
 	if(sweepInfo != NULL){
-		int divider = (maxValue - minValue) / 256 + 1;
+		//int divider = (stats.maxValue - stats.minValue) / 256 + 1;
 		int firstIndex = sweepBufferCount;
 		int lastIndex = -1;
 		for (int sweepIndex = 0; sweepIndex < sweepBufferCount; sweepIndex++) {

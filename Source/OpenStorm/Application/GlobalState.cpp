@@ -1,4 +1,5 @@
 #include "GlobalState.h"
+#include "../Radar/Globe.h"
 
 #include <stdio.h>
 
@@ -43,6 +44,8 @@ void GlobalState::test() {
 
 GlobalState::GlobalState(){
 	this->defaults = new GlobalState(true);
+	globe = new Globe();
+	
 }
 
 GlobalState::GlobalState(bool doNotInitDefaults){

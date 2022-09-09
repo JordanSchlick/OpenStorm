@@ -85,6 +85,7 @@ public:
 	
 	void RandomizeTexture();
 
+	//Initialize all textures or reinitialize ones that need it
 	void InitializeTextures();
 
 protected:

@@ -47,6 +47,20 @@ public:
 	// number of elements in the compressed buffer
 	int compressedBufferSize = 0;
 
+	struct Stats {
+		// blank distance in pixels between origin and most center pixels of the buffer
+		float innerDistance = 0;
+
+		float minValue = 0;
+		float maxValue = 0;
+		
+		float latitude = 0; 
+		float longitude = 0; 
+	};
+	
+	// information about the volume
+	Stats stats = {};
+
 
 	struct SweepInfo {
 		float elevation = 0;
@@ -57,11 +71,7 @@ public:
 	// array of info about sweeps
 	SweepInfo* sweepInfo = NULL;
 
-	// blank distance in pixels between origin and most center pixels of the buffer
-	float innerDistance = 0;
-
-	float minValue = 0;
-	float maxValue = 0;
+	
 
 	void ReadNexrad(const char* filename);
 	

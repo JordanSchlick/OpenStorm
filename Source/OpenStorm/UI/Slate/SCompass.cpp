@@ -35,8 +35,8 @@ void SCompass::Construct(const FArguments& inArgs) {
 	westText->SetText(FText::FromString(TEXT("W")));
 	
 	FSlateFontInfo textStyle = FCoreStyle::Get().GetFontStyle("EmbossedText");
-	textStyle.Size = 15;
-	textStyle.OutlineSettings.OutlineSize = 2;
+	textStyle.Size = size / 6.6f;
+	textStyle.OutlineSettings.OutlineSize = size / 50.0f;
 	northText->SetFont(textStyle);
 	southText->SetFont(textStyle);
 	eastText->SetFont(textStyle);
@@ -61,6 +61,7 @@ void SCompass::Construct(const FArguments& inArgs) {
 	rose->SetRenderOpacity(0.25);
 	AddSlot().Anchors(FAnchors(0.5f, 0.5f)).AutoSize(true)[rose.ToSharedRef()];
 	
+	Rotate(0);
 	//SOverlay::ComputeDesiredSize
 	//slot->SetPosition
 	//slot.Position(FVector2D(size / 2.0f, size / 2.0f));
@@ -73,7 +74,7 @@ FVector2D SCompass::ComputeDesiredSize(float layoutScaleMultiplier) const{
 void SCompass::Rotate(float rotation) {
 	FVector2D center = FVector2D(size / 2.0f, size / 2.0f);
 	southText->SetRenderTransform(FVector2D(size * rotation, 0));
-	float radians = -(rotation + 0.25) * PIF2;
+	float radians = -(rotation + 0.5) * PIF2;
 	float radius = size / 3.0;
 	northText->SetRenderTransform(FVector2D(std::cos(radians) * radius, std::sin(radians) * radius));
 	eastText-> SetRenderTransform(FVector2D(std::cos(radians + PIF2 * 0.25f) * radius, std::sin(radians + PIF2 * 0.25f) * radius));

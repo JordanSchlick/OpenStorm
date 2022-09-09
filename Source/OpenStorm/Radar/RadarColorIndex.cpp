@@ -72,8 +72,8 @@ int valueToIndex(float lowerBound, float upperBound, float value){
 
 
 void RadarColorIndex::Params::fromRadarData(RadarData* radarData) {
-	maxValue = radarData->maxValue;
-	minValue = radarData->minValue;
+	maxValue = radarData->stats.maxValue;
+	minValue = radarData->stats.minValue;
 }
 
 void RadarColorIndex::Result::Delete() {

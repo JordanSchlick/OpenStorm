@@ -10,7 +10,7 @@
 class SCompass : public SConstraintCanvas {
 public:
 	float lastRotation = -1;
-	float size = 100;
+	float size = 75;
 	TSharedPtr<STextBlock> northText;
 	TSharedPtr<STextBlock> southText;
 	TSharedPtr<STextBlock> eastText;
