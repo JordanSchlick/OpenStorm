@@ -247,7 +247,7 @@ public:
 	FDecompressWorker(FILE* inFile, FILE* outFile) {
 		this->inFile = inFile;
 		this->outFile = outFile;
-		thread = FRunnableThread::Create(this, TEXT("Give your thread a good name"));
+		thread = FRunnableThread::Create(this, TEXT("Bzip2 Decode"));
 	}
 
 	// Destructor
@@ -315,8 +315,8 @@ FILE* uncompress_pipe_ar2v(FILE* inFile)
 	FILE* returnFile = fdopen(pipeFDs[0], "r");
 
 
-	fprintf(stderr, "bzip2 decompressing FILE*: %p  %p\n", outFile, returnFile);
-	fprintf(stderr, "bzip2 decompressing\n");
+	//fprintf(stderr, "bzip2 decompressing FILE*: %p  %p\n", outFile, returnFile);
+	//fprintf(stderr, "bzip2 decompressing\n");
 
 	FDecompressWorker* thread = new FDecompressWorker(inFile, outFile);
 

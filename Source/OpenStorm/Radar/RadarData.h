@@ -54,8 +54,9 @@ public:
 		float minValue = 0;
 		float maxValue = 0;
 		
-		float latitude = 0; 
-		float longitude = 0; 
+		double latitude = 0; 
+		double longitude = 0; 
+		double elevation = 0;
 	};
 	
 	// information about the volume

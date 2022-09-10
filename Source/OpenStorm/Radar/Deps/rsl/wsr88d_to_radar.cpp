@@ -298,9 +298,9 @@ Radar *RSL_wsr88d_to_radar(char *infile, char *call_or_first_tape_file)
 	int nvolumes;
 	int volume_mask[] = {WSR88D_DZ, WSR88D_VR, WSR88D_SW};
 	char *field_str[] = {(char*)"Reflectivity", (char*)"Velocity", (char*)"Spectrum width"};
-	Wsr88d_site_info sitepDefualt = {};
+	Wsr88d_site_info siteDefault = {};
 	Wsr88d_site_info *sitep;
-	char site_id_str[5];
+	char site_id_str[5] = {};
 	char *the_file;
 	int expected_msgtype = 0;
 	char version[8];
@@ -327,15 +327,17 @@ Radar *RSL_wsr88d_to_radar(char *infile, char *call_or_first_tape_file)
 		//return(NULL);
 	}  
 
-	if (sitep == NULL)
+	if (sitep == NULL){
 		if (wsr88d_read_tape_header(call_or_first_tape_file, &wsr88d_tape_header) > 0) {
 			memcpy(site_id_str, wsr88d_tape_header.site_id, 4);
 			sitep  = wsr88d_get_site(site_id_str);
 		}
+	}
 	if (sitep == NULL) {
 			//fprintf(stderr,"wsr88d_to_radar: No valid site ID info found.\n");
 				//return(NULL);
-			sitep = &sitepDefualt;
+			memcpy(&siteDefault.name, site_id_str, 4);
+			sitep = &siteDefault;
 	}
 		if (radar_verbose_flag)
 			fprintf(stderr,"SITE: %c%c%c%c\n", sitep->name[0], sitep->name[1],
@@ -389,9 +391,14 @@ Radar *RSL_wsr88d_to_radar(char *infile, char *call_or_first_tape_file)
 			return NULL;
 	}
 
-	if (radar_verbose_flag)
+	if (radar_verbose_flag){
 		print_head(wsr88d_file_header);
-
+	}
+	
+	if(wsr88d_file_header.title.unused1[0] != 0 && sitep->name[0] == 0){
+		// use title.unused1 for site name if defined and site name has not been found yet
+		memcpy(&sitep->name, &wsr88d_file_header.title.unused1, 4);
+	}
 
 	if (expected_msgtype == 31) {
 			/* Get radar for message type 31. */
@@ -476,32 +483,32 @@ Radar *RSL_wsr88d_to_radar(char *infile, char *call_or_first_tape_file)
  */
 	radar_load_date_time(radar);  /* Magic :-) */
 
-		radar->h.number = sitep->number;
-		memcpy(&radar->h.name, sitep->name, sizeof(sitep->name));
-		memcpy(&radar->h.radar_name, sitep->name, sizeof(sitep->name)); /* Redundant */
-		memcpy(&radar->h.city, sitep->city, sizeof(sitep->city));
-		memcpy(&radar->h.state, sitep->state, sizeof(sitep->state));
-		strcpy(radar->h.radar_type, "wsr88d");
-		radar->h.latd = sitep->latd;
-		radar->h.latm = sitep->latm;
-		radar->h.lats = sitep->lats;
-		if (radar->h.latd < 0) { /* Degree/min/sec  all the same sign */
-			radar->h.latm *= -1;
-			radar->h.lats *= -1;
-		}
-		radar->h.lond = sitep->lond;
-		radar->h.lonm = sitep->lonm;
-		radar->h.lons = sitep->lons;
-		if (radar->h.lond < 0) { /* Degree/min/sec  all the same sign */
-			radar->h.lonm *= -1;
-			radar->h.lons *= -1;
-		}
-		radar->h.height = sitep->height;
-		radar->h.spulse = sitep->spulse;
-		radar->h.lpulse = sitep->lpulse;
-		if (sitep != &sitepDefualt) {
-			free(sitep);
-		}
+	radar->h.number = sitep->number;
+	memcpy(&radar->h.name, sitep->name, sizeof(sitep->name));
+	memcpy(&radar->h.radar_name, sitep->name, sizeof(sitep->name)); /* Redundant */
+	memcpy(&radar->h.city, sitep->city, sizeof(sitep->city));
+	memcpy(&radar->h.state, sitep->state, sizeof(sitep->state));
+	strcpy(radar->h.radar_type, "wsr88d");
+	radar->h.latd = sitep->latd;
+	radar->h.latm = sitep->latm;
+	radar->h.lats = sitep->lats;
+	if (radar->h.latd < 0) { /* Degree/min/sec  all the same sign */
+		radar->h.latm *= -1;
+		radar->h.lats *= -1;
+	}
+	radar->h.lond = sitep->lond;
+	radar->h.lonm = sitep->lonm;
+	radar->h.lons = sitep->lons;
+	if (radar->h.lond < 0) { /* Degree/min/sec  all the same sign */
+		radar->h.lonm *= -1;
+		radar->h.lons *= -1;
+	}
+	radar->h.height = sitep->height;
+	radar->h.spulse = sitep->spulse;
+	radar->h.lpulse = sitep->lpulse;
+	if (sitep != &siteDefault) {
+		free(sitep);
+	}
 
 	if (wsr88d_merge_split_cuts_is_set()) {
 			radar = wsr88d_merge_split_cuts(radar);

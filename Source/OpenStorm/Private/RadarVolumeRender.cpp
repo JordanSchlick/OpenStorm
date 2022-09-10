@@ -15,6 +15,7 @@
 #include "../Radar/RadarCollection.h"
 #include "../Radar/RadarColorIndex.h"
 #include "../Radar/SystemAPI.h"
+#include "../Radar/Globe.h"
 
 
 #include "UObject/Object.h"
@@ -211,6 +212,11 @@ void ARadarVolumeRender::BeginPlay()
 			
 			UpdateTexture(textureToUpdate, (uint8_t*)radarData->buffer, radarData->fullBufferSize * sizeof(float), sizeof(float));
 			
+			// Orient globe to match up with radar
+			//fprintf(stderr, "Location lat:%f lon:%f \n", event.data->stats.latitude, event.data->stats.longitude);
+			GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+			globalState->globe->SetCenter(0, 0, -globalState->globe->surfaceRadius - event.data->stats.elevation);
+			globalState->globe->SetRotation(event.data->stats.latitude, event.data->stats.longitude);
 			
 			radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), event.data->stats.innerDistance);
 			

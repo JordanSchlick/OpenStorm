@@ -1,6 +1,7 @@
 
 #include "RadarData.h"
 #include "SparseCompression.h"
+#include "NexradSites/NexradSites.h"
 #include "./Deps/rsl/rsl.h"
 
 
@@ -39,9 +40,14 @@ void RadarData::ReadNexrad(const char* filename) {
 
 	if (radar) {
 		Volume* volume = radar->v[DZ_INDEX];
+		fprintf(stderr, "site name %s\n", radar->h.name);
+		NexradSites::Site* site = NexradSites::GetSite(radar->h.name);
+		if(site != NULL){
+			stats.latitude = site->latitude;
+			stats.longitude = site->longitude;
+			stats.elevation = site->elevation;
+		}
 		if (volume) {
-
-			
 
 			std::map<float, Sweep*> sweeps = {};
 
@@ -71,6 +77,7 @@ void RadarData::ReadNexrad(const char* filename) {
 						fprintf(stderr, "sweep ray pixel length %i meters\n", sweep->ray[0]->h.gate_size);
 						fprintf(stderr, "sweep ray estimated length %i meters\n", sweep->ray[0]->h.gate_size * sweep->ray[0]->h.nbins + sweep->ray[0]->h.range_bin1);
 						fprintf(stderr, "sweep ray unam_rng %f meters\n", sweep->ray[0]->h.unam_rng);
+						fprintf(stderr, "sweep ray lat %f lon %f\n", sweep->ray[1]->h.lat, sweep->ray[1]->h.lon);
 					}*/
 
 					
