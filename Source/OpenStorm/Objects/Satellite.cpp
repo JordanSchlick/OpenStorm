@@ -1,8 +1,11 @@
 #include "Satellite.h"
 
+#include "../Application/GlobalState.h"
+
 #include "Engine/Texture2D.h"
 #include "UObject/Object.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Components/StaticMeshComponent.h"
 
 ASatellite::ASatellite()
@@ -10,7 +13,10 @@ ASatellite::ASatellite()
 	PrimaryActorTick.bCanEverTick = true;
 	UStaticMeshComponent* meshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Sphere"));
 	UStaticMesh* mesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'")).Object;
+	UMaterial* material = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/TestImageMaterial.TestImageMaterial'")).Object;
+	
 	meshComponent->SetStaticMesh(mesh);
+	meshComponent->SetMaterial(0, material);
 	RootComponent = meshComponent;
 }
 
@@ -36,6 +42,10 @@ void ASatellite::Tick(float DeltaTime){
 	}
 	if(doReset){
 		Reset();
+	}
+	if(doUseGlobalGlobe){
+		GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+		globe = *globalState->globe;
 	}
 	SimpleVector3 vector = globe.GetPointScaledDegrees(latitude, longitude, altitude);
 	fprintf(stderr, "vec %f %f %f \n", vector.x,vector.y,vector.z);

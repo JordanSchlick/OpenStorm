@@ -215,8 +215,8 @@ void ARadarVolumeRender::BeginPlay()
 			// Orient globe to match up with radar
 			//fprintf(stderr, "Location lat:%f lon:%f \n", event.data->stats.latitude, event.data->stats.longitude);
 			GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
-			globalState->globe->SetCenter(0, 0, -globalState->globe->surfaceRadius - event.data->stats.elevation);
-			globalState->globe->SetRotation(event.data->stats.latitude, event.data->stats.longitude);
+			globalState->globe->SetCenter(0, 0, -globalState->globe->surfaceRadius - event.data->stats.altitude);
+			globalState->globe->SetTopCoordinates(event.data->stats.latitude, event.data->stats.longitude);
 			
 			radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), event.data->stats.innerDistance);
 			

@@ -7,7 +7,7 @@ public:
 		double latitude = 0.0;
 		double longitude = 0.0;
 		//elevation above sea level in meters
-		double elevation = 0.0;
+		double altitude = 0.0;
 	};
 	static Site sites[];
 	static int numberOfSites;

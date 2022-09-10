@@ -45,7 +45,7 @@ void RadarData::ReadNexrad(const char* filename) {
 		if(site != NULL){
 			stats.latitude = site->latitude;
 			stats.longitude = site->longitude;
-			stats.elevation = site->elevation;
+			stats.altitude = site->altitude;
 		}
 		if (volume) {
 

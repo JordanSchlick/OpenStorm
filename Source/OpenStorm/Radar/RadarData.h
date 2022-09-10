@@ -56,7 +56,7 @@ public:
 		
 		double latitude = 0; 
 		double longitude = 0; 
-		double elevation = 0;
+		double altitude = 0;
 	};
 	
 	// information about the volume

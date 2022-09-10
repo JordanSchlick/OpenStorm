@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include "RadarGameStateBase.h"
 #include "../Radar/Globe.h"
 
 #include "CoreMinimal.h"
@@ -42,7 +43,9 @@ class ASatellite : public AActor{
 	UPROPERTY(EditAnywhere);
 		bool doReset = false;
 	UPROPERTY(EditAnywhere);
-		bool doSetGlobe = true;
+		bool doSetGlobe = false;
+	UPROPERTY(EditAnywhere);
+		bool doUseGlobalGlobe = true;
 	
 	ASatellite();
 	void Reset();
