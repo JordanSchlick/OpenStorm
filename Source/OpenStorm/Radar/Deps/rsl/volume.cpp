@@ -833,17 +833,17 @@ Ray *RSL_get_next_ccwise_ray(Sweep *s, Ray *ray)
  * Dennis Flanigan,Jr. 5/17/95            *
  ******************************************/
 double cwise_angle_diff(float x,float y)
-	 {
-	 /* Returns the clockwise angle difference of x to y.
-		* If x = 345 and y = 355 return 10.  
-		* If x = 345 and y = 335 return 350
-		*/
-	 double d;
-	 
-	 d = (double)(y - x);
-	 if (d < 0) d += 360;
-	 return d;
-	 }
+{
+	/* Returns the clockwise angle difference of x to y.
+	* If x = 345 and y = 355 return 10.  
+	* If x = 345 and y = 335 return 350
+	*/
+	double d;
+
+	d = (double)(y - x);
+	if (d < 0) d += 360;
+	return d;
+}
 
 /******************************************
  *                                        *
@@ -852,17 +852,17 @@ double cwise_angle_diff(float x,float y)
  * Dennis Flanigan,Jr. 5/17/95            *
  ******************************************/
 double ccwise_angle_diff(float x,float y)
-	 {
-	 /* Returns the counterclockwise angle differnce of x to y.
-		* If x = 345 and y = 355 return 350.  
-		* If x = 345 and y = 335 return 10
-		*/
-	 double d;
-	 
-	 d = (double)(x - y);
-	 if (d < 0) d += 360;
-	 return d;
-	 }
+{
+	/* Returns the counterclockwise angle differnce of x to y.
+	* If x = 345 and y = 355 return 350.  
+	* If x = 345 and y = 335 return 10
+	*/
+	double d;
+
+	d = (double)(x - y);
+	if (d < 0) d += 360;
+	return d;
+}
 
 /*****************************************
  *                                       *
@@ -871,58 +871,58 @@ double ccwise_angle_diff(float x,float y)
  * Dennis Flanigan,Jr. 4/29/95           *
  *****************************************/
 Azimuth_hash *the_closest_hash(Azimuth_hash *hash, float ray_angle)
-	 {
-	 /* Return the hash pointer with the minimum ray angle difference. */
+{
+	/* Return the hash pointer with the minimum ray angle difference. */
 
-	 double clow,chigh,cclow;
-	 Azimuth_hash *high,*low;
+	double clow,chigh,cclow;
+	Azimuth_hash *high,*low;
 
-	 if (hash == NULL) return NULL;
+	if (hash == NULL) return NULL;
 
-	 /* Set low pointer to hash index with ray angle just below
-		* requested angle and high pointer to just above requested
-		* angle.
-		*/
+	/* Set low pointer to hash index with ray angle just below
+	* requested angle and high pointer to just above requested
+	* angle.
+	*/
 
-	 /* set low and high pointers to initial search locations*/
-	 low = hash;         
-	 high = hash->ray_high;
-	 
-	 /* Search until clockwise angle to high is less then clockwise
-		* angle to low.
-		*/
+	/* set low and high pointers to initial search locations*/
+	low = hash;         
+	high = hash->ray_high;
 
-	 clow   = cwise_angle_diff(ray_angle,low->ray->h.azimuth);
-	 chigh  = cwise_angle_diff(ray_angle,high->ray->h.azimuth);
-	 cclow  = ccwise_angle_diff(ray_angle,low->ray->h.azimuth);
+	/* Search until clockwise angle to high is less then clockwise
+	* angle to low.
+	*/
 
-	 while((chigh > clow) && (clow != 0))
-			{
-			if (clow < cclow)
-				 {
-				 low  = low->ray_low;
-				 high = low->ray_high;  /* Not the same low as line before ! */
-				 }
-			else
-				 {
-				 low  = low->ray_high;
-				 high = low->ray_high;  /* Not the same low as line before ! */
-				 }
+	clow   = cwise_angle_diff(ray_angle,low->ray->h.azimuth);
+	chigh  = cwise_angle_diff(ray_angle,high->ray->h.azimuth);
+	cclow  = ccwise_angle_diff(ray_angle,low->ray->h.azimuth);
 
-			clow   = cwise_angle_diff(ray_angle,low->ray->h.azimuth);
-			chigh  = cwise_angle_diff(ray_angle,high->ray->h.azimuth);
-			cclow  = ccwise_angle_diff(ray_angle,low->ray->h.azimuth);
-			}
+	while((chigh > clow) && (clow != 0))
+	{
+		if (clow < cclow)
+		{
+			low  = low->ray_low;
+			high = low->ray_high;  /* Not the same low as line before ! */
+		}
+		else
+		{
+			low  = low->ray_high;
+			high = low->ray_high;  /* Not the same low as line before ! */
+		}
 
-	 if(chigh <= cclow)
-			{
-			return high;
-			}
-	 else
-			{
-			return low;
-			}
-	 }
+		clow   = cwise_angle_diff(ray_angle,low->ray->h.azimuth);
+		chigh  = cwise_angle_diff(ray_angle,high->ray->h.azimuth);
+		cclow  = ccwise_angle_diff(ray_angle,low->ray->h.azimuth);
+	}
+
+	if(chigh <= cclow)
+	{
+		return high;
+	}
+	else
+	{
+		return low;
+	}
+}
 
 
 /*******************************************************************/
@@ -932,31 +932,31 @@ Azimuth_hash *the_closest_hash(Azimuth_hash *hash, float ray_angle)
 /* Dennis Flanigan, Jr.  5/15/95                                   */
 /*******************************************************************/
 int get_closest_sweep_index(Volume *v,float sweep_angle)
-	 {
-	 Sweep *s;
-	 int i,ci;
-	 float delta_angle = 91;
-	 float check_angle;
-	 
-	 if(v == NULL) return -1;
+{
+	Sweep *s;
+	int i,ci;
+	float delta_angle = 91;
+	float check_angle;
 
-	 ci = 0;
+	if(v == NULL) return -1;
 
-	 for (i=0; i<v->h.nsweeps; i++)
-			{
-			s = v->sweep[i];
-			if (s == NULL) continue;
-			check_angle = fabs((double)(s->h.elev - sweep_angle));
+	ci = 0;
 
-			if(check_angle <= delta_angle) 
-				 {
-				 delta_angle = check_angle;
-				 ci = i;
-				 }
-			}
+	for (i=0; i<v->h.nsweeps; i++)
+	{
+		s = v->sweep[i];
+		if (s == NULL) continue;
+		check_angle = fabs((double)(s->h.elev - sweep_angle));
 
-	 return ci;
-	 }
+		if(check_angle <= delta_angle) 
+		{
+			delta_angle = check_angle;
+			ci = i;
+		}
+	}
+
+	return ci;
+}
 
 
 
@@ -969,35 +969,35 @@ int get_closest_sweep_index(Volume *v,float sweep_angle)
 /*  Dennis Flanigan, Jr. 5/15/95                                    */
 /********************************************************************/
 Sweep *RSL_get_closest_sweep(Volume *v,float sweep_angle,float limit)
-	 {
-	 /* Find closest sweep to requested angle.  Assume PPI sweep for
-		* now. Meaning: sweep_angle represents elevation angle from 
-		* 0->90 degrees
-		*/
-	 Sweep *s;
-	 float delta_angle;
-	 int ci;
-	 
-	 if (v == NULL) return NULL;
-	 
-	 if((ci = get_closest_sweep_index(v,sweep_angle)) < 0)
-			{
-			return NULL;
-			}
+{
+	/* Find closest sweep to requested angle.  Assume PPI sweep for
+	* now. Meaning: sweep_angle represents elevation angle from 
+	* 0->90 degrees
+	*/
+	Sweep *s;
+	float delta_angle;
+	int ci;
 
-	 s = v->sweep[ci];
+	if (v == NULL) return NULL;
 
-	 delta_angle = fabs((double)(s->h.elev - sweep_angle));
+	if((ci = get_closest_sweep_index(v,sweep_angle)) < 0)
+	{
+		return NULL;
+	}
 
-	 if( delta_angle <= limit)
-			{
-			return s;
-			}
-	 else
-			{
-			return NULL;
-			}
-	 }
+	s = v->sweep[ci];
+
+	delta_angle = fabs((double)(s->h.elev - sweep_angle));
+
+	if( delta_angle <= limit)
+	{
+		return s;
+	}
+	else
+	{
+		return NULL;
+	}
+}
 
 /**********************************************************************/
 /*     These are more specific routines to make coding hierarchical.  */
@@ -1076,36 +1076,36 @@ Hash_table *hash_table_for_sweep(Sweep *s)
 /* Dennis Flanigan  4/30/95                                          */
 /*********************************************************************/
 Ray *RSL_get_closest_ray_from_sweep(Sweep *s,float ray_angle, float limit)
-	 {
-	 /*
-		* Return closest Ray in Sweep within limit (angle) specified
-		* in parameter list.  Assume PPI mode.
-		*/
-	 int hindex;
-	 Hash_table *hash_table;
-	 Azimuth_hash *closest;
-	 double close_diff;
+{
+	/*
+	* Return closest Ray in Sweep within limit (angle) specified
+	* in parameter list.  Assume PPI mode.
+	*/
+	int hindex;
+	Hash_table *hash_table;
+	Azimuth_hash *closest;
+	double close_diff;
 
-	 if (s == NULL) return NULL;
-	 /* Find a non-NULL index close to hindex that we want. */
-	 hash_table = hash_table_for_sweep(s);
-	 if (hash_table == NULL) return NULL; /* Nada. */
+	if (s == NULL) return NULL;
+	/* Find a non-NULL index close to hindex that we want. */
+	hash_table = hash_table_for_sweep(s);
+	if (hash_table == NULL) return NULL; /* Nada. */
 
-	 hindex = hash_bin(hash_table,ray_angle); 
+	hindex = hash_bin(hash_table,ray_angle); 
 
-	 /* Find hash entry with closest Ray */
-	 closest = the_closest_hash(hash_table->indexes[hindex],ray_angle);
-	 
-	 /* Is closest ray within limit parameter ? If
-		* so return ray, else return NULL.
-		*/
+	/* Find hash entry with closest Ray */
+	closest = the_closest_hash(hash_table->indexes[hindex],ray_angle);
+	
+	/* Is closest ray within limit parameter ? If
+	* so return ray, else return NULL.
+	*/
 
-	 close_diff = angle_diff(ray_angle,closest->ray->h.azimuth);
-	 
-	 if(close_diff <= limit) return closest->ray;
-	 
-	 return NULL;
- }
+	close_diff = angle_diff(ray_angle,closest->ray->h.azimuth);
+	
+	if(close_diff <= limit) return closest->ray;
+	
+	return NULL;
+}
 
 
 /*********************************************************************/
@@ -1130,11 +1130,11 @@ float RSL_get_value_from_sweep(Sweep *s, float azim, float r)
 /* D. Flanigan 8/18/95                                               */
 /*********************************************************************/
 float RSL_get_range_of_range_index(Ray *ray, int index)
-	 {
-	 if (ray == NULL) return 0.0;
-	 if (index >= ray->h.nbins) return 0.0;
-	 return ray->h.range_bin1/1000.0 + index*ray->h.gate_size/1000.0;
-	 }
+{
+	if (ray == NULL) return 0.0;
+	if (index >= ray->h.nbins) return 0.0;
+	return ray->h.range_bin1/1000.0 + index*ray->h.gate_size/1000.0;
+}
 
 
 /************************************/
@@ -1144,31 +1144,31 @@ float RSL_get_range_of_range_index(Ray *ray, int index)
 /*                                  */
 /************************************/
 float RSL_get_value_from_ray(Ray *ray, float r)
-	 {
-	 int bin_index;
-	 float rm;
-	 
-	 rm = r * 1000;
+{
+	int bin_index;
+	float rm;
 
-	 if (ray == NULL) return BADVAL;
+	rm = r * 1000;
 
-	 if(ray->h.gate_size == 0)
-			{
-			if(radar_verbose_flag)
-				 {
-				 fprintf(stderr,"RSL_get_value_from_ray: ray->h.gate_size == 0\n");
-				 }
-			return BADVAL;
-			}
-	 
-	 /* range_bin1 is range to center of first bin */
-	 bin_index = (int)(((rm - ray->h.range_bin1)/ray->h.gate_size) + 0.5);
+	if (ray == NULL) return BADVAL;
 
-	 /* Bin indexes go from 0 to nbins - 1 */
-	 if (bin_index >= ray->h.nbins || bin_index < 0) return BADVAL;
+	if(ray->h.gate_size == 0)
+	{
+		if(radar_verbose_flag)
+		{
+			fprintf(stderr,"RSL_get_value_from_ray: ray->h.gate_size == 0\n");
+		}
+		return BADVAL;
+	}
 
-	 return ray->h.f(ray->range[bin_index]);  
-	 }
+	/* range_bin1 is range to center of first bin */
+	bin_index = (int)(((rm - ray->h.range_bin1)/ray->h.gate_size) + 0.5);
+
+	/* Bin indexes go from 0 to nbins - 1 */
+	if (bin_index >= ray->h.nbins || bin_index < 0) return BADVAL;
+
+	return ray->h.f(ray->range[bin_index]);  
+}
 
 
 /*********************************************************************/
@@ -1206,15 +1206,15 @@ float RSL_get_value_at_h(Volume *v, float azim, float grnd_r, float h)
 /* Updated 5/15/95 Dennis Flanigan, Jr.                              */
 /*********************************************************************/
 Sweep *RSL_get_sweep(Volume *v, float sweep_angle)
-	 {
-	 /* Return a sweep with +/- 1/2 beam_width of 'elev', if found. */
-	 int   i = 0;
-	 
-	 if (v == NULL) return NULL;
-	 while(v->sweep[i] == NULL) i++;
+{
+	/* Return a sweep with +/- 1/2 beam_width of 'elev', if found. */
+	int   i = 0;
 
-	 return RSL_get_closest_sweep(v,sweep_angle,v->sweep[i]->h.vert_half_bw);
-	 }
+	if (v == NULL) return NULL;
+	while(v->sweep[i] == NULL) i++;
+
+	return RSL_get_closest_sweep(v,sweep_angle,v->sweep[i]->h.vert_half_bw);
+}
 
 
 /*********************************************************************/
@@ -1262,26 +1262,26 @@ float RSL_get_value(Volume *v, float elev, float azimuth, float range)
 /* Updated 5/15/95, Dennis Flanigan, Jr.                             */
 /*********************************************************************/
 Ray *RSL_get_ray_above(Volume *v, Ray *current_ray)
-	 {
-	 int i;
+{
+	int i;
 
-	 if (v == NULL) return NULL;
-	 if (current_ray == NULL) return NULL;
+	if (v == NULL) return NULL;
+	if (current_ray == NULL) return NULL;
 
-	 /* Find index of current Sweep */
-	 if(( i = get_closest_sweep_index(v,current_ray->h.elev)) < 0) return NULL;
+	/* Find index of current Sweep */
+	if(( i = get_closest_sweep_index(v,current_ray->h.elev)) < 0) return NULL;
 
-	 i++;
-	 while( i < v->h.nsweeps)
-			{
-			if(v->sweep[i] != NULL) break;
-			i++;
-			}
+	i++;
+	while( i < v->h.nsweeps)
+	{
+		if(v->sweep[i] != NULL) break;
+		i++;
+	}
 
-	 if(i >= v->h.nsweeps) return NULL;
+	if(i >= v->h.nsweeps) return NULL;
 
-	 return RSL_get_ray_from_sweep(v->sweep[i], current_ray->h.azimuth);
-	 }
+	return RSL_get_ray_from_sweep(v->sweep[i], current_ray->h.azimuth);
+}
 
 
 /*********************************************************************/
@@ -1291,26 +1291,26 @@ Ray *RSL_get_ray_above(Volume *v, Ray *current_ray)
 /* Updated 5/15/95, Dennis Flanigan, Jr.                             */
 /*********************************************************************/
 Ray *RSL_get_ray_below(Volume *v, Ray *current_ray)
-	 {
-	 int i;
- 
-	 if (v == NULL) return NULL;
-	 if (current_ray == NULL) return NULL;
+{
+	int i;
 
-	 /* Find index of current Sweep */
-	 if(( i = get_closest_sweep_index(v,current_ray->h.elev)) < 0) return NULL;
+	if (v == NULL) return NULL;
+	if (current_ray == NULL) return NULL;
 
-	 i--;
-	 while( i >= 0)
-			{
-			if(v->sweep[i] != NULL) break;
-			i--;
-			}
+	/* Find index of current Sweep */
+	if(( i = get_closest_sweep_index(v,current_ray->h.elev)) < 0) return NULL;
 
-	 if(i < 0) return NULL;
+	i--;
+	while( i >= 0)
+	{
+		if(v->sweep[i] != NULL) break;
+		i--;
+	}
 
-	 return RSL_get_ray_from_sweep(v->sweep[i], current_ray->h.azimuth);
-	 }
+	if(i < 0) return NULL;
+
+	return RSL_get_ray_from_sweep(v->sweep[i], current_ray->h.azimuth);
+}
 
 /*********************************************************************/
 /*                                                                   */
