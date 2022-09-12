@@ -286,6 +286,11 @@ int read_wsr88d_ray_m31(Wsr88d_file *wf, int msg_size,
     int n;
     float nyq_vel, unamb_rng;
 
+	if(msg_size > sizeof(wsr88d_ray->data)){
+		fprintf(stderr,"read_wsr88d_ray_m31: msg_size = %i to large for wsr88d_ray->data[%i].\n",(int)msg_size,(int)sizeof(wsr88d_ray->data));
+		return 0;	
+	}
+
     /* Read wsr88d ray. */
 
     n = fread(wsr88d_ray->data, msg_size, 1, wf->fptr);
@@ -298,6 +303,11 @@ int read_wsr88d_ray_m31(Wsr88d_file *wf, int msg_size,
     memcpy(&wsr88d_ray->ray_hdr, &wsr88d_ray->data, sizeof(Ray_header_m31));
 
     if (little_endian()) wsr88d_swap_m31_ray_hdr(&wsr88d_ray->ray_hdr);
+	
+	if(wsr88d_ray->ray_hdr.azm < 0 || wsr88d_ray->ray_hdr.azm > 360 || wsr88d_ray->ray_hdr.radial_const > sizeof(wsr88d_ray->data) || wsr88d_ray->ray_hdr.elev_const > sizeof(wsr88d_ray->data) || wsr88d_ray->ray_hdr.vol_const > sizeof(wsr88d_ray->data)){
+		fprintf(stderr,"read_wsr88d_ray_m31: detected corruption %f %i %i %i\n", wsr88d_ray->ray_hdr.azm, wsr88d_ray->ray_hdr.radial_const, wsr88d_ray->ray_hdr.elev_const, wsr88d_ray->ray_hdr.vol_const);
+		return 0;
+	}
 
     /* Retrieve unambiguous range and Nyquist velocity here so that we don't
      * have to do it for each data moment later.
@@ -600,14 +610,16 @@ Radar *wsr88d_load_m31_into_radar(Wsr88d_file *wf)
 	    msg_size = (int) msghdr.msg_size * 2 - msg_hdr_size;
 
 	    n = read_wsr88d_ray_m31(wf, msg_size, &wsr88d_ray);
-	    if (n <= 0) return NULL;
+	    //if (n <= 0) return NULL;
+	    if (n <= 0) return radar;
 	    raynum = wsr88d_ray.ray_hdr.azm_num;
 	    if (raynum > MAXRAYS_M31) {
-		fprintf(stderr,"Error: raynum = %d, exceeds MAXRAYS_M31"
-			" (%d)\n", raynum, MAXRAYS_M31);
-		fprintf(stderr,"isweep = %d\n", isweep);
-		RSL_free_radar(radar);
-		return NULL;
+			fprintf(stderr,"Error: raynum = %d, exceeds MAXRAYS_M31"
+				" (%d)\n", raynum, MAXRAYS_M31);
+			fprintf(stderr,"isweep = %d\n", isweep);
+			//RSL_free_radar(radar);
+			//return NULL;
+			return radar;
 	    }
 
 	    /* Check for an unexpected start of new elevation, and issue a
@@ -627,9 +639,10 @@ Radar *wsr88d_load_m31_into_radar(Wsr88d_file *wf)
 
             /* Check if this sweep number exceeds how many we allocated */
             if (isweep > MAXSWEEPS) {
-		fprintf(stderr,"Error: isweep = %d, exceeds MAXSWEEPS (%d)\n", isweep, MAXSWEEPS);
-		RSL_free_radar(radar);
-		return NULL;                
+				fprintf(stderr,"Error: isweep = %d, exceeds MAXSWEEPS (%d)\n", isweep, MAXSWEEPS);
+				//RSL_free_radar(radar);
+				//return NULL;
+				return radar;       
             }
 
 	    /* Load ray into radar structure. */

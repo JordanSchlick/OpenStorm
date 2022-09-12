@@ -200,7 +200,7 @@ Hash_table *construct_sweep_hash_table(Sweep *s)
   if (hash_table->nindexes < 0) {
 	fprintf(stderr, "Unable to construct sweep hash table because nrays = %d\n", s->h.nrays);
 	fprintf(stderr, "FATAL error... unable to continue.\n");
-	exit(-1);
+	//exit(-1);
   }
 
   res = 360.0 / hash_table->nindexes;

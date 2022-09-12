@@ -567,7 +567,8 @@ int INSERT_SWEEP(Sweep *s)
 		new_list = (Sweep_list *) calloc(100*RSL_nextents, sizeof(Sweep_list));
 		if (new_list == NULL) {
 			perror("INSERT_SWEEP");
-			exit(2);
+			//exit(2);
+			return -1;
 		}
 		/* Copy the old list to the new one. */
 		for (i=0; i<RSL_max_sweeps; i++) new_list[i] = RSL_sweep_list[i];

@@ -254,7 +254,10 @@ void RadarCollection::PollFiles(std::string defaultFilename) {
 	float aReallyBadWayOfAssigningAnArbitraryTime = 1;
 	double now = SystemAPI::CurrentTime();
 	//fprintf(stderr, "now: %f\n", now);
+	int fileIndex = -1;
+	int lastFileIndex = files.size() - 1;
 	for (auto filename : files) {
+		fileIndex++;
 		//fprintf(stderr, "%s\n", (filePath + filename).c_str());
 		if(filename == ".gitkeep"){
 			continue;
@@ -264,8 +267,8 @@ void RadarCollection::PollFiles(std::string defaultFilename) {
 		if(radarFilesCache.find(filename) != radarFilesCache.end()){
 			RadarFile radarFile = radarFilesCache[filename];
 			radarFile.time = aReallyBadWayOfAssigningAnArbitraryTime++;
-			if(now - radarFile.mtime < 3600){
-				// only stat files that have been modified in the last hour for changes
+			if(now - radarFile.mtime < 3600 || fileIndex == lastFileIndex){
+				// only stat files that have been modified in the last hour or is the last one for changes
 				//fprintf(stderr, "file: %f %f\n", now, radarFile.mtime);
 				SystemAPI::FileStats stats = SystemAPI::GetFileStats(path);
 				if(stats.isDirectory){
@@ -289,7 +292,6 @@ void RadarCollection::PollFiles(std::string defaultFilename) {
 			radarFilesNew.push_back(radarFile);
 			radarFilesCache[filename] = radarFile;
 		}
-		
 	}
 	
 	// TODO: read propper file time and sort accordingly

@@ -473,9 +473,13 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 			float deltaF = delta;
 			//fprintf(stderr, "delta: %i %f\n", delta, info1.elevation);
 			float firstSweepIndex = sweepIndex - 1.0f;
-			for (int i = 0; i <= delta; i++) {
-				float subLocation = (float)i / deltaF;
-				textureBuffer[startLocation + i] = firstSweepIndex + subLocation;
+			if (startLocation < 0 || endLocation >= 65536) {
+				fprintf(stderr, "invalid elevation found while calculating angle index\n");
+			} else {
+				for (int i = 0; i <= delta; i++) {
+					float subLocation = (float)i / deltaF;
+					textureBuffer[startLocation + i] = firstSweepIndex + subLocation;
+				}
 			}
 		}
 		if(firstIndex == lastIndex){
@@ -485,8 +489,12 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 			int endLocation = (info.elevation + 0.2) * 32768 / 90 + 32768;
 			int delta = endLocation - startLocation;
 			float firstSweepIndex = firstIndex;
-			for (int i = 0; i <= delta; i++) {
-				textureBuffer[startLocation + i] = firstSweepIndex;
+			if (startLocation < 0 || endLocation >= 65536) {
+				fprintf(stderr, "invalid elevation found while calculating angle index\n");
+			} else {
+				for (int i = 0; i <= delta; i++) {
+					textureBuffer[startLocation + i] = firstSweepIndex;
+				}
 			}
 		}
 	}
