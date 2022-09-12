@@ -535,6 +535,7 @@ void FREE_HASH_TABLE(Hash_table *table)
 
 void REMOVE_SWEEP(Sweep *s)
 {
+	return; // disable hash table to allow multithreading
 	int i;
 	int j;
 	/* Find where it goes, split the list and slide the tail down one. */
@@ -557,6 +558,7 @@ void REMOVE_SWEEP(Sweep *s)
 
 int INSERT_SWEEP(Sweep *s)
 {
+	return -1; // disable hash table to allow multithreading
 	Sweep_list *new_list;
 	int i,j;
 
@@ -589,6 +591,7 @@ int INSERT_SWEEP(Sweep *s)
 
 int SWEEP_INDEX(Sweep *s)
 {
+	return -1; // disable hash table to allow multithreading
 	/* Locate the sweep in the RSL_sweep_list.  Return the index. */
 	/* Simple linear search; but this will be a binary search. */
 	int i;
@@ -1049,6 +1052,7 @@ int hash_bin(Hash_table *table,float angle)
 
 Hash_table *hash_table_for_sweep(Sweep *s)
 {
+	return NULL; // disable hash table to allow multithreading
 	int i;
 
 	i = SWEEP_INDEX(s);
