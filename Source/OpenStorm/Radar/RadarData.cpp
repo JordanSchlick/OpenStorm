@@ -32,6 +32,7 @@ void RadarData::ReadNexrad(const char* filename) {
 	//RSL_wsr88d_keep_sails();
 	//Radar* radar = RSL_wsr88d_to_radar("C:/Users/Admin/Desktop/stuff/projects/openstorm/files/KMKX_20220723_235820", "KMKX");
 	//Radar* radar = RSL_wsr88d_to_radar("C:/Users/Admin/Desktop/stuff/projects/openstorm/files/KMKX_20220723_233154", "KMKX");
+	RSL_wsr88d_keep_sails();
 	Radar* radar = RSL_wsr88d_to_radar((char*)filename, (char*)"");
 
 	//UE_LOG(LogTemp, Display, TEXT("================ %i"), radar);

@@ -70,5 +70,6 @@
 		"set": "cpp",
 		"xthread": "cpp",
 		"thread": "cpp"
-	}
+	},
+	"editor.insertSpaces": false
 }
