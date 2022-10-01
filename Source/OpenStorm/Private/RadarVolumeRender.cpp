@@ -217,6 +217,9 @@ void ARadarVolumeRender::BeginPlay()
 			GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 			globalState->globe->SetCenter(0, 0, -globalState->globe->surfaceRadius - event.data->stats.altitude);
 			globalState->globe->SetTopCoordinates(event.data->stats.latitude, event.data->stats.longitude);
+			auto vector = globalState->globe->GetPointScaledDegrees(event.data->stats.latitude, event.data->stats.longitude, event.data->stats.altitude);
+			radarMaterialInstance->SetVectorParameterValue(TEXT("Center"), FVector(vector.x, vector.y, vector.z));
+			globalState->EmitEvent("GlobeUpdate");
 			
 			radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), event.data->stats.innerDistance);
 			

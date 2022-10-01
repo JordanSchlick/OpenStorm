@@ -23,13 +23,20 @@ public:
 	// set center in meters from origin
 	void SetCenter(double centerMetersX, double centerMetersY, double centerMetersZ);
 	
-	// latitude and longitude in radians
+	// latitude and longitude in radians to rotate the globe
 	void SetRotation(double latitudeRadians, double longitudeRadians);
+	
+	// latitude and longitude in degrees to rotate the globe
+	void SetRotationDegrees(double latitudeDegrees, double longitudeDegrees);
 	
 	// set the rotation so that the coordinates that will be at the top of the globe
 	void SetTopCoordinates(double latitudeDegrees, double longitudeDegrees);
 	
-	void SetRotationDegrees(double latitudeDegrees, double longitudeDegrees);
+	// returns the latitude in degrees that is at the top based on the rotation
+	double GetTopLatitudeDegrees();
+	
+	// returns the longitude in degrees that is at the top based on the rotation
+	double GetTopLongitudeDegrees();
 	
 	// get point in meters from latitude radians, longitude radians and altitude meters
 	SimpleVector3<> GetPoint(double latitudeRadians, double longitudeRadians, double altitude);

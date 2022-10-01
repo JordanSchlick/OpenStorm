@@ -14,12 +14,20 @@ void Globe::SetRotation(double latitudeRadians, double longitudeRadians){
 	rotationTheta = longitudeRadians;
 }
 
-void Globe::SetTopCoordinates(double latitudeDegrees, double longitudeDegrees) {
-	SetRotationDegrees(90 - latitudeDegrees, -longitudeDegrees);
+void Globe::SetRotationDegrees(double latitudeDegrees, double longitudeDegrees){
+	SetRotation(latitudeDegrees / 180.0 * M_PI, longitudeDegrees / 180.0 * M_PI);
 }
 
-void Globe::SetRotationDegrees(double latitudeDegrees, double longitudeDegrees){
-	SetRotation(latitudeDegrees / 180 * M_PI, longitudeDegrees / 180 * M_PI);
+void Globe::SetTopCoordinates(double latitudeDegrees, double longitudeDegrees) {
+	SetRotationDegrees(90.0 - latitudeDegrees, -longitudeDegrees);
+}
+
+double Globe::GetTopLatitudeDegrees() {
+	return -rotationPhi / M_PI * 180.0 + 90.0;
+}
+
+double Globe::GetTopLongitudeDegrees() {
+	return -rotationTheta / M_PI * 180.0;
 }
 
 // get point in meters from latitude radians, longitude radians and altitude meters

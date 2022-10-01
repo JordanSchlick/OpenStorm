@@ -20,6 +20,7 @@ GS->globalState.maxFPS
 #include "native.h"
 #include "uiwindow.h"
 #include "../Radar/SystemApi.h"
+#include "../Radar/Globe.h"
 #include "RadarGameStateBase.h"
 #include "RadarViewPawn.h"
 #include "portable-file-dialogs.h"
@@ -28,6 +29,7 @@ GS->globalState.maxFPS
 
 //#include "imgui_internal.h"
 #include "imgui.h"
+#include "imgui_stdlib.h"
 #include "ImGuiModule.h"
 #include "Widgets/SWindow.h"
 #include "Kismet/GameplayStatics.h"
@@ -249,6 +251,37 @@ void AImGuiUI::Tick(float deltaTime)
 				ImGui::Checkbox("Poll Data", &globalState.pollData);
 				if (ImGui::Button("Load Files")) {
 					ChooseFiles();
+				}
+				ImGui::TreePop();
+			}
+			ImGui::Separator();
+			if (ImGui::TreeNodeEx("Waypoints", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+				int id = 0;
+				char idChr[3] = {};
+				bool markersChanged = false;
+				for(auto &marker : globalState.locationMarkers){
+					ImGui::Separator();
+					idChr[0] = (id % 255) + 1;
+					idChr[1] = id / 255 + 1;
+					ImGui::PushID(idChr);
+					markersChanged |= ImGui::InputText("Name", &marker.name);
+					markersChanged |= ImGui::InputDouble("Latitude", &marker.latitude);
+					markersChanged |= ImGui::InputDouble("Longitude", &marker.longitude);
+					markersChanged |= ImGui::InputDouble("Altitude", &marker.altitude);
+					ImGui::PopID();
+					id++;
+				}
+				ImGui::Separator();
+				if (ImGui::Button("New")) {
+					GlobalState::Waypoint newWaypoint = {};
+					newWaypoint.name = "New";
+					newWaypoint.latitude = globalState.globe->GetTopLatitudeDegrees();
+					newWaypoint.longitude = globalState.globe->GetTopLongitudeDegrees();
+					globalState.locationMarkers.push_back(newWaypoint);
+					markersChanged = true;
+				}
+				if(markersChanged){
+					globalState.EmitEvent("LocationMarkersUpdate");
 				}
 				ImGui::TreePop();
 			}

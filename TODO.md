@@ -7,8 +7,8 @@
 - [X] Implement directory polling
 - [X] Allow variable radar sizes and angles
 - [X] Make temporal interpolation optional
-- [ ] Location markers
-- [ ] Fix ImGui input state
+- [X] Location markers
+- [X] Fix ImGui input state
 - [ ] Initial public release
 - [ ] Add Support for filtering or modifying Color/Opacity in radar data 
 - [ ] Allow multiple products

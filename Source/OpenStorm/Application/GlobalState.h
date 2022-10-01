@@ -8,6 +8,19 @@ class Globe;
 
 class GlobalState{
 public:
+	
+	class Waypoint{
+	public:
+		double latitude = 0;
+		double longitude = 0;
+		double altitude = 0;
+		int colorR = 255;
+		int colorG = 255;
+		int colorB = 255;
+		std::string name;
+		bool enabled = true;
+	};
+	
 	bool inputToggle = false; // toggle mouse input
 	bool fade = false; // animate fade
 	bool animate = false; // animate the scene
@@ -30,7 +43,9 @@ public:
 	float rotateSpeed = 200.0f; // speed of rotation
 	float guiScale = 1.0f; // scale of gui for high dpi displays
 
-	
+	std::vector<Waypoint> locationMarkers = {};
+	Globe* globe;
+	GlobalState* defaults = NULL;
 	
 	// register a callback for the given event name. returns a uid to remove callback
 	uint64_t RegisterEvent(std::string name, std::function<void(std::string, void*)> callback);
@@ -40,9 +55,6 @@ public:
 	void EmitEvent(std::string name, std::string stringData, void* extraData);
 	void EmitEvent(std::string name);
 	
-	
-	GlobalState* defaults = NULL;
-	Globe* globe;
 	
 	//Testing
 	float testFloat = 1; // test float
