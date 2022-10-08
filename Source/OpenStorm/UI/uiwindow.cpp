@@ -130,13 +130,13 @@ void UIWindow::Close() {
 }
 
 void UIWindow::Tick(){
-	ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
+	/*ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
 	if (ImGui::Begin("Sugma", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar)){
 		if (ImGui::Button("Sugma")) {
 			fprintf(stderr, "Sugma\n");
 		}
 	}
-	ImGui::End();
+	ImGui::End();*/
 }
 
 void UIWindow::CloseDelegate(const TSharedRef<SWindow>& windowRef){

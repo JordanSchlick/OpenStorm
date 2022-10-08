@@ -391,9 +391,7 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 	
 	
 	if (volumeTexture != NULL) {
-		if (volumeMaterialRenderTarget != NULL) {
-			volumeMaterialRenderTarget->Update();
-		}
+		
 
 		if (interpolationAnimating) {
 			if (interpolationEndTime == interpolationStartTime) {
@@ -408,6 +406,9 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 					interpolationAnimating = false;
 				}
 			}
+			if (volumeMaterialRenderTarget != NULL) {
+				volumeMaterialRenderTarget->Update();
+			}
 		}
 		//return;
 		//*
@@ -419,7 +420,7 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 			cutoff = (sin(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * PI2F) + 1) / 2 * cutoff;
 			//cutoff = abs(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * -2 + 1) * cutoff;
 		}
-		RadarColorIndex::Cutoff(cutoff, &radarColorResult);
+		RadarColorIndex::ModifyOpacity(globalState->opacityMultiplier, cutoff, &radarColorResult);
 		//float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
 		//memcpy(rawValueIndexImageData, valueIndex.data, 16384);
 		//memcpy(rawValueIndexImageData, radarColorResult.data, radarColorResult.byteSize);

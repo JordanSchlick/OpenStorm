@@ -4,6 +4,7 @@
 #include "UObject/UObjectGlobals.h"
 #include "Engine/GameViewportClient.h"
 #include "Widgets/SOverlay.h"
+#include "Widgets/SWindow.h"
 #include "Widgets/Layout/SDPIScaler.h"
 #include "SCompass.h"
 

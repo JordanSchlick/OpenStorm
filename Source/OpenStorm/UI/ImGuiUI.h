@@ -36,6 +36,8 @@ public:
 	void InternalWindow();
 	// choose a dierectory or specific files
 	void ChooseFiles();
+	// set engine settings from global state
+	void UpdateEngineSettings();
 
 protected:
 	// Called when the game starts or when spawned

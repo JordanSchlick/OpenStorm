@@ -11,7 +11,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Engine/StaticMesh.h" 
+#include "Engine/StaticMesh.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/Object.h"
 #include "Materials/Material.h"

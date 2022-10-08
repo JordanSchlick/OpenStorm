@@ -47,7 +47,8 @@ enum CustomFloatInputFlags_{
 };
 
 // intput for a float value
-void CustomFloatInput(const char* label, float minSlider, float maxSlider, float* value, float* defaultValue = NULL, CustomFloatInputFlags flags = 0){
+bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float* value, float* defaultValue = NULL, CustomFloatInputFlags flags = 0){
+	bool changed = false;
 	float fontSize = ImGui::GetFontSize();
 	ImGuiStyle &style = ImGui::GetStyle();
 	ImGui::PushID(label);
@@ -58,22 +59,23 @@ void CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 	}
 	if(!(flags & CustomFloatInput_SliderOnly)){
 		ImGui::PushItemWidth(8 * fontSize);
-		ImGui::InputFloat("##floatInput", value, 0.1f, 1.0f, "%.2f");
+		changed |= ImGui::InputFloat("##floatInput", value, 0.1f, 1.0f, "%.2f");
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 	}
 	if(defaultValue != NULL){
 		float frameHeight = ImGui::GetFrameHeight();
 		ImGui::PushItemWidth(12 * fontSize - frameHeight - style.ItemSpacing.x);
-		ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
+		changed |= ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 		if(ImGui::Button(ICON_FA_DELETE_LEFT ,ImVec2(frameHeight, frameHeight))){
 			*value = *defaultValue;
+			changed = true;
 		}
 	}else{
 		ImGui::PushItemWidth(12 * fontSize);
-		ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
+		changed |= ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
 		ImGui::PopItemWidth();
 	}
 	
@@ -91,6 +93,7 @@ void CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 		ImGui::PopItemWidth();
 	}
 	ImGui::PopID();
+	return changed;
 }
 
 bool ToggleButton(const char* label, bool active, const ImVec2 &size = ImVec2(0, 0)) {
@@ -129,7 +132,7 @@ void AImGuiUI::BeginPlay()
 	
 	InitializeConsole();
 	
-	
+	UpdateEngineSettings();
 	
 	UnlockMouse();
 }
@@ -155,7 +158,16 @@ void AImGuiUI::Tick(float deltaTime)
 	FIntPoint viewportSize = veiwport->GetSizeXY();
 
 	SWindow* swindow = GetWorld()->GetGameViewport()->GetWindow().Get();
-	float nativeScale = ((uiWindow != NULL && uiWindow->isOpen) ? uiWindow->window.Get() : swindow)->GetDPIScaleFactor();
+	
+	float nativeScale = 1;
+	ImVec2 maxSize = ImVec2(viewportSize.X / 2, viewportSize.Y);
+	if (uiWindow != NULL && uiWindow->isOpen) {
+		FVector2D viewportSize2 = uiWindow->window.Get()->GetViewportSize();
+		maxSize = ImVec2(viewportSize2.X, viewportSize2.Y);
+		nativeScale = uiWindow->window.Get()->GetDPIScaleFactor();
+	}else{
+		nativeScale = swindow->GetDPIScaleFactor();
+	}
 	if(nativeScale != globalState.defaults->guiScale){
 		if(globalState.defaults->guiScale == globalState.guiScale){
 			globalState.guiScale = nativeScale;
@@ -169,7 +181,7 @@ void AImGuiUI::Tick(float deltaTime)
 	//ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
 	ImGuiIO& io = ImGui::GetIO();
 	io.FontGlobalScale = fontScale;
-	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, 100.0f), ImVec2(viewportSize.X / 2, viewportSize.Y));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, 100.0f), maxSize);
 	if(ImGui::Begin("OpenStorm", NULL, ImGuiWindowFlags_NoMove | /*ImGuiWindowFlags_NoBackground |*/ ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar)){
 		if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1)){
 			//auto rect = ImGui::GetCurrentWindow()->TitleBarRect();
@@ -207,12 +219,15 @@ void AImGuiUI::Tick(float deltaTime)
 			
 			if (ImGui::TreeNodeEx("Radar", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				CustomFloatInput("Cutoff", 0, 1, &globalState.cutoff, &globalState.defaults->cutoff, CustomFloatInput_SliderOnly);
+				CustomFloatInput("Opacity", 0.2, 4, &globalState.opacityMultiplier, &globalState.defaults->opacityMultiplier);
 				
 				bool spatialInterpolationOldValue = globalState.spatialInterpolation;
 				ImGui::Checkbox("Spatial Interpolation", &globalState.spatialInterpolation);
 				if(spatialInterpolationOldValue != globalState.spatialInterpolation){
 					globalState.EmitEvent("UpdateVolumeParameters");
 				}
+				
+				ImGui::Checkbox("Temporal Interpolation", &GS->globalState.temporalInterpolation);
 				
 				ImGui::TreePop();
 			}
@@ -228,18 +243,9 @@ void AImGuiUI::Tick(float deltaTime)
 			}
 			ImGui::Separator();
 			
-			if (ImGui::TreeNodeEx("Fade", ImGuiTreeNodeFlags_SpanAvailWidth)) {
-				ImGui::Checkbox("Fade", &GS->globalState.fade);
-				ImGui::Text("Fade Speed:");
-				ImGui::SliderFloat("##1", &GS->globalState.fadeSpeed, 0.0f, 5.0f);
-				ImGui::TreePop();
-			}
-			ImGui::Separator();
-			
 			if (ImGui::TreeNodeEx("Animation", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				ImGui::Checkbox("Time", &GS->globalState.animate);
 				ImGui::Checkbox("Cuttoff", &GS->globalState.animateCutoff);
-				ImGui::Checkbox("Temporal Interpolation", &GS->globalState.temporalInterpolation);
 				//ImGui::Text("Animation Speed:");
 				//ImGui::SliderFloat("##1", &GS->globalState.animateSpeed, 0.0f, 5.0f);
 				CustomFloatInput("Time Animation Speed", 1, 15, &globalState.animateSpeed, &globalState.defaults->animateSpeed);
@@ -294,7 +300,13 @@ void AImGuiUI::Tick(float deltaTime)
 		
 		if (ImGui::CollapsingHeader("Settings")) {
 			if (ImGui::TreeNodeEx("Display", ImGuiTreeNodeFlags_SpanAvailWidth)) {
-				CustomFloatInput("Max FPS", 20, 120, &globalState.maxFPS, &globalState.defaults->maxFPS);
+				if(CustomFloatInput("Max FPS", 20, 120, &globalState.maxFPS, &globalState.defaults->maxFPS)){
+					UpdateEngineSettings();
+				}
+				if(ImGui::Checkbox("VSync", &globalState.vsync)){
+					UpdateEngineSettings();
+				}
+				
 				if (ImGui::Button("External Window")) {
 					if(uiWindow != NULL){
 						InternalWindow();
@@ -317,7 +329,7 @@ void AImGuiUI::Tick(float deltaTime)
 			}
 		}
 		
-		if (ImGui::CollapsingHeader("Ligma")) {
+		if (globalState.developmentMode && ImGui::CollapsingHeader("Ligma")) {
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			if (ImGui::Button("Demo Window")) {
 				showDemoWindow = !showDemoWindow;
@@ -358,12 +370,12 @@ void AImGuiUI::Tick(float deltaTime)
 			
 			
 			ImGui::Checkbox("Scalability Test", &scalabilityTest);
-			
+			if (ImGui::Button("Test")) {
+				ligma(GS->globalState.inputToggle);
+			}
 		}
 		
-		if (ImGui::Button("Test")) {
-			ligma(GS->globalState.inputToggle);
-		}
+		
 	}
 	ImGui::End();
 	
@@ -382,6 +394,10 @@ void AImGuiUI::Tick(float deltaTime)
 			globalState.isMouseCaptured = true;
 			LockMouse();
 		}
+	}
+	
+	if(io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_L)){
+		globalState.developmentMode = !globalState.developmentMode;
 	}
 	
 	if (uiWindow != NULL) {
@@ -435,8 +451,9 @@ void AImGuiUI::UnlockMouse() {
 
 void AImGuiUI::ligma(bool Value)
 {
-	FImGuiModule::Get().GetProperties().SetInputEnabled(Value);
+	//FImGuiModule::Get().GetProperties().SetInputEnabled(Value);
 	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+	fprintf(stderr,"Test\n");
 	globalState->EmitEvent("Test");
 	globalState->EmitEvent("TestUnregistered");
 }
@@ -506,4 +523,10 @@ void AImGuiUI::ChooseFiles() {
 		const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
 		fileChooser = new pfd::public_open_file("Open Radar Files", "", { "All Files", "*" }, pfd::opt::multiselect);
 	}
+}
+void AImGuiUI::UpdateEngineSettings() {
+	GlobalState& globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("r.VSync %i"), globalState.vsync));
+	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("r.VSyncEditor %i"), globalState.vsync));
+	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("t.MaxFPS %f"), globalState.maxFPS == 0 ? 0 : std::max(1.0f,globalState.maxFPS)));
 }

@@ -1,7 +1,9 @@
 #include "LocationMarkerManager.h"
 #include "LocationMarker.h"
+#include "Engine/World.h"
 #include "RadarGameStateBase.h"
 #include "../Radar/Globe.h"
+#include "../Application/GlobalState.h"
 
 ALocationMarkerManager::ALocationMarkerManager() {
 	

@@ -4,6 +4,10 @@
 #include "UObject/Object.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Components/SceneComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "Engine/StaticMesh.h"
+#include "Materials/Material.h"
+#include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Camera/CameraComponent.h"
 

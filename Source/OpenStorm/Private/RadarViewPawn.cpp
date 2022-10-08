@@ -91,7 +91,7 @@ void ARadarViewPawn::Tick(float deltaTime)
 		if (hud != NULL) {
 			hud->SetCompassRotation(rotation.Yaw / 360.0f);
 		}
-		//GS->globalState.testFloat = forwardMovement;
+		GS->globalState.testFloat =  deltaTime;
 	}
 	meshComponent->SetRelativeLocation(camera->GetRelativeLocation());
 	meshComponent->SetRelativeRotation(camera->GetRelativeRotation());
