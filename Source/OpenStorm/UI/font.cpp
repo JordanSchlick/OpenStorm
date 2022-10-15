@@ -1,5 +1,3 @@
-#pragma once
-
 #include "font.h"
 #include "imgui.h"
 #include "ImGuiModule.h"

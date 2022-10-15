@@ -66,12 +66,15 @@ Wsr88d_site_info *wsr88d_get_site(char *in_sitenm)
 					  return NULL;
 					}
 				    currsite->number = in_number;
-				    for(i=0;i<4;i++)
-					currsite->name[i]   = in_site[i];
-					for(i=0;i<15;i++)
+				    for(i=0;i<4;i++){
+						currsite->name[i]   = in_site[i];
+					}
+					for(i=0;i<15;i++){
 						currsite->city[i]   = in_city[i];
-					for(i=0;i<2;i++)
+					}
+					for(i=0;i<2;i++){
 						currsite->state[i]  = in_state[i];
+					}
 					currsite->latd   = in_latd;
 					currsite->latm   = in_latm;
 					currsite->lats   = in_lats;
@@ -89,8 +92,9 @@ Wsr88d_site_info *wsr88d_get_site(char *in_sitenm)
 	/* close the file */
 	(void)fclose(in_file);
 	}
-	else
+	else{
 	  perror(WSR88D_SITE_INFO_FILE);
+	}
 	
 
 	return(currsite);

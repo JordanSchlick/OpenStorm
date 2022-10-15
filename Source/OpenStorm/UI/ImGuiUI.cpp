@@ -19,7 +19,7 @@ GS->globalState.maxFPS
 #include "font.h"
 #include "native.h"
 #include "uiwindow.h"
-#include "../Radar/SystemApi.h"
+#include "../Radar/SystemAPI.h"
 #include "../Radar/Globe.h"
 #include "RadarGameStateBase.h"
 #include "RadarViewPawn.h"

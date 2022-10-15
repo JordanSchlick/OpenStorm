@@ -10,12 +10,13 @@
 //  See http://www.wtfpl.net/ for more details.
 //
 
-#pragma once
 
 #include "portable-file-dialogs.h"
 
+#define XSTR(a) STR(a)
+#define STR(a) #a
 
-#if _WIN32
+#if defined _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN 1
 #endif
@@ -28,7 +29,7 @@
 #include <future>     // std::async
 #include <userenv.h>  // GetUserProfileDirectory()
 
-#elif __EMSCRIPTEN__
+#elif defined __EMSCRIPTEN__
 #include <emscripten.h>
 
 #else
@@ -57,7 +58,7 @@
 
 #include <string>   // std::string
 #include <memory>   // std::shared_ptr
-#include <iostream> // std::ostream
+//#include <iostream> // std::ostream
 #include <map>      // std::map
 #include <set>      // std::set
 #include <regex>    // std::regex
@@ -96,10 +97,10 @@ public:
     // High level function to abort
     bool kill();
 
-#if _WIN32
+#if defined _WIN32
     void start_func(std::function<std::string(int *)> const &fun);
     static BOOL CALLBACK enum_windows_callback(HWND hwnd, LPARAM lParam);
-#elif __EMSCRIPTEN__
+#elif defined __EMSCRIPTEN__
     void start(int exit_code);
 #else
     void start_process(std::vector<std::string> const &command);
@@ -115,13 +116,13 @@ private:
     bool m_running = false;
     std::string m_stdout;
     int m_exit_code = -1;
-#if _WIN32
+#if defined _WIN32
     std::future<std::string> m_future;
     std::set<HWND> m_windows;
     std::condition_variable m_cond;
     std::mutex m_mutex;
     DWORD m_tid;
-#elif __EMSCRIPTEN__ || __NX__
+#elif defined __EMSCRIPTEN__ || defined __NX__
     // FIXME: do something
 #else
     pid_t m_pid = 0;
@@ -132,7 +133,7 @@ private:
 class platform
 {
 protected:
-#if _WIN32
+#if defined _WIN32
     // Helper class around LoadLibraryA() and GetProcAddress() with some safety
     class dll
     {
@@ -225,7 +226,7 @@ protected:
     std::string string_result();
     std::vector<std::string> vector_result();
 
-#if _WIN32
+#if defined _WIN32
     static int CALLBACK bffcallback(HWND hwnd, UINT uMsg, LPARAM, LPARAM pData);
 #if PFD_HAS_IFILEDIALOG
     std::string select_folder_vista(IFileDialog *ifd, bool force_path);
@@ -353,7 +354,7 @@ public:
 namespace internal
 {
 
-#if _WIN32
+#if defined _WIN32
 static inline std::wstring str2wstr(std::string const &str)
 {
     int len = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), nullptr, 0);
@@ -407,10 +408,10 @@ static inline bool starts_with(std::string const &str, std::string const &prefix
 
 static inline bool is_directory(std::string const &path)
 {
-#if _WIN32
+#if defined _WIN32
     auto attr = GetFileAttributesA(path.c_str());
     return attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY);
-#elif __EMSCRIPTEN__
+#elif defined __EMSCRIPTEN__
     // TODO
     return false;
 #else
@@ -423,7 +424,7 @@ static inline bool is_directory(std::string const &path)
 
 static inline std::string getenv(std::string const &str)
 {
-#if _WIN32
+#if defined _WIN32
     char *buf = nullptr;
     size_t size = 0;
     if (_dupenv_s(&buf, &size, str.c_str()) == 0 && buf)
@@ -455,7 +456,7 @@ settings::settings(bool resync)
     if (!std::regex_match(pfd_verbose, match_no))
         flags(flag::is_verbose) = true;
 
-#if _WIN32
+#if defined _WIN32
     flags(flag::is_vista) = internal::is_vista();
 #elif !__APPLE__
     flags(flag::has_zenity) = check_program("zenity");
@@ -479,11 +480,11 @@ settings::settings(bool resync)
 
 bool settings::available()
 {
-#if _WIN32
+#if defined _WIN32
     return true;
 #elif __APPLE__
     return true;
-#elif __EMSCRIPTEN__
+#elif defined __EMSCRIPTEN__
     // FIXME: Return true after implementation is complete.
     return false;
 #else
@@ -492,7 +493,7 @@ bool settings::available()
            tmp.flags(flag::has_matedialog) ||
            tmp.flags(flag::has_qarma) ||
            tmp.flags(flag::has_kdialog);
-#endif
+#endif//#if _WIN32
 }
 
 void settings::verbose(bool value)
@@ -508,10 +509,10 @@ void settings::rescan()
 // Check whether a program is present using “which”.
 bool settings::check_program(std::string const &program)
 {
-#if _WIN32
+#if defined _WIN32
     (void)program;
     return false;
-#elif __EMSCRIPTEN__
+#elif defined __EMSCRIPTEN__
     (void)program;
     return false;
 #else
@@ -558,7 +559,7 @@ bool &settings::flags(flag in_flag)
 // path implementation
 inline std::string path::home()
 {
-#if _WIN32
+#if defined _WIN32
     // First try the USERPROFILE environment variable
     auto user_profile = internal::getenv("USERPROFILE");
     if (user_profile.size() > 0)
@@ -576,7 +577,7 @@ inline std::string path::home()
         if (*buf)
             return buf;
     }
-#elif __EMSCRIPTEN__
+#elif defined __EMSCRIPTEN__
     return "/";
 #else
     // First try the HOME environment variable
@@ -600,7 +601,7 @@ inline std::string path::home()
 
 inline std::string path::separator()
 {
-#if _WIN32
+#if defined _WIN32
     return "\\";
 #else
     return "/";
@@ -619,7 +620,7 @@ inline std::string internal::executor::result(int *exit_code /* = nullptr */)
 
 inline bool internal::executor::kill()
 {
-#if _WIN32
+#if defined _WIN32
     if (m_future.valid())
     {
         // Close all windows that weren’t open when we started the future
@@ -633,7 +634,7 @@ inline bool internal::executor::kill()
                 SendMessage(hwnd, WM_COMMAND, IDNO, 0);
             }
     }
-#elif __EMSCRIPTEN__ || __NX__
+#elif defined __EMSCRIPTEN__ || defined __NX__
     // FIXME: do something
     return false; // cannot kill
 #else
@@ -643,7 +644,7 @@ inline bool internal::executor::kill()
     return true;
 }
 
-#if _WIN32
+#if defined _WIN32
 inline BOOL CALLBACK internal::executor::enum_windows_callback(HWND hwnd, LPARAM lParam)
 {
     auto that = (executor *)lParam;
@@ -656,7 +657,7 @@ inline BOOL CALLBACK internal::executor::enum_windows_callback(HWND hwnd, LPARAM
 }
 #endif
 
-#if _WIN32
+#if defined _WIN32
 inline void internal::executor::start_func(std::function<std::string(int *)> const &fun)
 {
     stop();
@@ -676,7 +677,7 @@ inline void internal::executor::start_func(std::function<std::string(int *)> con
     m_running = true;
 }
 
-#elif __EMSCRIPTEN__
+#elif defined __EMSCRIPTEN__
 inline void internal::executor::start(int exit_code)
 {
     m_exit_code = exit_code;
@@ -738,7 +739,7 @@ inline bool internal::executor::ready(int timeout /* = default_wait_timeout */)
     if (!m_running)
         return true;
 
-#if _WIN32
+#if defined _WIN32
     if (m_future.valid())
     {
         auto status = m_future.wait_for(std::chrono::milliseconds(timeout));
@@ -758,7 +759,7 @@ inline bool internal::executor::ready(int timeout /* = default_wait_timeout */)
 
         m_stdout = m_future.get();
     }
-#elif __EMSCRIPTEN__ || __NX__
+#elif defined __EMSCRIPTEN__ || defined __NX__
     // FIXME: do something
     (void)timeout;
 #else
@@ -800,7 +801,7 @@ inline void internal::executor::stop()
 
 // dll implementation
 
-#if _WIN32
+#if defined _WIN32
 inline internal::platform::dll::dll(std::string const &name)
   : handle(::LoadLibraryA(name.c_str()))
 {}
@@ -814,7 +815,7 @@ inline internal::platform::dll::~dll()
 
 // ole32_dll implementation
 
-#if _WIN32
+#if defined _WIN32
 inline internal::platform::ole32_dll::ole32_dll()
     : dll("ole32.dll")
 {
@@ -838,7 +839,7 @@ inline bool internal::platform::ole32_dll::is_initialized()
 
 // new_style_context implementation
 
-#if _WIN32
+#if defined _WIN32
 inline internal::platform::new_style_context::new_style_context()
 {
     // Only create one activation context for the whole app lifetime.
@@ -934,7 +935,7 @@ inline std::string internal::dialog::get_icon_name(icon _icon)
         case icon::question: return "question";
         // Zenity wants "information" but WinForms wants "info"
         /* case icon::info: */ default:
-#if _WIN32
+#if defined _WIN32
             return "info";
 #else
             return "information";
@@ -943,13 +944,13 @@ inline std::string internal::dialog::get_icon_name(icon _icon)
 }
 
 // This is only used for debugging purposes
-inline std::ostream& operator <<(std::ostream &s, std::vector<std::string> const &v)
+/*inline std::ostream& operator <<(std::ostream &s, std::vector<std::string> const &v)
 {
     int not_first = 0;
     for (auto &e : v)
         s << (not_first++ ? " " : "") << e;
     return s;
-}
+}*/
 
 // Properly quote a string for Powershell: replace ' or " with '' or ""
 // FIXME: we should probably get rid of newlines!
@@ -983,7 +984,7 @@ inline internal::file_dialog::file_dialog(type in_type,
             std::vector<std::string> const &filters /* = {} */,
             opt options /* = opt::none */)
 {
-#if _WIN32
+#if defined _WIN32
     std::string filter_list;
     std::regex whitespace("  *");
     for (size_t i = 0; i + 1 < filters.size(); i += 2)
@@ -1126,7 +1127,7 @@ inline internal::file_dialog::file_dialog(type in_type,
 
         return "";
     });
-#elif __EMSCRIPTEN__
+#elif defined __EMSCRIPTEN__
     // FIXME: do something
     (void)in_type;
     (void)title;
@@ -1272,7 +1273,8 @@ inline internal::file_dialog::file_dialog(type in_type,
     }
 
     if (flags(flag::is_verbose))
-        std::cerr << "pfd: " << command << std::endl;
+        //std::cerr << "pfd: " << command << std::endl;
+        fprintf(stderr, "suppressed log file-dialogs line " XSTR(__LINE__) "\n");
 
     m_async->start_process(command);
 #endif
@@ -1280,7 +1282,7 @@ inline internal::file_dialog::file_dialog(type in_type,
 
 inline std::string internal::file_dialog::string_result()
 {
-#if _WIN32
+#if defined _WIN32
     return m_async->result();
 #else
     auto ret = m_async->result();
@@ -1294,7 +1296,7 @@ inline std::string internal::file_dialog::string_result()
 
 inline std::vector<std::string> internal::file_dialog::vector_result()
 {
-#if _WIN32
+#if defined _WIN32
     m_async->result();
     return m_vector_result;
 #else
@@ -1313,7 +1315,7 @@ inline std::vector<std::string> internal::file_dialog::vector_result()
 #endif
 }
 
-#if _WIN32
+#if defined _WIN32
 // Use a static function to pass as BFFCALLBACK for legacy folder select
 inline int CALLBACK internal::file_dialog::bffcallback(HWND hwnd, UINT uMsg,
                                                        LPARAM, LPARAM pData)
@@ -1387,10 +1389,12 @@ inline std::string internal::file_dialog::select_folder_vista(IFileDialog *ifd, 
                 {
                     auto name = internal::wstr2str(std::wstring(wname));
                     dll::proc<void WINAPI (LPVOID)>(ole32_dll(), "CoTaskMemFree")(wname);
-                    std::cerr << "pfd: failed to get path for " << name << std::endl;
+                    //std::cerr << "pfd: failed to get path for " << name << std::endl;
+                    fprintf(stderr, "suppressed log file-dialogs line " XSTR(__LINE__) "\n");
                 }
                 else
-                    std::cerr << "pfd: item of unknown type selected" << std::endl;
+                    //std::cerr << "pfd: item of unknown type selected" << std::endl;
+                    fprintf(stderr, "suppressed log file-dialogs line " XSTR(__LINE__) "\n");
             }
 
             item->Release();
@@ -1413,7 +1417,7 @@ inline notify::notify(std::string const &title,
     if (_icon == icon::question) // Not supported by notifications
         _icon = icon::info;
 
-#if _WIN32
+#if defined _WIN32
     // Use a static shared pointer for notify_icon so that we can delete
     // it whenever we need to display a new one, and we can also wait
     // until the program has finished running.
@@ -1474,7 +1478,7 @@ inline notify::notify(std::string const &title,
 
     // Display the new icon
     Shell_NotifyIconW(NIM_ADD, nid.get());
-#elif __EMSCRIPTEN__
+#elif defined __EMSCRIPTEN__
     // FIXME: do something
     (void)title;
     (void)message;
@@ -1507,7 +1511,8 @@ inline notify::notify(std::string const &title,
     }
 
     if (flags(flag::is_verbose))
-        std::cerr << "pfd: " << command << std::endl;
+        //std::cerr << "pfd: " << command << std::endl;
+        fprintf(stderr, "suppressed log file-dialogs line " XSTR(__LINE__) "\n");
 
     m_async->start_process(command);
 #endif
@@ -1520,7 +1525,7 @@ inline message::message(std::string const &title,
                         choice _choice /* = choice::ok_cancel */,
                         icon _icon /* = icon::info */)
 {
-#if _WIN32
+#if defined _WIN32
     // Use MB_SYSTEMMODAL rather than MB_TOPMOST to ensure the message window is brought
     // to front. See https://github.com/samhocevar/portable-file-dialogs/issues/52
     UINT style = MB_SYSTEMMODAL;
@@ -1560,7 +1565,7 @@ inline message::message(std::string const &title,
         return "";
     });
 
-#elif __EMSCRIPTEN__
+#elif defined __EMSCRIPTEN__
     std::string full_message;
     switch (_icon)
     {
@@ -1711,7 +1716,8 @@ inline message::message(std::string const &title,
     }
 
     if (flags(flag::is_verbose))
-        std::cerr << "pfd: " << command << std::endl;
+        //std::cerr << "pfd: " << command << std::endl;
+        fprintf(stderr, "suppressed log file-dialogs line " XSTR(__LINE__) "\n");
 
     m_async->start_process(command);
 #endif

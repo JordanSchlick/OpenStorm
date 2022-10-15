@@ -16,7 +16,7 @@
 - [ ] Pull data from http server
 - [ ] Add designated thread pools to AsyncTask and multi-thread radar decompression
 - [ ] Add linux support to ImGUI and get linux working for everything
-- [ ] Implement Map data
+- [ ] Fix opacity flickering caused by async upload race condition
 
 ## Future:
 - [ ] Mobile Support (Possibly)
@@ -25,3 +25,4 @@
 - [ ] Combining radar data from multiple points
 - [ ] Change radar decoder to one that is more performant and uses less memory
 - [ ] Display real time lightning
+- [ ] Implement map data

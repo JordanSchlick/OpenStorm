@@ -9,6 +9,7 @@
 #endif
 //#include "CoreMinimal.h"
 #include <stdint.h>
+#include <stddef.h>
 
 class RadarData {
 public:

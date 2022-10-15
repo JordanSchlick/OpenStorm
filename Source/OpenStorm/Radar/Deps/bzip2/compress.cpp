@@ -28,6 +28,9 @@
 
 #include "bzlib_private.h"
 
+//#if __cplusplus >= 201703L
+#define register
+//#endif
 
 /*---------------------------------------------------*/
 /*--- Bit stream I/O                              ---*/

@@ -87,7 +87,11 @@ public:
 		Start(true);
 	}
 	void Task(){
+		
+		#ifdef _WIN32
 		_sleep(timeout * 1000);
+		#endif
+		
 		collection->LogState();
 	}
 };
@@ -371,7 +375,7 @@ void RadarCollection::PollFiles(std::string defaultFilename) {
 	}
 	UnloadOldData();
 	LoadNewData();
-	if(moveToEnd){
+	if(moveToEnd && cachedAfter > 0){
 		// a better place for keeping the current position at the end might be in LoadNewData with a global state set on Move
 		Move(cachedAfter);
 	}
@@ -383,7 +387,7 @@ void RadarCollection::ReloadFile(int index) {
 	}
 	RadarDataHolder* holder = &cache[index];
 	if(holder->state != RadarDataHolder::State::DataStateUnloaded){
-		fprintf(stderr, "Reloading");
+		fprintf(stderr, "Reloading file\n");
 		std::string originalFilePath = holder->filePath;
 		holder->Unload();
 		asyncTasks.push_back(new RadarLoader(
@@ -654,7 +658,9 @@ void RadarCollection::LogState() {
 class AsyncTaskTest : public AsyncTaskRunner{
 	void Task(){
 		fprintf(stderr,"Starting task\n");
+		#ifdef _WIN32
 		_sleep(1000);
+		#endif
 		fprintf(stderr,"Ending task\n");
 	}
 };
