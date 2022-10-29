@@ -236,8 +236,8 @@ void AImGuiUI::Tick(float deltaTime)
 			if (ImGui::TreeNodeEx("Movement", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				CustomFloatInput("Movement Speed", 10, 1500, &globalState.moveSpeed, &globalState.defaults->moveSpeed);
 				
-				ImGui::Text("Rotation Speed:");
-				ImGui::SliderFloat("##2", &GS->globalState.rotateSpeed, 0.0f, 1000.0f);
+				
+				CustomFloatInput("Rotation Speed", 0.0f, 300.0f, &globalState.rotateSpeed, &globalState.defaults->rotateSpeed);
 				ImGui::TreePop();
 				//ImGui::Text("MovementSpeed: %f", GS->globalState.moveSpeed);
 			}
@@ -325,6 +325,45 @@ void AImGuiUI::Tick(float deltaTime)
 					//ImGui::SetWindowCollapsed(true);
 					ExternalWindow();
 				}
+				
+				ImGuiComboFlags flags = 0;
+				const char* qualityNames[] =  { "Custom", "GPU Melter", "Very High", "High", "Normal", "Low", "Very Low", "Potato" };
+				const float qualityValues[] = { 10,       3,            2,           1,      0,        -1,    -2,         -10      };
+				int qualityCurrentIndex = 0; 
+				for (int n = 0; n < IM_ARRAYSIZE(qualityNames); n++){
+					if(globalState.quality == qualityValues[n]){
+						qualityCurrentIndex = n;
+						break;
+					}
+				}
+				const char* comboPreviewValue = qualityNames[qualityCurrentIndex];  // Pass in the preview value visible before opening the combo (it could be anything)
+				if (ImGui::BeginCombo("Quality", comboPreviewValue, flags)){
+					for (int n = 0; n < IM_ARRAYSIZE(qualityNames); n++){
+						const bool is_selected = (qualityCurrentIndex == n);
+						if (ImGui::Selectable(qualityNames[n], is_selected)){
+							//qualityCurrentIndex = n;
+							if(globalState.quality != qualityValues[n]){
+								globalState.quality = qualityValues[n];
+								globalState.EmitEvent("UpdateVolumeParameters");
+								globalState.testFloat = globalState.quality;
+							}
+						}
+						// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+						if (is_selected){
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+				
+				if(globalState.quality == 10 && CustomFloatInput("Step Size", 0.1f, 20.0f, &globalState.qualityCustomStepSize, &globalState.defaults->qualityCustomStepSize)){
+					globalState.EmitEvent("UpdateVolumeParameters");
+				}
+				
+				if(ImGui::Checkbox("Enable Fuzz", &globalState.enableFuzz)){
+					globalState.EmitEvent("UpdateVolumeParameters");
+				}
+						
 				ImGui::TreePop();
 			}
 		}

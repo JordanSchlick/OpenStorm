@@ -171,7 +171,6 @@ float travelDistance = startingDistance;
 //for(float travelDistance = startingDistance; travelDistance <= endingDistance && alpha < 0.90; travelDistance += stepSize){
 for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	// travelDistance += wasEmpty * stepSize * 10;
-	travelDistance += stepSize;
 	float3 location = rayOrigin + travelDistance * rayDirection;
 	
 	if(step & 0xF == 0xF){
@@ -208,6 +207,7 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	int sweepInt = sweep + 0.5;
 	
 	if(sweep < 0 || radiusInt >= radiusSize){
+		travelDistance += stepSize;
 		continue;
 	}
 	
@@ -344,6 +344,7 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	//}
 	
 	
+	travelDistance += stepSize;
 }
 
 //color -= 1;

@@ -144,6 +144,7 @@ void ARadarVolumeRender::BeginPlay()
 	
 
 	radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), 0);
+	radarMaterialInstance->SetScalarParameterValue(TEXT("StepSize"), 5);
 
 	// RadarData::TextureBuffer imageBuffer = radarData->CreateTextureBufferReflectivity2();
 	// float* RawImageData = (float*)volumeImageData->Lock(LOCK_READ_WRITE);
@@ -264,6 +265,25 @@ void ARadarVolumeRender::BeginPlay()
 	}));
 	callbackIds.push_back(globalState->RegisterEvent("UpdateVolumeParameters",[this, globalState](std::string stringData, void* extraData){	
 		radarMaterialInstance->SetScalarParameterValue(TEXT("Mode"), globalState->spatialInterpolation ? 1 : 0);
+		float stepSize = 5;
+		if(globalState->quality == 10){
+			stepSize = std::max(globalState->qualityCustomStepSize, 0.1f);
+		}else if(globalState->quality >= 3){
+			stepSize = 0.1;
+		}else if(globalState->quality >= 2){
+			stepSize = 1;
+		}else if(globalState->quality >= 1){
+			stepSize = 2;
+		}else if(globalState->quality <= -10){
+			stepSize = 50;
+		}else if(globalState->quality <= -2){
+			stepSize = 20;
+		}else if(globalState->quality <= -1){
+			stepSize = 10;
+		}
+		fprintf(stderr,"stepSize: %f",stepSize);
+		radarMaterialInstance->SetScalarParameterValue(TEXT("StepSize"), stepSize);
+		radarMaterialInstance->SetScalarParameterValue(TEXT("Fuzz"), globalState->enableFuzz ? 1 : 0);
 	}));
 	
 	//RandomizeTexture();

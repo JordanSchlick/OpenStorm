@@ -34,6 +34,7 @@ public:
 	bool devShowImGui = false; // if it is safe to show ImGui debuging windows
 	bool developmentMode = false; // show development features
 	bool vsync = true; // show development features
+	bool enableFuzz = true;
 	
 	float maxFPS = 60.0f; // maximum frames per second
 	float animateSpeed = 3.0f; // speed of animation
@@ -44,6 +45,8 @@ public:
 	float moveSpeed = 300.0f; // speed of movement
 	float rotateSpeed = 200.0f; // speed of rotation
 	float guiScale = 1.0f; // scale of gui for high dpi displays
+	float quality = 0.0f; // a float representing quality with 0 being normal
+	float qualityCustomStepSize = 5.0f; // if quality is set to 10 this value is used
 
 	std::vector<Waypoint> locationMarkers = {};
 	Globe* globe;

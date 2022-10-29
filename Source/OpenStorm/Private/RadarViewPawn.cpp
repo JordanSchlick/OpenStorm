@@ -69,6 +69,7 @@ void ARadarViewPawn::Tick(float deltaTime)
 	}
 	if (ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>()){
 		moveSpeed = GS->globalState.moveSpeed;
+		rotateSpeed = GS->globalState.rotateSpeed;
 		FVector location = GetActorLocation();
 		location += camera->GetForwardVector() * forwardMovement * deltaTime * moveSpeed;
 		location += camera->GetRightVector() * sidewaysMovement * deltaTime * moveSpeed;

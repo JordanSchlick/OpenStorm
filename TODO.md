@@ -17,12 +17,14 @@
 - [ ] Add designated thread pools to AsyncTask and multi-thread radar decompression
 - [ ] Add linux support to ImGUI and get linux working for everything
 - [ ] Fix opacity flickering caused by async upload race condition
+- [ ] Support gzip nexrad archives
+- [ ] More Advanced Tools/Options for interacting, measuring, and viewing data
+- [ ] Top down radar view panning
+- [ ] Save settings to disk
 
 ## Future:
 - [ ] Mobile Support (Possibly)
-- [ ] More Advanced Tools/Options for interacting, measuring, and viewing data
-- [ ] Top down radar view panning
-- [ ] Combining radar data from multiple points
+- [ ] Combining radar data from multiple stations
 - [ ] Change radar decoder to one that is more performant and uses less memory
 - [ ] Display real time lightning
 - [ ] Implement map data
