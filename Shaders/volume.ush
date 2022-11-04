@@ -8,9 +8,9 @@ struct F
 		float B = 2 - abs(H * 6 - 4);
 		return saturate(float3(R,G,B));
 	}
-	static float4 sphere(){
-		#include "sphere.ush"
-	}
+	// static float4 sphere(){
+	// 	#include "sphere.ush"
+	// }
 	
 	/*static float raySphereIntersect(vec3 r0, vec3 rd, vec3 s0, float sr) {
 		// - r0: ray origin
@@ -173,7 +173,7 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	// travelDistance += wasEmpty * stepSize * 10;
 	float3 location = rayOrigin + travelDistance * rayDirection;
 	
-	if(step & 0xF == 0xF){
+	if((step & 0xF) == 0xF){
 		// check if ray is going out of bounds and end early
 		bool inBounds = cutoffCircles.r >= location.z && cutoffCircles.b <= location.z;
 		inBounds = inBounds && distance(location,0) <= boundingRadius;
