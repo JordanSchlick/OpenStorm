@@ -11,6 +11,7 @@
 - [X] Fix ImGui input state
 - [ ] Initial public release
 - [ ] Add Support for filtering or modifying Color/Opacity in radar data 
+- [ ] Find and order by radar dates
 - [ ] Allow multiple products
 - [ ] Allow computed products
 - [ ] Pull data from http server
