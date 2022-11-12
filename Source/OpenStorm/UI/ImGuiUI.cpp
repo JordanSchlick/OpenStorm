@@ -21,8 +21,8 @@ GS->globalState.maxFPS
 #include "uiwindow.h"
 #include "../Radar/SystemAPI.h"
 #include "../Radar/Globe.h"
-#include "RadarGameStateBase.h"
-#include "RadarViewPawn.h"
+#include "../Objects/RadarGameStateBase.h"
+#include "../Objects/RadarViewPawn.h"
 #include "portable-file-dialogs.h"
 
 #include <vector>

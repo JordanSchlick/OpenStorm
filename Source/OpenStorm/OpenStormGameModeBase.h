@@ -1,10 +1,10 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #pragma once
-#include "RadarGameStateBase.h"
+#include "./Objects/RadarGameStateBase.h"
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "RadarViewPawn.h"
+#include "./Objects/RadarViewPawn.h"
 #include "GameFramework/DefaultPawn.h"
 #include "OpenStormGameModeBase.generated.h"
 

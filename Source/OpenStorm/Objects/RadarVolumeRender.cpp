@@ -4,7 +4,7 @@
 
 
 #include "RadarVolumeRender.h"
-#include "StdioConsole.h"
+#include "../UI/native.h"
 #include "RadarGameStateBase.h"
 #include "../EngineHelpers/MaterialRenderTarget.h"
 
@@ -95,7 +95,7 @@ void ARadarVolumeRender::BeginPlay()
 	// Load the Cube mesh
 	cubeMeshComponent->SetStaticMesh(cubeMesh);
 
-	AStdioConsole::ShowConsole();
+	NativeAPI::ShowConsole();
 
 	/*
 	//IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("ShowFlag.PostProcessing"));
