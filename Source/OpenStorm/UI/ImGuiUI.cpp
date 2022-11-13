@@ -297,7 +297,7 @@ void AImGuiUI::Tick(float deltaTime)
 		}
 		
 		if (ImGui::CollapsingHeader("Settings")) {
-			if (ImGui::TreeNodeEx("Display", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+			if (ImGui::TreeNodeEx("Display", ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen)) {
 				if(CustomFloatInput("Max FPS", 20, 120, &globalState.maxFPS, &globalState.defaults->maxFPS)){
 					UpdateEngineSettings();
 				}
@@ -362,6 +362,13 @@ void AImGuiUI::Tick(float deltaTime)
 					globalState.EmitEvent("UpdateVolumeParameters");
 				}
 						
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNodeEx("Joke", ImGuiTreeNodeFlags_SpanAvailWidth)) {	
+				ImGui::Checkbox("Audio Height", &globalState.audioControlledHeight);
+				ImGui::Checkbox("Audio Opacity", &globalState.audioControlledOpacity);
+				ImGui::Checkbox("Audio Cutoff", &globalState.audioControlledCutoff);
+				CustomFloatInput("Audio Multiplier", 1.0f, 10.0f, &globalState.audioControlMultiplier, &globalState.defaults->audioControlMultiplier);
 				ImGui::TreePop();
 			}
 		}

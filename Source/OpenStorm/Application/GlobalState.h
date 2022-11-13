@@ -34,7 +34,10 @@ public:
 	bool devShowImGui = false; // if it is safe to show ImGui debuging windows
 	bool developmentMode = false; // show development features
 	bool vsync = true; // show development features
-	bool enableFuzz = true;
+	bool enableFuzz = true; // add noise to shader to achieve a dithering effect
+	bool audioControlledHeight = false;
+	bool audioControlledOpacity = false;
+	bool audioControlledCutoff = false;
 	
 	float maxFPS = 60.0f; // maximum frames per second
 	float animateSpeed = 3.0f; // speed of animation
@@ -48,6 +51,7 @@ public:
 	float quality = 0.0f; // a float representing quality with 0 being normal
 	float qualityCustomStepSize = 5.0f; // if quality is set to 10 this value is used
 	float verticalScale = 1.0f; // multiply vertical scale
+	float audioControlMultiplier = 5.0f;
 
 	std::vector<Waypoint> locationMarkers = {};
 	Globe* globe;
