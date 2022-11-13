@@ -18,7 +18,7 @@
 #include <algorithm>
 #include <cmath>
 
-
+#define PIF 3.14159265358979323846f
 
 // modulo that always returns positive
 inline int modulo(int i, int n) {
@@ -106,6 +106,9 @@ void RadarData::ReadNexrad(const char* filename) {
 			int maxRadius = 0;
 			stats.minValue = INFINITY;
 			stats.maxValue = -INFINITY;
+			stats.boundUpper = 0;
+			stats.boundLower = 0;
+			stats.boundRadius = 0;
 			
 			// do a pass of the data to find info
 			for (const auto pair : sweeps) {
@@ -118,13 +121,14 @@ void RadarData::ReadNexrad(const char* filename) {
 				sweepInfo[sweepId].elevation = sweep->h.elev;
 				sweepInfo[sweepId].actualRayCount = sweep->h.nrays;
 				stats.innerDistance = (float)sweep->ray[0]->h.range_bin1 / (float)sweep->ray[0]->h.gate_size;
+				stats.pixelSize = (float)sweep->ray[0]->h.gate_size;
 				//fprintf(stderr, "innerDistance: %f\n", innerDistance);
 
 				int thetaSize = sweep->h.nrays;
 				maxTheta = std::max(maxTheta, thetaSize);
 				for (int theta = 0; theta < thetaSize; theta++) {
 					Ray* ray = sweep->ray[theta];
-					
+					int maxDataDistance = 0;
 					if (ray) {
 						int radiusSize = ray->h.nbins;
 						maxRadius = std::max(maxRadius, radiusSize);
@@ -135,13 +139,23 @@ void RadarData::ReadNexrad(const char* filename) {
 								stats.minValue = value != 0 ? (value < stats.minValue ? value : stats.minValue) : stats.minValue;
 								//minValue = value < minValue ? value : minValue;
 								stats.maxValue = value > stats.maxValue ? value : stats.maxValue;
+								maxDataDistance = std::max(maxDataDistance,radius);
 							}
 						}
 					}
+					float realMaxDistance = stats.innerDistance + maxDataDistance + 1;
+					float realMaxHeight = realMaxDistance*std::sinf(PIF / 180.0f * sweepInfo[sweepId].elevation) + 1;
+					stats.boundRadius = std::max(stats.boundRadius, realMaxDistance);
+					stats.boundUpper = std::max(stats.boundUpper, realMaxHeight);
+					stats.boundLower = std::min(stats.boundLower, realMaxHeight);
 				}
+				
+				
 
 				sweepId++;
 			}
+			
+			fprintf(stderr, "bounds %f %f %f\n",stats.boundRadius,stats.boundUpper,stats.boundLower);
 			
 			if (stats.minValue == INFINITY) {
 				stats.minValue = 0;

@@ -47,6 +47,7 @@ public:
 	float guiScale = 1.0f; // scale of gui for high dpi displays
 	float quality = 0.0f; // a float representing quality with 0 being normal
 	float qualityCustomStepSize = 5.0f; // if quality is set to 10 this value is used
+	float verticalScale = 1.0f; // multiply vertical scale
 
 	std::vector<Waypoint> locationMarkers = {};
 	Globe* globe;

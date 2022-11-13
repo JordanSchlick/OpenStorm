@@ -68,8 +68,8 @@ const float angleIndexSize = 65536;
 
 
 float3 rayOrigin = hitPos;
-const float boundingRadius = (radiusSize + innerDistance) /**/;
-cutoffCircles = float4(100,boundingRadius,-10,boundingRadius);
+const float boundingRadius = cutoffRadius != 0 ? cutoffRadius : (radiusSize + innerDistance) /**/;
+//cutoffCircles = float4(100,boundingRadius,-10,boundingRadius);
 
 // initial offset from rayOrigin to start from
 float startingDistance = 0.0;
@@ -80,7 +80,7 @@ bool wasInsideBounds = false;
 
 // section that bounds the rays to a region defined by a sphere with a radius of boundingRadius and the top and bottom cut off by cutoffCircles
 if(true){
-	bool inBounds = cutoffCircles.r == cutoffCircles.b || (cutoffCircles.r >= rayOrigin.z && cutoffCircles.b <= rayOrigin.z);
+	bool inBounds = /*cutoffCircles.r == cutoffCircles.b ||*/ (cutoffCircles.r >= rayOrigin.z && cutoffCircles.b <= rayOrigin.z);
 	inBounds = inBounds && distance(rayOrigin, 0) <= boundingRadius;
 	if(!inBounds){
 		// the starting position is outside the bounds, move the ray in bounds or discard it if not possible
@@ -121,12 +121,14 @@ if(true){
 					return 0;
 				}
 			}
-		}else{
-			cutoffCircles = float4(boundingRadius,0,-boundingRadius,0);
-		}
+		}//else{
+			//cutoffCircles = float4(boundingRadius,0,-boundingRadius,0);
+		//}
 		if(intersectionDistance > 0){
 			// only move starting distance when the offset is positive to keep the volume behind the surface
 			startingDistance = intersectionDistance;
+			// float3 color = F::HUEtoRGB((intersectionDistance / 300) % 1);
+			// return float4(color.x,color.y,color.z,0.5);
 		}
 		/*if(animationTime >= 0.9){
 			float3 color2 =  F::HUEtoRGB(((intersectionLocation) / 30 + 100).z % 1);
@@ -156,7 +158,17 @@ float alpha = 0;
 if(fuzz >= 1){
 	// add random noise to starting position to prevent patterns from appearing
 	//startingDistance += frac(sin(dot(rayOrigin, float3(12.9898, 78.233, 29.4382)) + animationTime) * 43758.5453) * stepSize;
-	startingDistance += frac(sin(dot(screenPosition, float2(12.9898, 78.233)) + animationTime) * 43758.5453) * stepSize;
+	
+	float noise = frac(
+		sin(
+			dot(screenPosition / 2048.0f, float2(12.9898, 78.2337)) * 
+			dot(screenPosition / 2048.0f, float2(51.5372, 97.1857)) + 
+			animationTime * 5 + 
+			cos(animationTime)
+		) * 43758.5453f 
+	);
+	//return noise;
+	startingDistance += noise * stepSize;
 }
 
 //animationTime = (1 - cos(PI2 * animationTime))/2;
@@ -175,7 +187,7 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	
 	if((step & 0xF) == 0xF){
 		// check if ray is going out of bounds and end early
-		bool inBounds = cutoffCircles.r >= location.z && cutoffCircles.b <= location.z;
+		bool inBounds = /*cutoffCircles.r == cutoffCircles.b ||*/ cutoffCircles.r >= location.z && cutoffCircles.b <= location.z;
 		inBounds = inBounds && distance(location,0) <= boundingRadius;
 		if(wasInsideBounds && !inBounds){
 			break;

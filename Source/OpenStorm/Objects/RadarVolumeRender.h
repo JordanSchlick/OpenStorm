@@ -83,10 +83,15 @@ public:
 	std::vector<uint64_t> callbackIds = {};
 	RadarColorIndex::Result radarColorResult = {};
 	
+	// load data from RadarUpdateEvent into shader
+	void HandleRadarDataEvent(RadarCollection::RadarUpdateEvent event);
+	
 	void RandomizeTexture();
 
 	//Initialize all textures or reinitialize ones that need it
 	void InitializeTextures();
+	
+	
 
 protected:
 	// Called when the game starts or when spawned

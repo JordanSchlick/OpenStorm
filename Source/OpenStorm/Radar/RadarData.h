@@ -51,9 +51,17 @@ public:
 	struct Stats {
 		// blank distance in pixels between origin and most center pixels of the buffer
 		float innerDistance = 0;
-
+		// minumum value in the data
 		float minValue = 0;
+		// maximum value in the data
 		float maxValue = 0;
+		// length of a pixel along the radius in meters
+		float pixelSize = 250;
+		
+		// bounds in pixels including the inner distance defined by a sphere with a radius of boundRadius and the top and bottom cut off
+		float boundRadius = 0;
+		float boundUpper = 0;
+		float boundLower = 0;
 		
 		double latitude = 0; 
 		double longitude = 0; 
@@ -65,6 +73,7 @@ public:
 
 
 	struct SweepInfo {
+		// elevation from flat in degrees
 		float elevation = 0;
 		int id = -1;
 		int actualRayCount = 0;

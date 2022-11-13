@@ -185,51 +185,7 @@ void ARadarVolumeRender::BeginPlay()
 	radarCollection = new RadarCollection();
 
 	radarCollection->RegisterListener([this](RadarCollection::RadarUpdateEvent event) {
-		if (event.data != NULL) {
-			
-			// copy to local buffer to decompress and retain data
-			radarData->CopyFrom(event.data);
-			InitializeTextures();
-			
-			
-			UTexture2D* textureToUpdate = volumeTexture;
-			if(doTimeInterpolation){
-				double now = SystemAPI::CurrentTime();
-				if(usePrimaryTexture){
-					interpolationStartValue = 1;
-					interpolationEndValue = 0;
-				}else{
-					textureToUpdate = volumeTexture2;
-					interpolationStartValue = 0;
-					interpolationEndValue = 1;
-				}
-				interpolationAnimating = true;
-				interpolationStartTime = now;
-				interpolationEndTime = now + (double)event.minTimeTillNext;
-				interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), interpolationStartValue);
-				usePrimaryTexture = !usePrimaryTexture;
-				
-			}
-			
-			UpdateTexture(textureToUpdate, (uint8_t*)radarData->buffer, radarData->fullBufferSize * sizeof(float), sizeof(float));
-			
-			// Orient globe to match up with radar
-			//fprintf(stderr, "Location lat:%f lon:%f \n", event.data->stats.latitude, event.data->stats.longitude);
-			GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
-			globalState->globe->SetCenter(0, 0, -globalState->globe->surfaceRadius - event.data->stats.altitude);
-			globalState->globe->SetTopCoordinates(event.data->stats.latitude, event.data->stats.longitude);
-			auto vector = globalState->globe->GetPointScaledDegrees(event.data->stats.latitude, event.data->stats.longitude, event.data->stats.altitude);
-			radarMaterialInstance->SetVectorParameterValue(TEXT("Center"), FVector(vector.x, vector.y, vector.z));
-			globalState->EmitEvent("GlobeUpdate");
-			
-			radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), event.data->stats.innerDistance);
-			
-			RadarData::TextureBuffer imageBuffer = event.data->CreateAngleIndexBuffer();
-			UpdateTexture(angleIndexTexture, (uint8_t*)imageBuffer.data, imageBuffer.byteSize, sizeof(float), [](uint8_t* buffer){
-				delete[] buffer;
-			});
-			
-		}
+		HandleRadarDataEvent(event);
 	});
 
 	radarCollection->Allocate(75);
@@ -287,6 +243,69 @@ void ARadarVolumeRender::BeginPlay()
 	}));
 	
 	//RandomizeTexture();
+}
+
+void ARadarVolumeRender::HandleRadarDataEvent(RadarCollection::RadarUpdateEvent event){
+	if (event.data != NULL) {
+		
+		// copy to local buffer to decompress and retain data
+		radarData->CopyFrom(event.data);
+		InitializeTextures();
+		
+		
+		UTexture2D* textureToUpdate = volumeTexture;
+		if(doTimeInterpolation){
+			double now = SystemAPI::CurrentTime();
+			if(usePrimaryTexture){
+				interpolationStartValue = 1;
+				interpolationEndValue = 0;
+			}else{
+				textureToUpdate = volumeTexture2;
+				interpolationStartValue = 0;
+				interpolationEndValue = 1;
+			}
+			interpolationAnimating = true;
+			interpolationStartTime = now;
+			interpolationEndTime = now + (double)event.minTimeTillNext;
+			interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), interpolationStartValue);
+			usePrimaryTexture = !usePrimaryTexture;
+			
+		}
+		
+		
+		float boundRadius = event.data->stats.boundRadius + 1.0f;
+		float boundUpper = event.data->stats.boundUpper + 5.0f;
+		float boundLower = event.data->stats.boundLower - 1.0f;
+		radarMaterialInstance->SetScalarParameterValue(TEXT("CutoffRadius"), boundRadius);
+		radarMaterialInstance->SetVectorParameterValue(TEXT("CutoffCircles"), FVector4(
+			boundUpper, 
+			std::sqrt(boundRadius*boundRadius-boundUpper*boundUpper), 
+			boundLower,
+			std::sqrt(boundRadius*boundRadius-boundLower*boundLower)
+		));
+		radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), event.data->stats.innerDistance);
+		radarMaterialInstance->SetScalarParameterValue(TEXT("Scale"), 2.5);
+		
+		
+		UpdateTexture(textureToUpdate, (uint8_t*)radarData->buffer, radarData->fullBufferSize * sizeof(float), sizeof(float));
+		
+		// Orient globe to match up with radar
+		//fprintf(stderr, "Location lat:%f lon:%f \n", event.data->stats.latitude, event.data->stats.longitude);
+		GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+		globalState->globe->SetCenter(0, 0, -globalState->globe->surfaceRadius - event.data->stats.altitude);
+		globalState->globe->SetTopCoordinates(event.data->stats.latitude, event.data->stats.longitude);
+		auto vector = globalState->globe->GetPointScaledDegrees(event.data->stats.latitude, event.data->stats.longitude, event.data->stats.altitude);
+		radarMaterialInstance->SetVectorParameterValue(TEXT("Center"), FVector(vector.x, vector.y, vector.z));
+		globalState->EmitEvent("GlobeUpdate");
+		
+		
+		
+		RadarData::TextureBuffer imageBuffer = event.data->CreateAngleIndexBuffer();
+		UpdateTexture(angleIndexTexture, (uint8_t*)imageBuffer.data, imageBuffer.byteSize, sizeof(float), [](uint8_t* buffer){
+			delete[] buffer;
+		});
+		
+	}
 }
 
 void ARadarVolumeRender::EndPlay(const EEndPlayReason::Type endPlayReason) {
@@ -452,6 +471,12 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 		radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexLower"), radarColorResult.lower);
 		radarMaterialInstance->SetScalarParameterValue(TEXT("ValueIndexUpper"), radarColorResult.upper);
 
+		radarMaterialInstance->SetVectorParameterValue(TEXT("ScaleInner"), FVector(
+			250.0f / radarData->stats.pixelSize,
+			250.0f / radarData->stats.pixelSize,
+			250.0f / radarData->stats.pixelSize / globalState->verticalScale
+		));
+		
 		if (doTimeInterpolation) {
 			interpolationMaterialInstance->SetScalarParameterValue(TEXT("Minimum"), radarColorResult.lower);
 		}

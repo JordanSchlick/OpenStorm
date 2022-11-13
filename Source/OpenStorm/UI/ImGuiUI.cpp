@@ -220,6 +220,7 @@ void AImGuiUI::Tick(float deltaTime)
 			if (ImGui::TreeNodeEx("Radar", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				CustomFloatInput("Cutoff", 0, 1, &globalState.cutoff, &globalState.defaults->cutoff, CustomFloatInput_SliderOnly);
 				CustomFloatInput("Opacity", 0.2, 4, &globalState.opacityMultiplier, &globalState.defaults->opacityMultiplier);
+				CustomFloatInput("Height", 1, 4, &globalState.verticalScale, &globalState.defaults->verticalScale);
 				
 				bool spatialInterpolationOldValue = globalState.spatialInterpolation;
 				ImGui::Checkbox("Spatial Interpolation", &globalState.spatialInterpolation);
@@ -293,9 +294,6 @@ void AImGuiUI::Tick(float deltaTime)
 			}
 			//ImGui::Separator();
 
-		}	
-		if (ImGui::CollapsingHeader("Filter")) {
-			ImGui::Text("TODO");
 		}
 		
 		if (ImGui::CollapsingHeader("Settings")) {
