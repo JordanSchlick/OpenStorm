@@ -445,6 +445,7 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 					interpolationAnimating = false;
 				}
 			}
+			// only update render target while animating
 			if (volumeMaterialRenderTarget != NULL) {
 				volumeMaterialRenderTarget->Update();
 			}

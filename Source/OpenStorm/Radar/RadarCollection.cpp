@@ -585,6 +585,7 @@ void RadarCollection::Emit(RadarDataHolder* holder) {
 	}
 	RadarUpdateEvent event = {};
 	event.data = holder->radarData;
+	event.minTimeTillNext = 0.2;
 	if(automaticallyAdvance){
 		event.minTimeTillNext = autoAdvanceInterval;
 	}
