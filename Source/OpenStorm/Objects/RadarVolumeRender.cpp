@@ -481,6 +481,11 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 		if (doTimeInterpolation) {
 			interpolationMaterialInstance->SetScalarParameterValue(TEXT("Minimum"), radarColorResult.lower);
 		}
+		
+		// swap to second buffer to prevent overwiting before the asynchronous texture upload is complete.
+		RadarColorIndex::Result oldRadarColorResultAlternate = radarColorResultAlternate;
+		radarColorResultAlternate = radarColorResult;
+		radarColorResult = oldRadarColorResultAlternate;
 
 
 		if (globalState->devShowImGui && globalState->devShowCacheState) {
@@ -510,6 +515,7 @@ ARadarVolumeRender::~ARadarVolumeRender()
 		instance = NULL;
 	}
 	radarColorResult.Delete();
+	radarColorResultAlternate.Delete();
 }
 
 

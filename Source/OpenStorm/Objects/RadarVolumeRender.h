@@ -82,6 +82,7 @@ public:
 	//GlobalState* globalState = NULL;
 	std::vector<uint64_t> callbackIds = {};
 	RadarColorIndex::Result radarColorResult = {};
+	RadarColorIndex::Result radarColorResultAlternate = {};
 	
 	// load data from RadarUpdateEvent into shader
 	void HandleRadarDataEvent(RadarCollection::RadarUpdateEvent event);
