@@ -23,6 +23,7 @@
 #include "Math/UnrealMathUtility.h"
 #include "HAL/FileManager.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Misc/Paths.h"
 
 #include <algorithm>
 #include <cmath>
@@ -192,6 +193,13 @@ void ARadarVolumeRender::BeginPlay()
 	
 	
 	FString radarDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("../files/dir/"));
+	if(!FPaths::DirectoryExists(radarDir)){
+		radarDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("../../files/dir/"));
+	}
+	if(!FPaths::DirectoryExists(radarDir)){
+		radarDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/Demo/"));
+	}
+	
 	FString fullradarDir = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarDir);
 	const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
 	fprintf(stderr, "path %s\n", radarDirLocaition);
