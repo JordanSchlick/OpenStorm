@@ -107,7 +107,7 @@ void RadarData::ReadNexrad(const char* filename) {
 			stats.minValue = INFINITY;
 			stats.maxValue = -INFINITY;
 			stats.boundUpper = 0;
-			stats.boundLower = 0;
+			stats.boundLower = 1e-10;
 			stats.boundRadius = 0;
 			
 			// do a pass of the data to find info

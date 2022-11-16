@@ -67,18 +67,27 @@ void ARadarViewPawn::Tick(float deltaTime)
 			}
 		}
 	}
+	
+	
 	if (ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>()){
 		moveSpeed = GS->globalState.moveSpeed;
 		rotateSpeed = GS->globalState.rotateSpeed;
+		bool shouldEnableTAA = GS->globalState.temporalAntiAliasing;
 		FVector location = GetActorLocation();
 		location += camera->GetForwardVector() * forwardMovement * deltaTime * moveSpeed;
 		location += camera->GetRightVector() * sidewaysMovement * deltaTime * moveSpeed;
 		location.Z += verticalMovement * deltaTime * moveSpeed;
 		SetActorLocation(location);
+		
+		if(forwardMovement != 0 || sidewaysMovement != 0 || verticalMovement != 0){
+			// disable TAA when moving
+			shouldEnableTAA = false;
+		}
 
 		FRotator rotation = GetActorRotation();
 		if(GS->globalState.vrMode){
 			rotation.Pitch = 0;
+			shouldEnableTAA = false;
 		}else{
 			rotation.Pitch = FMath::Clamp(rotation.Pitch + (verticalRotation * deltaTime + verticalRotationAmount / 60) * rotateSpeed, -89.0f, 89.0f);
 			camera->SetRelativeLocation(FVector(0, 0, 0));
@@ -92,7 +101,16 @@ void ARadarViewPawn::Tick(float deltaTime)
 		if (hud != NULL) {
 			hud->SetCompassRotation(rotation.Yaw / 360.0f);
 		}
-		GS->globalState.testFloat =  deltaTime;
+		GS->globalState.testFloat = deltaTime;
+		
+		if(shouldEnableTAA && !isTAAEnabled){
+			isTAAEnabled = true;
+			GEngine->Exec(GetWorld(), TEXT("r.AntiAliasingMethod 2"));
+		}
+		if(!shouldEnableTAA && isTAAEnabled){
+			isTAAEnabled = false;
+			GEngine->Exec(GetWorld(), TEXT("r.AntiAliasingMethod 0"));
+		}
 	}
 	meshComponent->SetRelativeLocation(camera->GetRelativeLocation());
 	meshComponent->SetRelativeRotation(camera->GetRelativeRotation());

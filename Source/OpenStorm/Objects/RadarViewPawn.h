@@ -42,6 +42,8 @@ private:
 	float horizontalRotation = 0;
 	float verticalRotationAmount = 0;
 	float horizontalRotationAmount = 0;
+	
+	bool isTAAEnabled = false;
 
 	void MoveFB(float Value);
 	void MoveLR(float Value);

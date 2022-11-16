@@ -306,7 +306,7 @@ void AImGuiUI::Tick(float deltaTime)
 				}
 				
 				if (ImGui::Button("External Window")) {
-					if(uiWindow != NULL){
+					if(uiWindow != NULL && !globalState.vrMode){
 						InternalWindow();
 					}else{
 						ExternalWindow();
@@ -320,6 +320,7 @@ void AImGuiUI::Tick(float deltaTime)
 					}else{
 						GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 0"));
 					}
+					UpdateEngineSettings();
 					//ImGui::SetWindowCollapsed(true);
 					ExternalWindow();
 				}
@@ -361,6 +362,8 @@ void AImGuiUI::Tick(float deltaTime)
 				if(ImGui::Checkbox("Enable Fuzz", &globalState.enableFuzz)){
 					globalState.EmitEvent("UpdateVolumeParameters");
 				}
+				
+				ImGui::Checkbox("Enable TAA", &globalState.temporalAntiAliasing);
 						
 				ImGui::TreePop();
 			}
@@ -515,6 +518,7 @@ void AImGuiUI::InitializeConsole()
     }
 }
 
+// send controls to an external window
 void AImGuiUI::ExternalWindow() {
 	if (uiWindow != NULL) {
 		if (!uiWindow->isOpen) {
@@ -529,6 +533,7 @@ void AImGuiUI::ExternalWindow() {
 	}
 }
 
+// close external settings window and move controls to main viewport
 void AImGuiUI::InternalWindow() {
 	if(uiWindow != NULL){
 		uiWindow->Close();
@@ -570,7 +575,7 @@ void AImGuiUI::ChooseFiles() {
 }
 void AImGuiUI::UpdateEngineSettings() {
 	GlobalState& globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
-	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("r.VSync %i"), globalState.vsync));
-	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("r.VSyncEditor %i"), globalState.vsync));
-	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("t.MaxFPS %f"), globalState.maxFPS == 0 ? 0 : std::max(1.0f,globalState.maxFPS)));
+	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("r.VSync %i"), globalState.vsync && !globalState.vrMode));
+	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("r.VSyncEditor %i"), globalState.vsync && !globalState.vrMode));
+	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("t.MaxFPS %f"), (globalState.maxFPS == 0 || globalState.vrMode) ? 0 : std::max(1.0f,globalState.maxFPS)));
 }
