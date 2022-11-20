@@ -1,0 +1,4 @@
+adb shell mkdir -p /storage/emulated/0/Android/data/com.YourCompany.OpenStorm/files/UnrealGame/OpenStorm/OpenStorm/Content/Data/Demo/
+adb push ../Content/Data/Demo/KLCH20200827_034044_V06 /storage/emulated/0/Android/data/com.YourCompany.OpenStorm/files/UnrealGame/OpenStorm/OpenStorm/Content/Data/Demo/
+adb push ../Content/Data/Demo/KMKX_20220723_235820 /storage/emulated/0/Android/data/com.YourCompany.OpenStorm/files/UnrealGame/OpenStorm/OpenStorm/Content/Data/Demo/
+adb push ../Content/Data/Demo/KTLX20130531_231434_V06 /storage/emulated/0/Android/data/com.YourCompany.OpenStorm/files/UnrealGame/OpenStorm/OpenStorm/Content/Data/Demo/

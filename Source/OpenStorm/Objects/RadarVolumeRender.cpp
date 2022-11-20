@@ -146,7 +146,7 @@ void ARadarVolumeRender::BeginPlay()
 
 	radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), 0);
 	radarMaterialInstance->SetScalarParameterValue(TEXT("StepSize"), 5);
-
+	
 	// RadarData::TextureBuffer imageBuffer = radarData->CreateTextureBufferReflectivity2();
 	// float* RawImageData = (float*)volumeImageData->Lock(LOCK_READ_WRITE);
 	// memcpy(RawImageData, imageBuffer.data, imageBuffer.byteSize);
@@ -201,6 +201,7 @@ void ARadarVolumeRender::BeginPlay()
 	}
 	
 	FString fullradarDir = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarDir);
+	UE_LOG(LogTemp, Display, TEXT("Default radar file dir is %s"), *fullradarDir);
 	const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
 	fprintf(stderr, "path %s\n", radarDirLocaition);
 	radarCollection->ReadFiles(std::string(radarDirLocaition));

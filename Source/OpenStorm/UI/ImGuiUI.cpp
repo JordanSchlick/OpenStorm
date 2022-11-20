@@ -376,6 +376,10 @@ void AImGuiUI::Tick(float deltaTime)
 			}
 		}
 		
+		if(globalState.opacityMultiplier + 0.9f < 0.001f && globalState.cutoff == 1.0f){
+			globalState.developmentMode = true;
+		}
+		
 		if (globalState.developmentMode && ImGui::CollapsingHeader("Ligma")) {
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			if (ImGui::Button("Demo Window")) {
