@@ -625,6 +625,20 @@ std::string RadarCollection::StateString(){
 	return state;
 }
 
+
+std::vector<RadarCollection::RadarDataHolder::State> RadarCollection::StateVector() {
+	std::vector<RadarCollection::RadarDataHolder::State> stateVector = std::vector<RadarCollection::RadarDataHolder::State>(cacheSize);
+	for(int i = 0; i < cacheSize; i++){
+		stateVector[i] = cache[i].state;
+	}
+	return stateVector;
+}
+
+
+int RadarCollection::GetCurrentPosition() {
+	return currentPosition;
+}
+
 void RadarCollection::LogState() {
 	/*fprintf(stderr,"Radar Cache: [");
 	for(int i = 0; i < cacheSize; i++){

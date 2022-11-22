@@ -532,28 +532,6 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 	return returnValue;
 }
 
-void RadarData::Compress() {
-	if(buffer == NULL){
-		return;
-	}
-	int compressedSize = 2;
-	bool isEmpty = true;
-	for(int i = 0; i < fullBufferSize; i++){
-		float value = buffer[i];
-		if(value == -INFINITY){
-			if(isEmpty == false){
-				compressedSize += 2;
-				isEmpty = true;
-			}
-		}else{
-			compressedSize++;
-			isEmpty = false;
-		}
-	}
-	fprintf(stderr, "Compressed size bytes:   %i\n", compressedSize * 4);
-	fprintf(stderr, "Uncompressed size bytes: %i\n", fullBufferSize * 4);
-}
-
 void RadarData::Deallocate(){
 	if(buffer != NULL){
 		delete[] buffer;

@@ -131,6 +131,12 @@ public:
 	// visually describe the state of the cache
 	std::string StateString();
 	
+	// return the state of the cache
+	std::vector<RadarDataHolder::State> StateVector();
+	
+	// gets current position buffer
+	int GetCurrentPosition();
+	
 	// visually describe the state of the cache in the console
 	void LogState();
 	

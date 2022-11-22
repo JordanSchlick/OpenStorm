@@ -212,6 +212,8 @@ void ARadarVolumeRender::BeginPlay()
 
 	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	
+	globalState->refRadarCollection = radarCollection;
+	
 	// register global events
 	callbackIds.push_back(globalState->RegisterEvent("Test",[this](std::string stringData, void* extraData){
 		fprintf(stderr, "Test event received in RadarVolumeRender\n");
@@ -323,6 +325,8 @@ void ARadarVolumeRender::EndPlay(const EEndPlayReason::Type endPlayReason) {
 	for(auto id : callbackIds){
 		globalState->UnregisterEvent(id);
 	}
+	
+	globalState->refRadarCollection = NULL;
 }
 
 //Initialize all textures or reinitialize ones that need it

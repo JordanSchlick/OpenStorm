@@ -5,6 +5,7 @@
 #include <vector>
 
 class Globe;
+class RadarCollection;
 
 class GlobalState{
 public:
@@ -57,6 +58,10 @@ public:
 	std::vector<Waypoint> locationMarkers = {};
 	Globe* globe;
 	GlobalState* defaults = NULL;
+	
+	// this section contains pointers to objects within the application
+	// using these should be avoided where possible and always check that they are not null
+	RadarCollection* refRadarCollection;
 	
 	// register a callback for the given event name. returns a uid to remove callback
 	uint64_t RegisterEvent(std::string name, std::function<void(std::string, void*)> callback);

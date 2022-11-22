@@ -8,6 +8,8 @@
 class SOverlay;
 class SDPIScaler;
 class SCompass;
+class SCacheState;
+class STextBlock;
 class UGameViewportClient;
 class USlateUIResources;
 
@@ -17,7 +19,9 @@ class ASlateUI : public AActor{
 
 public:
 	TSharedPtr<SCompass> compass;
+	TSharedPtr<SCacheState> cacheState;
 	TSharedPtr<SOverlay> hudWidget;
+	TSharedPtr<STextBlock> fileName;
 	TSharedPtr<SDPIScaler> scaleWidget;
 	ASlateUI();
 	~ASlateUI();
@@ -28,5 +32,6 @@ public:
 	void AddToViewport(UGameViewportClient* gameViewport);
 	void SetCompassRotation(float rotation);
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type endPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
 };

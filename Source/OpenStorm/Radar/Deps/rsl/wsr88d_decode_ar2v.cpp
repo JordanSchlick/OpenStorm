@@ -1,4 +1,5 @@
 #include "wsr88d_decode_ar2v.h"
+#include "../../SystemAPI.h"
 
 #include <fcntl.h>
 #include <stdlib.h>
@@ -34,10 +35,12 @@ void uncompress_pipe_ar2v_thread(FILE* inFile, FILE* outFile) {
 	_set_fmode(_O_BINARY);
 #endif // _WIN32
 	char clength[4];
-	char* block = (char*)malloc(8192), * oblock = (char*)malloc(262144);
-	int isize = 8192, osize = 262144, olength;
+	int isize = 8192, osize = 262144*8, olength;
+	char* block = (char*)malloc(isize), * oblock = (char*)malloc(osize);
 	char stid[5] = { 0 }; /* station id: not used */
-
+	double totalTime = SystemAPI::CurrentTime();
+	double writeTime = 0;
+	int writeCount = 0;
 	/*
 	 * process command line arguments
 	 */
@@ -207,7 +210,8 @@ void uncompress_pipe_ar2v_thread(FILE* inFile, FILE* outFile) {
 			{
 				if (error == BZ_OUTBUFF_FULL)
 				{
-					osize += 262144;
+					//osize += 262144;
+					osize *= 2;
 					if ((oblock = (char*)realloc(oblock, osize)) == NULL)
 					{
 						fprintf(stderr, "Cannot allocate output buffer\n");
@@ -227,9 +231,17 @@ void uncompress_pipe_ar2v_thread(FILE* inFile, FILE* outFile) {
 			//{
 			//	write(fd, oblock, olength);
 			//}
+			double writeStartTime = SystemAPI::CurrentTime();
 			fwrite(oblock, 1, olength, outFile);
+			writeTime += SystemAPI::CurrentTime() - writeStartTime;
+			writeCount++;
 		}
 	}
+	
+	totalTime = SystemAPI::CurrentTime() - totalTime;
+	
+	fprintf(stderr,"BZ2 decompress writes:%i usage:%.2f%% time:%f\n", writeCount, (1-writeTime/totalTime)*100, totalTime);
+	
 	free(oblock);
 	free(block);
 	fclose(inFile);
@@ -237,7 +249,7 @@ void uncompress_pipe_ar2v_thread(FILE* inFile, FILE* outFile) {
 }
 
 
-
+// This must never share the same thread pool with radar decodeing or it will deadlock
 class FDecompressWorker : public FRunnable
 {
 public:
@@ -303,7 +315,7 @@ FILE* uncompress_pipe_ar2v(FILE* inFile)
 	int pipeFDs[2];
 	// windows specific
 	#ifdef _WIN32
-	if (_pipe(pipeFDs, 4096, _O_BINARY) != 0) {
+	if (_pipe(pipeFDs, 655360, _O_BINARY) != 0) {
 		fprintf(stderr, "Could not create pipe\n");
 	}
 	#else
