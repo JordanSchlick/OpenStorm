@@ -25,7 +25,6 @@ void ASlateUI::AddToViewport(UGameViewportClient* gameViewport) {
 	SAssignNew(hudWidget, SOverlay);
 	SAssignNew(compass, SCompass);
 	SAssignNew(cacheState, SCacheState);
-	SAssignNew(fileName, STextBlock);
 
 	hudWidget->AddSlot(2)[compass.ToSharedRef()].HAlign(HAlign_Right).VAlign(VAlign_Bottom);
 	hudWidget->AddSlot(1)[cacheState.ToSharedRef()].HAlign(HAlign_Right).VAlign(VAlign_Bottom);
@@ -77,5 +76,5 @@ void ASlateUI::Tick(float DeltaTime){
 		cacheState->UpdateState();
 	}
 	
-	//fileName->SetText(FText::FromString());
+	
 }

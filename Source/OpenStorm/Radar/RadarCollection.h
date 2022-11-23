@@ -18,7 +18,9 @@ public:
 		double time;
 		double mtime;
 		size_t size;
+		// path to file ion disk
 		std::string path = "";
+		// name of file
 		std::string name = "";
 	};
 	
@@ -48,8 +50,8 @@ public:
 		RadarData* radarData = NULL;
 		// async loader reference
 		AsyncTaskRunner* loader = NULL;
-		// path of file corrsponding to the data
-		std::string filePath;
+		// info about the file on disk
+		RadarFile fileInfo = {};
 		// constructor
 		RadarDataHolder();
 		// destructor

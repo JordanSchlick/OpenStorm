@@ -3,6 +3,7 @@
 #include "Brushes/SlateImageBrush.h"
 #include "Rendering/SlateRenderTransform.h"
 #include "Misc/Paths.h"
+#include "Widgets/Text/STextBlock.h"
 #include "SlateUIResources.h"
 
 #include "../../Radar/RadarCollection.h"
@@ -13,7 +14,14 @@ SCacheState::SCacheState(){
 
 void SCacheState::Construct(const FArguments& inArgs) {
 	SAssignNew(selector, SImage);
+	SAssignNew(fileName, STextBlock);
+
 	selector->SetImage(&selectorBrush);
+
+	FSlateFontInfo textStyle = FCoreStyle::Get().GetFontStyle("EmbossedText");
+	textStyle.Size = height / 1.5f;
+	textStyle.OutlineSettings.OutlineSize = 0;
+	fileName->SetFont(textStyle);
 }
 
 FVector2D SCacheState::ComputeDesiredSize(float layoutScaleMultiplier) const {
@@ -42,10 +50,13 @@ void SCacheState::UpdateState() {
 				cell->SetImage(&unloadedBrush);
 				cell->SetDesiredSizeOverride(FVector2D(width / (float)cellCount - boarder * 2.0f, height - boarder * 2.0f));
 				cells.push_back(cell);
-				fprintf(stderr,"test %i ", i);
 			}
 			AddSlot().Offset(FMargin(0, height / 2.0f)).AutoSize(true).Anchors(FAnchors(0.0f, 0.0f))[selector.ToSharedRef()];
 			selector->SetDesiredSizeOverride(FVector2D(width / (float)cellCount, height / 2.0f));
+			if(fileName.IsValid()){
+				AddSlot().Offset(FMargin(0, -2)).AutoSize(true).Anchors(FAnchors(0.0f, 0.0f)).Alignment(FVector2D(0.0f, 1.0f))[fileName.ToSharedRef()];
+				fileName->SetJustification(ETextJustify::Left);
+			}
 			// TSharedPtr<class SImage> background;
 			// SAssignNew(background, SImage);
 			// AddSlot(-1)[background.ToSharedRef()];
@@ -53,6 +64,11 @@ void SCacheState::UpdateState() {
 		}
 		
 		selector->SetRenderTransform(FVector2D(width / (float)cellCount * ((float)radarCollection->GetCurrentPosition() + 0.5f),0));
+		if(fileName.IsValid()){
+			//int lastSlash = std::max(std::max((int)path.find_last_of('/'), (int)path.find_last_of('\\')), 0);
+			//filePath = path.substr(0, lastSlash + 1);
+			fileName->SetText(FText::FromString(radarCollection->GetCurrentRadarData()->fileInfo.name.c_str()));
+		}
 		
 		for(int i = 0; i < cellCount; i++){
 			switch(stateVector[i]){

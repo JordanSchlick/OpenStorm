@@ -507,7 +507,7 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 				ImGui::PushFont(io.Fonts->Fonts[1]);
 				ImGui::Text("%s", radarCollection->StateString().c_str());
 				RadarCollection::RadarDataHolder* holder = radarCollection->GetCurrentRadarData();
-				ImGui::Text("%s", holder->filePath.c_str());
+				ImGui::Text("%s", holder->fileInfo.path.c_str());
 				ImGui::PopFont();
 			}
 			ImGui::End();

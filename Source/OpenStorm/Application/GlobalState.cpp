@@ -43,10 +43,12 @@ void GlobalState::test() {
 }
 
 GlobalState::GlobalState(){
+	#ifdef PLATFORM_ANDROID
 	#if PLATFORM_ANDROID
 	// temporal interpolation crashes on android
 	// the render target seems to be the cause
 	temporalInterpolation = false;
+	#endif
 	#endif
 	
 	this->defaults = new GlobalState(true);

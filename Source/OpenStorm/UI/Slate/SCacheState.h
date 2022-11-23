@@ -8,6 +8,7 @@
 #include <vector>
 
 
+class STextBlock;
 class SCacheState : public SConstraintCanvas {
 public:
 	float height = 15;
@@ -17,6 +18,7 @@ public:
 	
 	std::vector<TSharedPtr<SImage>> cells;
 	TSharedPtr<SImage> selector;
+	TSharedPtr<STextBlock> fileName;
 	
 	FSlateBrush selectorBrush =      FSlateColorBrush(FLinearColor(1.0, 1.0, 1.0, 0.5));
 	FSlateColorBrush unloadedBrush = FSlateColorBrush(FLinearColor(0.1, 0.1, 0.1, 0.5));

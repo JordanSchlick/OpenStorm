@@ -33,7 +33,7 @@ void RadarCollection::RadarDataHolder::Unload() {
 	}
 	uid = CreateUID();
 	state = RadarDataHolder::State::DataStateUnloaded;
-	filePath = "";
+	fileInfo = {};
 	if(radarData != NULL){
 		delete radarData;
 		radarData = NULL;
@@ -48,12 +48,12 @@ public:
 	RadarCollection::RadarDataSettings radarSettings;
 	RadarCollection::RadarDataHolder* radarHolder;
 	uint64_t initialUid = 0;
-	RadarLoader(std::string filePath, RadarCollection::RadarDataSettings radarDataSettings, RadarCollection::RadarDataHolder* radarDataHolder){
-		path = filePath;
+	RadarLoader(RadarCollection::RadarFile fileInfo, RadarCollection::RadarDataSettings radarDataSettings, RadarCollection::RadarDataHolder* radarDataHolder){
+		path = fileInfo.path;
 		radarSettings = radarDataSettings;
 		radarHolder = radarDataHolder;
 		initialUid = RadarCollection::CreateUID();
-		radarHolder->filePath = filePath;
+		radarHolder->fileInfo = fileInfo;
 		radarHolder->uid = initialUid;
 		radarHolder->loader = this;
 		radarHolder->state = RadarCollection::RadarDataHolder::State::DataStateLoading;
@@ -388,10 +388,9 @@ void RadarCollection::ReloadFile(int index) {
 	RadarDataHolder* holder = &cache[index];
 	if(holder->state != RadarDataHolder::State::DataStateUnloaded){
 		fprintf(stderr, "Reloading file\n");
-		std::string originalFilePath = holder->filePath;
 		holder->Unload();
 		asyncTasks.push_back(new RadarLoader(
-			originalFilePath,
+			holder->fileInfo,
 			radarDataSettings,
 			holder
 		));
@@ -472,7 +471,7 @@ void RadarCollection::LoadNewData() {
 	if(cache[currentPosition].state == RadarDataHolder::State::DataStateUnloaded){
 		// load current position if not loaded
 		asyncTasks.push_back(new RadarLoader(
-			radarFiles[lastItemIndex - cachedAfter].path,
+			radarFiles[lastItemIndex - cachedAfter],
 			radarDataSettings,
 			&cache[currentPosition]
 		));
@@ -508,7 +507,7 @@ void RadarCollection::LoadNewData() {
 						// load next file
 						RadarFile file = radarFiles[lastItemIndex - cachedAfter + loopRun];
 						asyncTasks.push_back(new RadarLoader(
-							file.path,
+							file,
 							radarDataSettings,
 							holder
 						));
@@ -538,7 +537,7 @@ void RadarCollection::LoadNewData() {
 						// load previous file
 						RadarFile file = radarFiles[firstItemIndex + cachedBefore - loopRun];
 						asyncTasks.push_back(new RadarLoader(
-							file.path,
+							file,
 							radarDataSettings,
 							holder
 						));
@@ -580,7 +579,7 @@ void RadarCollection::LoadNewData() {
 
 void RadarCollection::Emit(RadarDataHolder* holder) {
 	if(verbose){
-		fprintf(stderr, "Emitting %s\n", holder->filePath.c_str());
+		fprintf(stderr, "Emitting %s\n", holder->fileInfo.path.c_str());
 		LogState();
 	}
 	RadarUpdateEvent event = {};
