@@ -1,7 +1,7 @@
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "Engine/Texture2D.h"
-#include "../Application/GlobalState.h"
+#include "../../Application/GlobalState.h"
 #include "SlateUIResources.generated.h"
 
 UCLASS()
