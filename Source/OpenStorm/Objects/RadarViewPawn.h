@@ -61,7 +61,7 @@ private:
 	UPROPERTY(EditAnywhere)
 		float rotateSpeed = 200.0f;
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 		UStaticMeshComponent* meshComponent;
 	
 	UPROPERTY(EditAnywhere)
