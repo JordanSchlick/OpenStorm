@@ -9,14 +9,14 @@
 - [X] Make temporal interpolation optional
 - [X] Location markers
 - [X] Fix ImGui input state
-- [ ] Initial public release
+- [X] Initial public release
 - [ ] Add Support for filtering or modifying Color/Opacity in radar data 
 - [ ] Find and order by radar dates
 - [ ] Allow multiple products
 - [ ] Allow computed products
 - [ ] Pull data from http server
 - [ ] Add designated thread pools to AsyncTask and multi-thread radar decompression
-- [ ] Add linux support to ImGUI and get linux working for everything
+- [X] Add linux support to ImGUI and get linux working for everything
 - [ ] Support gzip nexrad archives
 - [ ] More Advanced Tools/Options for interacting, measuring, and viewing data
 - [ ] Top down radar view panning

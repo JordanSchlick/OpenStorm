@@ -1,0 +1,19 @@
+
+- /Source/OpenStorm/Radar/NexradSites/NexradSites.cpp
+
+- /Source/OpenStorm/UI/IconsFontAwesome6.h
+- /Source/OpenStorm/UI/portable-file-dialogs.cpp
+- /Source/OpenStorm/UI/font.cpp
+
++ Source
+- /*
+
+- Deps
++ */
++ *.c
++ *.h
++ *.cpp
+
+
+
+- *
