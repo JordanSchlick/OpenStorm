@@ -388,9 +388,10 @@ void RadarCollection::ReloadFile(int index) {
 	RadarDataHolder* holder = &cache[index];
 	if(holder->state != RadarDataHolder::State::DataStateUnloaded){
 		fprintf(stderr, "Reloading file\n");
+		RadarFile info = holder->fileInfo;
 		holder->Unload();
 		asyncTasks.push_back(new RadarLoader(
-			holder->fileInfo,
+			info,
 			radarDataSettings,
 			holder
 		));
