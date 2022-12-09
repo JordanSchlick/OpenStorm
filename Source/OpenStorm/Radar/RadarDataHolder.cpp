@@ -28,7 +28,10 @@ public:
 		radarData->radiusBufferCount = radarSettings.radiusBufferCount;
 		radarData->thetaBufferCount = radarSettings.thetaBufferCount;
 		radarData->sweepBufferCount = radarSettings.sweepBufferCount;
-		radarData->ReadNexrad(path.c_str());
+		//radarData->ReadNexrad(path.c_str());
+		void* nexradData = radarData->ReadNexradData(path.c_str());
+		radarData->LoadNexradVolume(nexradData, RadarData::VOLUME_REFLECTIVITY);
+		radarData->FreeNexradData(nexradData);
 		if(!canceled && initialUid == radarHolder->uid){
 			radarHolder->radarData = radarData;
 			radarHolder->state = RadarDataHolder::State::DataStateLoaded;

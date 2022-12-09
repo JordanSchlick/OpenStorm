@@ -13,6 +13,20 @@
 
 class RadarData {
 public:
+	enum VolumeType {
+		VOLUME_UNKNOWN = 0,
+		
+		// raw volume types
+		VOLUME_REFLECTIVITY = 1,
+		VOLUME_VELOCITY = 2,
+		VOLUME_SPECTRUM_WIDTH = 3,
+		
+		// computed volume types
+		VOLUME_VELOCITY_ANTIALIASED = 102,
+	};
+	
+	
+	
 	// buffer of volume values
 	// dim 0: sweep  dim 1: rotation  dim 2: radius
 	float* buffer = NULL;
@@ -63,9 +77,13 @@ public:
 		float boundUpper = 0;
 		float boundLower = 0;
 		
+		// location of the radar in the world
 		double latitude = 0; 
 		double longitude = 0; 
 		double altitude = 0;
+		
+		// the type of radar volume
+		VolumeType volumeType = VOLUME_UNKNOWN;
 	};
 	
 	// information about the volume
@@ -83,8 +101,12 @@ public:
 	SweepInfo* sweepInfo = NULL;
 
 	
-
-	void ReadNexrad(const char* filename);
+	// parse rsl nexrad data 
+	void* ReadNexradData(const char* filename);
+	// free rsl nexrad data
+	void FreeNexradData(void* nexradData);
+	// load rsl nexrad volume into this radar data
+	bool LoadNexradVolume(void* nexradData, VolumeType volumeType);
 	
 	void CopyFrom(RadarData* data);
 

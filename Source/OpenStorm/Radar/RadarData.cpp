@@ -25,10 +25,7 @@ inline int modulo(int i, int n) {
 	return (i % n + n) % n;
 }
 
-
-
-void RadarData::ReadNexrad(const char* filename) {
-
+void* RadarData::ReadNexradData(const char* filename) {
 	//RSL_wsr88d_keep_sails();
 	//Radar* radar = RSL_wsr88d_to_radar("C:/Users/Admin/Desktop/stuff/projects/openstorm/files/KMKX_20220723_235820", "KMKX");
 	//Radar* radar = RSL_wsr88d_to_radar("C:/Users/Admin/Desktop/stuff/projects/openstorm/files/KMKX_20220723_233154", "KMKX");
@@ -36,11 +33,44 @@ void RadarData::ReadNexrad(const char* filename) {
 	Radar* radar = RSL_wsr88d_to_radar((char*)filename, (char*)"");
 
 	//UE_LOG(LogTemp, Display, TEXT("================ %i"), radar);
-
 	
+	if(true && radar){
+		for(int i = 0; i <= 46; i++){
+			Volume* volume = radar->v[i];
+			if(volume){
+				fprintf(stderr, "Volume %i %s\n", i, volume->h.type_str);
+			}
+		}
+	}
+	
+	return radar;
+}
 
+void RadarData::FreeNexradData(void* nexradData) {
+	if (nexradData) {
+		RSL_free_radar((Radar*)nexradData);
+	}
+}
+
+bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
+	Radar* radar = (Radar*)nexradData;
 	if (radar) {
-		Volume* volume = radar->v[DZ_INDEX];
+		int nexradType = DZ_INDEX;
+		switch (volumeType){
+			case VOLUME_REFLECTIVITY:
+				nexradType = DZ_INDEX;
+				break;
+			case VOLUME_VELOCITY:
+				nexradType = VR_INDEX;
+				break;
+			case VOLUME_SPECTRUM_WIDTH:
+				nexradType = SW_INDEX;
+				break;
+			default:
+				return false;
+				break;
+		}
+		Volume* volume = radar->v[nexradType];
 		fprintf(stderr, "site name %s\n", radar->h.name);
 		NexradSites::Site* site = NexradSites::GetSite(radar->h.name);
 		if(site != NULL){
@@ -49,7 +79,7 @@ void RadarData::ReadNexrad(const char* filename) {
 			stats.altitude = site->altitude;
 		}
 		if (volume) {
-
+			stats.volumeType = volumeType;
 			std::map<float, Sweep*> sweeps = {};
 
 			fprintf(stderr, "volume type_str %s\n", volume->h.type_str);
@@ -324,9 +354,14 @@ void RadarData::ReadNexrad(const char* filename) {
 			fprintf(stderr,"\n");
 			//*/
 
-			RSL_free_radar(radar);
+			
+		}else{
+			return false;
 		}
+	}else{
+		return false;
 	}
+	return true;
 }
 
 void RadarData::CopyFrom(RadarData* data) {
