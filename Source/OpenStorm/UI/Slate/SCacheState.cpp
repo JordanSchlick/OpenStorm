@@ -37,7 +37,7 @@ FVector2D SCacheState::ComputeDesiredSize(float layoutScaleMultiplier) const {
 void SCacheState::UpdateState() {
 	if(USlateUIResources::Instance != NULL && USlateUIResources::Instance->globalState != NULL  && USlateUIResources::Instance->globalState->refRadarCollection != NULL){
 		RadarCollection* radarCollection = USlateUIResources::Instance->globalState->refRadarCollection;
-		std::vector<RadarCollection::RadarDataHolder::State> stateVector = radarCollection->StateVector();
+		std::vector<RadarDataHolder::State> stateVector = radarCollection->StateVector();
 		
 		if(stateVector.size() != cellCount){
 			cellCount = stateVector.size();
@@ -72,16 +72,16 @@ void SCacheState::UpdateState() {
 		
 		for(int i = 0; i < cellCount; i++){
 			switch(stateVector[i]){
-				case RadarCollection::RadarDataHolder::State::DataStateUnloaded:
+				case RadarDataHolder::State::DataStateUnloaded:
 					cells[i]->SetImage(&unloadedBrush);
 				break;
-				case RadarCollection::RadarDataHolder::State::DataStateLoaded:
+				case RadarDataHolder::State::DataStateLoaded:
 					cells[i]->SetImage(&loadedBrush);
 				break;
-				case RadarCollection::RadarDataHolder::State::DataStateLoading:
+				case RadarDataHolder::State::DataStateLoading:
 					cells[i]->SetImage(&loadingBrush);
 				break;
-				case RadarCollection::RadarDataHolder::State::DataStateFailed:
+				case RadarDataHolder::State::DataStateFailed:
 					cells[i]->SetImage(&errorBrush);
 				break;
 			}

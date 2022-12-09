@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RadarData.h"
+#include "RadarDataHolder.h"
 #include "AsyncTask.h"
 
 #include <string>
@@ -12,19 +13,8 @@
 class RadarCollection{
 public:
 	
-	// represents a file on the disk
-	class RadarFile{
-	public:
-		double time;
-		double mtime;
-		size_t size;
-		// path to file ion disk
-		std::string path = "";
-		// name of file
-		std::string name = "";
-	};
 	
-	// event emittid when new current data is available
+	// event emitted when new current data is available
 	class RadarUpdateEvent{
 	public:
 		// radar data for event
@@ -33,32 +23,6 @@ public:
 		float minTimeTillNext = 0;
 	};
 	
-	// a class that holds the radar data and related information
-	class RadarDataHolder{
-	public:
-		enum State{
-			DataStateUnloaded,
-			DataStateLoading,
-			DataStateLoaded,
-			DataStateFailed
-		};
-		// uid to distinguish when it has been chenged
-		uint64_t uid = 0;
-		// state of loading
-		State state = DataStateUnloaded;
-		// radar data reference
-		RadarData* radarData = NULL;
-		// async loader reference
-		AsyncTaskRunner* loader = NULL;
-		// info about the file on disk
-		RadarFile fileInfo = {};
-		// constructor
-		RadarDataHolder();
-		// destructor
-		~RadarDataHolder();
-		// unload data and stop any loading in progress
-		void Unload();
-	};
 	
 	// settings for radar data that is read in
 	class RadarDataSettings{
@@ -90,9 +54,6 @@ public:
 	
 	// if it should print debug data
 	bool verbose = false;
-	
-	// create a UID for use with threading
-	static uint64_t CreateUID();
 	
 	RadarCollection();
 	
@@ -190,9 +151,6 @@ private:
 	
 	// next system time to poll
 	double nextPollTime = 0;
-	
-	// TODO: clean this out occasionally
-	std::vector<AsyncTaskRunner *> asyncTasks = {};
 	
 	// list of files
 	std::vector<RadarFile> radarFiles = {};

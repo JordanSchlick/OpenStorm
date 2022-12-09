@@ -17,64 +17,6 @@ bool moduloCompare(int smaller, int larger, int n) {
 }
 
 
-RadarCollection::RadarDataHolder::RadarDataHolder()
-{
-	uid = RadarCollection::CreateUID();
-}
-
-RadarCollection::RadarDataHolder::~RadarDataHolder(){
-	Unload();
-}
-
-void RadarCollection::RadarDataHolder::Unload() {
-	if(loader != NULL){
-		loader->Cancel();
-		loader = NULL;
-	}
-	uid = CreateUID();
-	state = RadarDataHolder::State::DataStateUnloaded;
-	fileInfo = {};
-	if(radarData != NULL){
-		delete radarData;
-		radarData = NULL;
-	}
-}
-
-// asynchronously loads radar data on a separate thread
-// this thing is like the Daytona 500, there are no locks to be found
-class RadarLoader : public AsyncTaskRunner{
-public:
-	std::string path;
-	RadarCollection::RadarDataSettings radarSettings;
-	RadarCollection::RadarDataHolder* radarHolder;
-	uint64_t initialUid = 0;
-	RadarLoader(RadarCollection::RadarFile fileInfo, RadarCollection::RadarDataSettings radarDataSettings, RadarCollection::RadarDataHolder* radarDataHolder){
-		path = fileInfo.path;
-		radarSettings = radarDataSettings;
-		radarHolder = radarDataHolder;
-		initialUid = RadarCollection::CreateUID();
-		radarHolder->fileInfo = fileInfo;
-		radarHolder->uid = initialUid;
-		radarHolder->loader = this;
-		radarHolder->state = RadarCollection::RadarDataHolder::State::DataStateLoading;
-		Start();
-	}
-	void Task(){
-		RadarData* radarData = new RadarData();
-		radarData->compress = true;
-		radarData->radiusBufferCount = radarSettings.radiusBufferCount;
-		radarData->thetaBufferCount = radarSettings.thetaBufferCount;
-		radarData->sweepBufferCount = radarSettings.sweepBufferCount;
-		radarData->ReadNexrad(path.c_str());
-		if(!canceled && initialUid == radarHolder->uid){
-			radarHolder->radarData = radarData;
-			radarHolder->state = RadarCollection::RadarDataHolder::State::DataStateLoaded;
-			radarHolder->loader = NULL;
-		}else{
-			delete radarData;
-		}
-	}
-};
 
 // helper for testing
 class LogStateDelayed : public AsyncTaskRunner{
@@ -95,11 +37,6 @@ public:
 		collection->LogState();
 	}
 };
-
-uint64_t RadarCollection::CreateUID(){
-	static uint64_t uid = 1;
-	return uid++;
-}
 
 RadarCollection::RadarCollection()
 {
@@ -136,11 +73,6 @@ void RadarCollection::Free() {
 }
 
 void RadarCollection::Clear() {
-	for(auto& item : asyncTasks){
-		item->Cancel();
-		item->Delete();
-	}
-	asyncTasks.clear();
 	radarFiles.clear();
 	radarFilesCache.clear();
 	if(cache != NULL){
@@ -229,7 +161,7 @@ void RadarCollection::RegisterListener(std::function<void(RadarUpdateEvent)> cal
 	listeners.push_back(callback);
 }
 
-RadarCollection::RadarDataHolder* RadarCollection::GetCurrentRadarData() {
+RadarDataHolder* RadarCollection::GetCurrentRadarData() {
 	return &cache[currentPosition];
 }
 
@@ -390,11 +322,7 @@ void RadarCollection::ReloadFile(int index) {
 		fprintf(stderr, "Reloading file\n");
 		RadarFile info = holder->fileInfo;
 		holder->Unload();
-		asyncTasks.push_back(new RadarLoader(
-			info,
-			radarDataSettings,
-			holder
-		));
+		holder->Load(info);
 		if(index == currentPosition){
 			needToEmit = true;
 		}
@@ -471,11 +399,7 @@ void RadarCollection::LoadNewData() {
 	}
 	if(cache[currentPosition].state == RadarDataHolder::State::DataStateUnloaded){
 		// load current position if not loaded
-		asyncTasks.push_back(new RadarLoader(
-			radarFiles[lastItemIndex - cachedAfter],
-			radarDataSettings,
-			&cache[currentPosition]
-		));
+		cache[currentPosition].Load(radarFiles[lastItemIndex - cachedAfter]);
 	}
 	
 	int maxLoops = cacheSize * 2;
@@ -507,11 +431,7 @@ void RadarCollection::LoadNewData() {
 					if(lastItemIndex - cachedAfter + loopRun < radarFiles.size()){
 						// load next file
 						RadarFile file = radarFiles[lastItemIndex - cachedAfter + loopRun];
-						asyncTasks.push_back(new RadarLoader(
-							file,
-							radarDataSettings,
-							holder
-						));
+						holder->Load(file);
 						cachedAfter++;
 						lastItemIndex++;
 						lastItemTime = file.time;
@@ -537,11 +457,7 @@ void RadarCollection::LoadNewData() {
 					if(firstItemIndex + cachedBefore - loopRun >= 0){
 						// load previous file
 						RadarFile file = radarFiles[firstItemIndex + cachedBefore - loopRun];
-						asyncTasks.push_back(new RadarLoader(
-							file,
-							radarDataSettings,
-							holder
-						));
+						holder->Load(file);
 						cachedBefore++;
 						firstItemIndex--;
 						firstItemTime = file.time;
@@ -626,8 +542,8 @@ std::string RadarCollection::StateString(){
 }
 
 
-std::vector<RadarCollection::RadarDataHolder::State> RadarCollection::StateVector() {
-	std::vector<RadarCollection::RadarDataHolder::State> stateVector = std::vector<RadarCollection::RadarDataHolder::State>(cacheSize);
+std::vector<RadarDataHolder::State> RadarCollection::StateVector() {
+	std::vector<RadarDataHolder::State> stateVector = std::vector<RadarDataHolder::State>(cacheSize);
 	for(int i = 0; i < cacheSize; i++){
 		stateVector[i] = cache[i].state;
 	}
