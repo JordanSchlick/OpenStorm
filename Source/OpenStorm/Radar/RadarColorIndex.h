@@ -37,6 +37,7 @@ public:
 	static Result relativeHue(Params params, Result* reuseResult);
 	static Result relativeHueAcid(Params params, Result* reuseResult);
 	static Result reflectivityColors(Params params, Result* reuseResult);
+	static Result velocityColors(Params params, Result* reuseResult);
 	
 	// modify the opacity with a multiplier and a relative cutoff
 	static void ModifyOpacity(float opacityMultiplier, float cutoff, Result* existingResult);

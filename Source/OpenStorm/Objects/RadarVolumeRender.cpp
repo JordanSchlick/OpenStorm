@@ -468,6 +468,7 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 		RadarColorIndex::Params colorParams = {};
 		colorParams.fromRadarData(radarData);
 		radarColorResult = RadarColorIndex::reflectivityColors(colorParams, &radarColorResult);
+		//radarColorResult = RadarColorIndex::velocityColors(colorParams, &radarColorResult);
 		float cutoff = globalState->cutoff;
 		if (globalState->animateCutoff) {
 			cutoff = (sin(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * PI2F) + 1) / 2 * cutoff;

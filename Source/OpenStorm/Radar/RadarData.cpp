@@ -62,6 +62,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				break;
 			case VOLUME_VELOCITY:
 				nexradType = VR_INDEX;
+				stats.noDataValue = 0;
 				break;
 			case VOLUME_SPECTRUM_WIDTH:
 				nexradType = SW_INDEX;
@@ -206,6 +207,8 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 			sweepBufferSize = (thetaBufferCount + 2) * thetaBufferSize;
 			fullBufferSize = sweepBufferCount * sweepBufferSize;
 			
+			float noDataValue = stats.noDataValue;
+			
 			SparseCompress::CompressorState compressorState = {};
 			
 			// pointer to beginning of a sweep buffer to write to
@@ -220,7 +223,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				// store in continuous buffer
 				if (buffer == NULL) {
 					buffer = new float[fullBufferSize];
-					std::fill(buffer, buffer+fullBufferSize, -INFINITY);
+					std::fill(buffer, buffer+fullBufferSize, noDataValue);
 				}
 			}
 			
@@ -234,7 +237,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				int thetaSize = sweep->h.nrays;
 				int sweepOffset = sweepIndex * sweepBufferSize;
 				if(compress){
-					std::fill(sweepBuffer, sweepBuffer + sweepBufferSize, -INFINITY);
+					std::fill(sweepBuffer, sweepBuffer + sweepBufferSize, noDataValue);
 				}else{
 					sweepBuffer = buffer + sweepOffset;
 				}
@@ -251,9 +254,15 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 							//int value = (ray->range[radius] - minValue) / divider;
 							float value = ray->h.f(ray->range[radius]);
 							//float value = ray->range[radius];
-							if (value == 131072) {
-								// value for no data
-								value = -INFINITY;
+							// if (value == 131072) {
+							// 	// value for no data
+							// 	value = noDataValue;
+							// }
+							if(value == BADVAL){
+								value = noDataValue;
+							}
+							if(value == RFVAL){
+								//value = stats.invalidValue;
 							}
 							sweepBuffer[radius + ((realTheta + 1) * thetaBufferSize)] = value;
 
@@ -384,7 +393,7 @@ void RadarData::CopyFrom(RadarData* data) {
 		
 		// allocate buffer
 		buffer = new float[fullBufferSize];
-		std::fill(buffer, buffer+fullBufferSize, -INFINITY);
+		std::fill(buffer, buffer+fullBufferSize, data->stats.noDataValue);
 	}
 	// copy data
 	if(data->bufferCompressed != NULL){
@@ -395,7 +404,7 @@ void RadarData::CopyFrom(RadarData* data) {
 	// take used buffer size int account
 	if(data->usedBufferSize < usedBufferSize){
 		// fill newly unused space
-		std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, -INFINITY);
+		std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, data->stats.noDataValue);
 	}
 	usedBufferSize = data->usedBufferSize;
 	stats = data->stats;

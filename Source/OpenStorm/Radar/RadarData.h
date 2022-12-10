@@ -10,6 +10,7 @@
 //#include "CoreMinimal.h"
 #include <stdint.h>
 #include <stddef.h>
+#include <math.h>
 
 class RadarData {
 public:
@@ -71,6 +72,10 @@ public:
 		float maxValue = 0;
 		// length of a pixel along the radius in meters
 		float pixelSize = 250;
+		// value for when there is no data, the default is -infinity
+		float noDataValue = -INFINITY;
+		// ( TODO: Implement NaN support in the shader) value for invalid data such as range folding, the defaults is NaN
+		// float invalidValue = NAN;
 		
 		// bounds in pixels including the inner distance defined by a sphere with a radius of boundRadius and the top and bottom cut off
 		float boundRadius = 0;

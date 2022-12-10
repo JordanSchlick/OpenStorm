@@ -188,6 +188,33 @@ RadarColorIndex::Result RadarColorIndex::reflectivityColors(RadarColorIndex::Par
 	return result;
 };
 
+RadarColorIndex::Result RadarColorIndex::velocityColors(Params params, Result* reuseResult) {
+	RadarColorIndex::Result result = {};
+	float l = -30;
+	result.lower = l;
+	float u = 30;
+	result.upper = u;
+	if(reuseResult != NULL && reuseResult->data != NULL){
+		result.data = reuseResult->data;
+	}
+	if(result.data == NULL){
+		result.data = new float[65536]();
+	}
+	
+	// green
+	colorRangeHSL(result.data, valueToIndex(-100,100,-100), valueToIndex(-100,100,0), 0.0,1,0.5, 0.0,0.2,0.5);
+	// red
+	colorRangeHSL(result.data, valueToIndex(-100,100,0), valueToIndex(-100,100,100),  0.33,0.2,0.5,  0.33,1,0.5);
+	
+	for (int i = 0; i < 16384; i++) {
+		float value = (abs(i - 8191.5f) / 8191.5f );
+		result.data[i * 4 + 3] = value;
+	}
+	result.data[8191 * 4 + 3] = 0;
+	result.data[8192 * 4 + 3] = 0;
+	return result;
+}
+
 void RadarColorIndex::ModifyOpacity(float opacityMultiplier, float cutoff, Result* existingResult) {
 	int max = std::min((int)(cutoff * 16384), (int)16384);
 	for (int i = 0; i < max; i++) {
