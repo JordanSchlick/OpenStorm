@@ -297,6 +297,7 @@ void ARadarVolumeRender::HandleRadarDataEvent(RadarCollection::RadarUpdateEvent 
 		radarMaterialInstance->SetScalarParameterValue(TEXT("InnerDistance"), event.data->stats.innerDistance);
 		radarMaterialInstance->SetScalarParameterValue(TEXT("Scale"), 2.5);
 		
+		radarColor = RadarColorIndex::GetDefaultColorIndexForData(radarData);
 		
 		UpdateTexture(textureToUpdate, (uint8_t*)radarData->buffer, radarData->fullBufferSize * sizeof(float), sizeof(float));
 		
@@ -467,14 +468,15 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 		//*
 		RadarColorIndex::Params colorParams = {};
 		colorParams.fromRadarData(radarData);
-		radarColorResult = RadarColorIndex::reflectivityColors(colorParams, &radarColorResult);
+		//radarColorResult = RadarColorIndex::reflectivityColors(colorParams, &radarColorResult);
 		//radarColorResult = RadarColorIndex::velocityColors(colorParams, &radarColorResult);
+		radarColorResult = radarColor->GenerateColorIndex(colorParams, &radarColorResult);
 		float cutoff = globalState->cutoff;
 		if (globalState->animateCutoff) {
 			cutoff = (sin(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * PI2F) + 1) / 2 * cutoff;
 			//cutoff = abs(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * -2 + 1) * cutoff;
 		}
-		RadarColorIndex::ModifyOpacity(globalState->opacityMultiplier, cutoff, &radarColorResult);
+		radarColor->ModifyOpacity(globalState->opacityMultiplier, cutoff, &radarColorResult);
 		//float* rawValueIndexImageData = (float*)valueIndexImageData->Lock(LOCK_READ_WRITE);
 		//memcpy(rawValueIndexImageData, valueIndex.data, 16384);
 		//memcpy(rawValueIndexImageData, radarColorResult.data, radarColorResult.byteSize);

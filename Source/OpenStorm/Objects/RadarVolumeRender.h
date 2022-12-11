@@ -81,6 +81,7 @@ public:
 	
 	//GlobalState* globalState = NULL;
 	std::vector<uint64_t> callbackIds = {};
+	RadarColorIndex* radarColor = &RadarColorIndexReflectivity::defaultInstance;
 	RadarColorIndex::Result radarColorResult = {};
 	RadarColorIndex::Result radarColorResultAlternate = {};
 	

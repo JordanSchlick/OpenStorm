@@ -83,6 +83,8 @@ void RadarColorIndex::Result::Delete() {
 	}
 }
 
+/*
+
 RadarColorIndex::Result RadarColorIndex::relativeHue(RadarColorIndex::Params params, Result* reuseResult) {
 	RadarColorIndex::Result result = {};
 	result.lower = params.minValue;
@@ -215,7 +217,15 @@ RadarColorIndex::Result RadarColorIndex::velocityColors(Params params, Result* r
 	return result;
 }
 
-void RadarColorIndex::ModifyOpacity(float opacityMultiplier, float cutoff, Result* existingResult) {
+*/
+
+RadarColorIndex::Result RadarColorIndex::GenerateColorIndex(Params params, Result* resultToReuse)
+{
+	return BasicSetup(0, 1, resultToReuse);
+}
+
+void RadarColorIndex::ModifyOpacity(float opacityMultiplier, float cutoff, Result* existingResult)
+{
 	int max = std::min((int)(cutoff * 16384), (int)16384);
 	for (int i = 0; i < max; i++) {
 		existingResult->data[i * 4 + 3] = 0;
@@ -226,6 +236,144 @@ void RadarColorIndex::ModifyOpacity(float opacityMultiplier, float cutoff, Resul
 		}
 	}
 }
+
+RadarColorIndex* RadarColorIndex::GetDefaultColorIndexForData(RadarData* radarData) {
+	switch (radarData->stats.volumeType)
+	{
+		case RadarData::VOLUME_REFLECTIVITY:
+			return &RadarColorIndexReflectivity::defaultInstance;
+			break;
+			
+		case RadarData::VOLUME_VELOCITY:
+		case RadarData::VOLUME_VELOCITY_ANTIALIASED:
+			return &RadarColorIndexVelocity::defaultInstance;
+			break;
+	
+		default:
+			return &RadarColorIndexRelativeHue::defaultInstance;
+			break;
+	}
+}
+
+RadarColorIndex::Result RadarColorIndex::BasicSetup(float lowerBound, float upperBound, Result* resultToReuse) {
+	RadarColorIndex::Result result = {};
+	result.lower = lowerBound;
+	result.upper = upperBound;
+	if(resultToReuse != NULL && resultToReuse->data != NULL){
+		result.data = resultToReuse->data;
+	}
+	if(result.data == NULL){
+		result.data = new float[65536]();
+	}
+	return result;
+}
+
+RadarColorIndexReflectivity RadarColorIndexReflectivity::defaultInstance = {};
+RadarColorIndex::Result RadarColorIndexReflectivity::GenerateColorIndex(Params params, Result* resultToReuse) {
+	float l = -20;
+	float u = 80;
+	RadarColorIndex::Result result = BasicSetup(l, u, resultToReuse);
+	
+	//gray
+	colorRangeHSL(result.data, valueToIndex(l,u,-20), valueToIndex(l,u,15),  0,0,0.1,  0,0,0.4);
+	//blue
+	colorRangeHSL(result.data, valueToIndex(l,u,15), valueToIndex(l,u,30),  0.5,0.6,0.5,  0.66,1,0.5);
+	//green
+	colorRangeHSL(result.data, valueToIndex(l,u,30), valueToIndex(l,u,40),  0.4,1,0.5,  0.33,1,0.5);
+	//yellow
+	colorRangeHSL(result.data, valueToIndex(l,u,40), valueToIndex(l,u,50),  0.25,1,0.5,  0.166,1,0.5);
+	//red
+	colorRangeHSL(result.data, valueToIndex(l,u,50), valueToIndex(l,u,60),  0,1,0.5,  0,1,0.5);
+	//purple
+	colorRangeHSL(result.data, valueToIndex(l,u,60), valueToIndex(l,u,70),  0.92,1,0.5,  0.83,1,0.5);
+	//white
+	colorRangeHSL(result.data, valueToIndex(l,u,70), valueToIndex(l,u,80),  0.83,0.3,0.8,  0.83,0,1);
+	
+	
+	for (int i = 0; i < 16384; i++) {
+		float value = (i / 16383.0f);
+		if(valueToIndex(l,u,60) <= i && i < valueToIndex(l,u,70)){
+			//purple
+			value *= 1.5;
+		}
+		if(valueToIndex(l,u,70) <= i && i < valueToIndex(l,u,80)){
+			//white
+			value *= 2;
+		}
+		value *= 2;
+		result.data[i * 4 + 3] = value;
+	}
+	return result;
+}
+
+RadarColorIndexVelocity RadarColorIndexVelocity::defaultInstance = {};
+RadarColorIndex::Result RadarColorIndexVelocity::GenerateColorIndex(Params params, Result* resultToReuse) {
+	float l = -30;
+	float u = 30;
+	RadarColorIndex::Result result = BasicSetup(l, u, resultToReuse);
+	
+	// green
+	colorRangeHSL(result.data, valueToIndex(-100,100,-100), valueToIndex(-100,100,0), 0.0,1,0.5, 0.0,0.2,0.5);
+	// red
+	colorRangeHSL(result.data, valueToIndex(-100,100,0), valueToIndex(-100,100,100),  0.33,0.2,0.5,  0.33,1,0.5);
+	
+	for (int i = 0; i < 16384; i++) {
+		float value = (abs(i - 8191.5f) / 8191.5f );
+		result.data[i * 4 + 3] = value;
+	}
+	result.data[8191 * 4 + 3] = 0;
+	result.data[8192 * 4 + 3] = 0;
+	return result;
+}
+
+RadarColorIndexRelativeHue RadarColorIndexRelativeHue::defaultInstance = {};
+RadarColorIndex::Result RadarColorIndexRelativeHue::GenerateColorIndex(Params params, Result* resultToReuse) {
+	RadarColorIndex::Result result = BasicSetup(params.minValue, params.maxValue, resultToReuse);
+	
+	for (int i = 0; i < 16384; i++) {
+		float value = (i / 16383.0f);
+		float hue = 0.85 - fmod(value, 1.0) * 0.9;
+		float R = std::clamp(std::abs(hue * 6.0f - 3.0f) - 1.0f, 0.0f, 1.0f);
+		float G = std::clamp(2 - std::abs(hue * 6.0f - 2.0f), 0.0f, 1.0f);
+		float B = std::clamp(2 - std::abs(hue * 6.0f - 4.0f), 0.0f, 1.0f);
+		//R = i;
+		//G = i;
+		//B = i;
+		result.data[i * 4 + 0] = R;
+		result.data[i * 4 + 1] = G;
+		result.data[i * 4 + 2] = B;
+		result.data[i * 4 + 3] = value;
+		//fprintf(stderr,"%f\n",value);
+	}
+
+	return result;
+}
+
+RadarColorIndexRelativeHueAcid RadarColorIndexRelativeHueAcid::defaultInstance = {};
+RadarColorIndex::Result RadarColorIndexRelativeHueAcid::GenerateColorIndex(Params params, Result* resultToReuse) {
+	RadarColorIndex::Result result = BasicSetup(params.minValue, params.maxValue, resultToReuse);
+	
+	double currentTime = SystemAPI::CurrentTime();
+	for (int i = 0; i < 16384; i++) {
+		float value = (i / 16383.0f);
+		float hue = 1 - fmod(value + currentTime, 1.0);
+		float R = std::clamp(std::abs(hue * 6.0f - 3.0f) - 1.0f, 0.0f, 1.0f);
+		float G = std::clamp(2 - std::abs(hue * 6.0f - 2.0f), 0.0f, 1.0f);
+		float B = std::clamp(2 - std::abs(hue * 6.0f - 4.0f), 0.0f, 1.0f);
+		//R = i;
+		//G = i;
+		//B = i;
+		result.data[i * 4 + 0] = R;
+		result.data[i * 4 + 1] = G;
+		result.data[i * 4 + 2] = B;
+		result.data[i * 4 + 3] = value;
+		//fprintf(stderr,"%f\n",value);
+	}
+	result.data[3] = 0;
+	return result;
+}
+
+
 
 
 
