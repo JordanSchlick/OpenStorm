@@ -226,12 +226,12 @@ RadarColorIndex::Result RadarColorIndex::GenerateColorIndex(Params params, Resul
 
 void RadarColorIndex::ModifyOpacity(float opacityMultiplier, float cutoff, Result* existingResult)
 {
-	int max = std::min((int)(cutoff * 16384), (int)16384);
-	for (int i = 0; i < max; i++) {
+	unsigned int max = std::min((unsigned int)(cutoff * 16384), (unsigned int)16384);
+	for (unsigned int i = 0; i < max; i++) {
 		existingResult->data[i * 4 + 3] = 0;
 	}
 	if(opacityMultiplier != 1.0f){
-		for (int i = max; i < 16384; i++) {
+		for (unsigned int i = max; i < 16384; i++) {
 			existingResult->data[i * 4 + 3] = existingResult->data[i * 4 + 3] * opacityMultiplier;
 		}
 	}

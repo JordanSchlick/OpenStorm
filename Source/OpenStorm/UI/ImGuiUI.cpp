@@ -380,7 +380,7 @@ void AImGuiUI::Tick(float deltaTime)
 			globalState.developmentMode = true;
 		}
 		
-		if (globalState.developmentMode && ImGui::CollapsingHeader("Ligma")) {
+		if (globalState.developmentMode && ImGui::CollapsingHeader("Ligma", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			if (ImGui::Button("Demo Window")) {
 				showDemoWindow = !showDemoWindow;

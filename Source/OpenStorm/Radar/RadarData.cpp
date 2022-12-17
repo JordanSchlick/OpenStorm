@@ -263,6 +263,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 							}
 							if(value == RFVAL){
 								//value = stats.invalidValue;
+								value = noDataValue;
 							}
 							sweepBuffer[radius + ((realTheta + 1) * thetaBufferSize)] = value;
 
