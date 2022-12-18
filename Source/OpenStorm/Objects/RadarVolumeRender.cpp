@@ -312,7 +312,7 @@ void ARadarVolumeRender::HandleRadarDataEvent(RadarCollection::RadarUpdateEvent 
 		
 		
 		
-		RadarData::TextureBuffer imageBuffer = event.data->CreateAngleIndexBuffer();
+		RadarData::TextureBuffer imageBuffer = radarData->CreateAngleIndexBuffer();
 		UpdateTexture(angleIndexTexture, (uint8_t*)imageBuffer.data, imageBuffer.byteSize, sizeof(float), [](uint8_t* buffer){
 			delete[] buffer;
 		});

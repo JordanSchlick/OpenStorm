@@ -12,17 +12,20 @@
 #include <stddef.h>
 #include <math.h>
 
+// holds the data for a volume of radar
 class RadarData {
 public:
 	enum VolumeType {
 		VOLUME_UNKNOWN = 0,
 		
 		// raw volume types
+		
 		VOLUME_REFLECTIVITY = 1,
 		VOLUME_VELOCITY = 2,
 		VOLUME_SPECTRUM_WIDTH = 3,
 		
 		// computed volume types
+		
 		VOLUME_VELOCITY_ANTIALIASED = 102,
 	};
 	
@@ -91,6 +94,15 @@ public:
 		VolumeType volumeType = VOLUME_UNKNOWN;
 	};
 	
+	class TextureBuffer {
+	public:
+		float* data = NULL;
+		int byteSize = 0;
+		bool doDelete = true;
+		void Delete();
+	};
+
+	
 	// information about the volume
 	Stats stats = {};
 
@@ -107,36 +119,30 @@ public:
 
 	
 	// parse rsl nexrad data 
-	void* ReadNexradData(const char* filename);
+	static void* ReadNexradData(const char* filename);
 	// free rsl nexrad data
-	void FreeNexradData(void* nexradData);
+	static void FreeNexradData(void* nexradData);
 	// load rsl nexrad volume into this radar data
 	bool LoadNexradVolume(void* nexradData, VolumeType volumeType);
 	
+	// copies data from another and decompresses it if needed
 	void CopyFrom(RadarData* data);
-
-	class TextureBuffer {
-	public:
-		float* data = NULL;
-		int byteSize = 0;
-		bool doDelete = true;
-		void Delete();
-	};
-
-	// returns a uint8 array of the volume each pixel is 4 bytes wide. theta is padded by one pixel on each side
-	// buffer must be freed with delete[]
-	RadarData::TextureBuffer CreateTextureBufferReflectivity();
-	RadarData::TextureBuffer CreateTextureBufferReflectivity2();
 
 	// returns a float array of the sweeps for elevations to be used with the shader
 	// buffer must be freed with delete[]
 	// the angle index texture maps the angle from the ground to a sweep
 	// pixel 65536 is strait up, pixel 32768 is parallel with the ground, pixel 0 is strait down
-	// value 0 is no sweep, value 1.0-255.0 specify the index of the sweep, value 1.0 specifies first sweep, values inbetween intagers will interpolate sweeps
+	// value -1.0 is no sweep, value 0.0-255.0 specify the index of the sweep, value 0.0 specifies first sweep, values inbetween integers will interpolate sweeps
 	RadarData::TextureBuffer CreateAngleIndexBuffer();
 	
-	
+	// compress the buffer and deallocate the full buffer
 	void Compress();
+	
+	// decompress into the main buffer but leaves compressed buffer unfreed
+	void Decompress();
+	
+	// returns true if it is compressed and the main buffer is unallocated
+	bool IsCompressed();
 	
 	//frees all buffers
 	void Deallocate();

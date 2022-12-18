@@ -31,6 +31,9 @@ public:
 		int radiusBufferCount = 1832;
 		int thetaBufferCount = 720;
 		int sweepBufferCount = 14;
+		
+		// type of volume to display
+		RadarData::VolumeType volumeType = RadarData::VOLUME_REFLECTIVITY;
 	};
 	
 	// settings for radar data

@@ -61,6 +61,9 @@ void RadarCollection::Allocate(int newCacheSize) {
 	reservedCacheSize = std::max(std::min(reservedCacheSize,10),std::min(cacheSizeSide,4));
 	currentPosition = cacheSize / 2;
 	cache = new RadarDataHolder[cacheSize];
+	for(int i = 0; i < cacheSize; i++){
+		cache[i].collection = this;
+	}
 	allocated = true;
 }
 
@@ -481,9 +484,10 @@ void RadarCollection::LoadNewData() {
 	}
 	
 	if(maxLoops == 0){
-		// I have never seen this printed and I home no one ever will.
+		// I have never seen this printed and I hope no one ever will.
 		// Actually, I think this can be reached if there are too few files
-		fprintf(stderr, "You fool! You have made the loop run to long.\n");
+		// It has been proven that this is a fairly common occurrence so I am commening it out
+		//fprintf(stderr, "You fool! You have made the loop run to long.\n");
 	}
 	if(verbose){
 		LogState();

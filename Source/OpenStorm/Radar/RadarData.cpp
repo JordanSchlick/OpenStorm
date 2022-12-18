@@ -384,6 +384,7 @@ void RadarData::CopyFrom(RadarData* data) {
 		}
 		if (sweepBufferCount == 0) {
 			sweepBufferCount = data->sweepBufferCount;
+			sweepInfo = new SweepInfo[sweepBufferCount]();
 		}
 		
 		thetaBufferSize = radiusBufferCount;
@@ -397,113 +398,23 @@ void RadarData::CopyFrom(RadarData* data) {
 		std::fill(buffer, buffer+fullBufferSize, data->stats.noDataValue);
 	}
 	// copy data
-	if(data->bufferCompressed != NULL){
+	if(data->buffer != NULL){
+		memcpy(buffer, data->buffer, std::min(fullBufferSize, data->usedBufferSize) * sizeof(float));
+	}else if(data->bufferCompressed != NULL){
 		SparseCompress::decompressToBuffer(buffer, data->bufferCompressed, fullBufferSize);
-	}else if(data->buffer != NULL){
-		memcpy(buffer, data->buffer, std::min(fullBufferSize, data->usedBufferSize) * 4);
 	}
-	// take used buffer size int account
+	// take used buffer size into account
 	if(data->usedBufferSize < usedBufferSize){
 		// fill newly unused space
 		std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, data->stats.noDataValue);
 	}
 	usedBufferSize = data->usedBufferSize;
 	stats = data->stats;
-	// TODO: copy sweepInfo
+	memcpy(sweepInfo, data->sweepInfo, std::min(sweepBufferCount, data->sweepBufferCount) * sizeof(SweepInfo));
 }
 
 
 
-RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity() {
-	int thetaBufferSize2 = radiusBufferCount;
-	int sweepBufferSize2 = (thetaBufferCount + 2) * thetaBufferSize2;
-	int fullBufferSize2 = sweepBufferCount * sweepBufferSize2;
-	
-	
-	if(buffer == NULL){
-		RadarData::TextureBuffer returnValue;
-		returnValue.data = NULL;
-		//returnValue.data = new float[fullBufferSize2];
-		returnValue.byteSize = 0;
-		return returnValue;
-	}
-	
-	// sizes of secitions of the buffer
-	
-
-	float* textureBuffer = new float[fullBufferSize2]();
-	//int divider = (maxValue - minValue) / 256 + 1;
-	//float divider = (stats.maxValue - stats.minValue);
-	for (int sweepIndex = 0; sweepIndex < sweepBufferCount; sweepIndex++) {
-		for (int theta = 0; theta < thetaBufferCount; theta++) {
-			for (int radius = 0; radius < radiusBufferCount; radius++) {
-				//float value = (buffer[radius + (theta * radiusBufferCount) + (sweepIndex * radiusBufferCount * thetaBufferCount)] - minValue) / divider;
-				//textureBuffer[(radius) + ((theta + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)] = std::max(0.0f, value);
-				
-				float value = buffer[radius + (theta * radiusBufferCount) + (sweepIndex * radiusBufferCount * thetaBufferCount)];
-				textureBuffer[(radius) + ((theta + 1) * thetaBufferSize) + (sweepIndex * sweepBufferSize)] =  value;
-				//if (theta == 0) {
-				//	value = 255;
-				//}
-				
-			}
-		}
-		// pad theta with pixels from the other side
-		//fprintf(stderr, "sweepIndex %i \n", sweepIndex);
-		//fflush(stderr);
-		memcpy(
-			textureBuffer + (sweepIndex * sweepBufferSize2),
-			textureBuffer + (thetaBufferCount * thetaBufferSize2 + (sweepIndex * sweepBufferSize2)),
-			thetaBufferSize2*4);
-
-		
-
-
-		memcpy(
-			textureBuffer + (((thetaBufferCount + 1) * thetaBufferSize2) + (sweepIndex * sweepBufferSize2)),
-			textureBuffer + (thetaBufferSize2 + (sweepIndex * sweepBufferSize2)),
-			thetaBufferSize2*4);
-
-		/*if (sweepIndex == 3 ) {
-			//for (int radius = 0; radius < thetaBufferSize; radius++) {
-			//	textureBuffer[(sweepIndex * sweepBufferSize) + radius] = 255;
-			//}
-			for (int radius = 0; radius < thetaBufferSize; radius++) {
-				//textureBuffer[((230) * thetaBufferSize) + (sweepIndex * sweepBufferSize) + radius] = 255;
-				textureBuffer[((230) * thetaBufferSize) + (sweepIndex * sweepBufferSize) + radius] = 1.0f * (float)radius / (float)thetaBufferSize;
-			}
-		}*/
-		/*memcpy(textureBuffer + (sweepIndex * thetaRadiusBufferSize), textureBuffer + (radiusBufferCount * radiusBufferSize + sweepIndex * thetaRadiusBufferSize), radiusBufferSize);
-		for (int radius = 0; radius < radiusBufferCount; radius++) {
-			textureBuffer[3 + radius * 4 + sweepIndex * thetaRadiusBufferSize] = textureBuffer[3 + radius * 4 + radiusBufferCount * radiusBufferSize + sweepIndex * thetaRadiusBufferSize];
-			textureBuffer[3 + radius * 4 + thetaBufferCount * radiusBufferSize + sweepIndex * thetaRadiusBufferSize] = textureBuffer[3 + radius * 4 + radiusBufferSize + sweepIndex * thetaRadiusBufferSize];
-		}*/
-	}
-	//for(int sweep)
-	RadarData::TextureBuffer returnValue;
-	returnValue.data = textureBuffer;
-	returnValue.byteSize = fullBufferSize2 * 4;
-	return returnValue;
-}
-
-RadarData::TextureBuffer RadarData::CreateTextureBufferReflectivity2(){
-	RadarData::TextureBuffer returnValue;
-	if(bufferCompressed != NULL){
-		returnValue.data = bufferCompressed;
-		returnValue.byteSize = compressedBufferSize;
-		returnValue.doDelete = false;
-		return returnValue;
-	}
-	if(buffer == NULL){
-		returnValue.data = NULL;
-		returnValue.byteSize = 0;
-		return returnValue;
-	}
-	returnValue.data = buffer;
-	returnValue.byteSize = fullBufferSize * 4;
-	returnValue.doDelete = false;
-	return returnValue;
-}
 
 
 RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
@@ -575,6 +486,34 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 	returnValue.data = textureBuffer;
 	returnValue.byteSize = 65536 * 4;
 	return returnValue;
+}
+
+void RadarData::Compress() {
+	/*if(bufferCompressed != NULL){
+		delete bufferCompressed;
+		compressedBufferSize = 0;
+	}*/
+	if(bufferCompressed == NULL && buffer != NULL){
+		SparseCompress::CompressorState compressorState = {};
+		compressorState.preCompressedSize = fullBufferSize / 10;
+		SparseCompress::compressStart(&compressorState);
+		SparseCompress::compressValues(&compressorState, buffer, usedBufferSize);
+		bufferCompressed = SparseCompress::compressEnd(&compressorState);
+		compressedBufferSize = compressorState.sizeAllocated;
+	}
+	if(buffer != NULL){
+		delete buffer;
+	}
+}
+
+void RadarData::Decompress() {
+	if(bufferCompressed != NULL && buffer == NULL){
+		CopyFrom(this);
+	}
+}
+
+bool RadarData::IsCompressed() {
+	return buffer == NULL && bufferCompressed != NULL;
 }
 
 void RadarData::Deallocate(){

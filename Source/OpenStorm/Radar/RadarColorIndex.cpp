@@ -313,9 +313,9 @@ RadarColorIndex::Result RadarColorIndexVelocity::GenerateColorIndex(Params param
 	RadarColorIndex::Result result = BasicSetup(l, u, resultToReuse);
 	
 	// green
-	colorRangeHSL(result.data, valueToIndex(-100,100,-100), valueToIndex(-100,100,0), 0.0,1,0.5, 0.0,0.2,0.5);
+	colorRangeHSL(result.data, valueToIndex(-100,100,-100), valueToIndex(-100,100,0), 0.33,1,0.5, 0.33,0.2,0.5);
 	// red
-	colorRangeHSL(result.data, valueToIndex(-100,100,0), valueToIndex(-100,100,100),  0.33,0.2,0.5,  0.33,1,0.5);
+	colorRangeHSL(result.data, valueToIndex(-100,100,0), valueToIndex(-100,100,100),  0.0,0.2,0.5, 0.0,1,0.5);
 	
 	for (int i = 0; i < 16384; i++) {
 		float value = (abs(i - 8191.5f) / 8191.5f );
