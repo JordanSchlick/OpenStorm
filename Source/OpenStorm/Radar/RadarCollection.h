@@ -89,7 +89,7 @@ public:
 	// this function should be called regularly on the main thread
 	void EventLoop();
 	
-	// register a callback for when radar data, this can emit null if there was an error loading data
+	// register a callback for when radar data
 	void RegisterListener(std::function<void(RadarUpdateEvent)> callback);
 	
 	RadarDataHolder* GetCurrentRadarData();

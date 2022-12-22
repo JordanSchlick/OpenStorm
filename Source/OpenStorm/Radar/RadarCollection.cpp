@@ -108,7 +108,7 @@ void RadarCollection::Move(int delta) {
 	LoadNewData();
 	if(cache[currentPosition].state == RadarDataHolder::State::DataStateLoading){
 		needToEmit = true;
-	}else{
+	}else if(cache[currentPosition].state == RadarDataHolder::State::DataStateLoaded){
 		Emit(&cache[currentPosition]);
 		needToEmit = false;
 	}
@@ -129,7 +129,7 @@ void RadarCollection::EventLoop() {
 	//	return;
 	//}
 	RadarDataHolder* holder = &cache[currentPosition];
-	if(needToEmit && holder->state != RadarDataHolder::State::DataStateLoading){
+	if(needToEmit && holder->state == RadarDataHolder::State::DataStateLoaded){
 		Emit(holder);
 		needToEmit = false;
 	}
@@ -416,10 +416,10 @@ void RadarCollection::LoadNewData() {
 	while(availableSlots > 0 && maxLoops > 0){
 		//fprintf(stderr,"state %i %i %i\n",cachedBefore,cachedAfter,availableSlots);
 		
-		// this if statement is used to alternate between sides
-		// if you make a change to one section you need to make a change the other section
+		// this if statement is used to alternate between sides of the curent position so that data closesed to the current position will be scheduled for loading first
+		// if you make a change to one section of the if statement you need to make a change the other section
 		if(side == 1){
-			//advance forward
+			//load forward
 			if(modulo(currentPosition + loopRun, cacheSize) == modulo(currentPosition - cachedBefore - 1, cacheSize)){
 				// it has collided with the empty spot
 				forwardEnded = true;
@@ -446,7 +446,7 @@ void RadarCollection::LoadNewData() {
 				}
 			}
 		}else{
-			//advance backward
+			//load backward
 			if(modulo(currentPosition - loopRun, cacheSize) == modulo(currentPosition + cachedAfter + 1,cacheSize)){
 				// it has collided with the empty spot
 				backwardEnded = true;

@@ -68,8 +68,8 @@ void ASlateUI::Tick(float DeltaTime){
 	// update scale based on system scalling
 	if (scaleWidget.IsValid()) {
 		SWindow* swindow = GetWorld()->GetGameViewport()->GetWindow().Get();
-		float nativeScale = swindow->GetDPIScaleFactor();
-		scaleWidget->SetDPIScale(nativeScale);
+		//float nativeScale = swindow->GetDPIScaleFactor();
+		scaleWidget->SetDPIScale(resources->globalState->guiScale);
 	}
 	
 	if(cacheState.IsValid()){

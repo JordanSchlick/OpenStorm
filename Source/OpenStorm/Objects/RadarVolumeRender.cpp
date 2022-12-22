@@ -57,6 +57,7 @@ ARadarVolumeRender *ARadarVolumeRender::instance = NULL;
 // Sets default values
 ARadarVolumeRender::ARadarVolumeRender()
 {
+
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -96,7 +97,15 @@ void ARadarVolumeRender::BeginPlay()
 	// Load the Cube mesh
 	cubeMeshComponent->SetStaticMesh(cubeMesh);
 
+	static bool doAllocatedConsole = true;
+	if (doAllocatedConsole) {
+		NativeAPI::AllocateConsole();
+		doAllocatedConsole = false;
+	}
+
+#if WITH_EDITOR
 	NativeAPI::ShowConsole();
+#endif
 
 	/*
 	//IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("ShowFlag.PostProcessing"));

@@ -214,7 +214,8 @@ void RadarDataHolder::Unload() {
 		delete radarData;
 		radarData = NULL;
 	}*/
-	
+	// the radar data will be freed when its product holder is freed
+	radarData = NULL;
 	for(auto product : products){
 		delete product;
 	}

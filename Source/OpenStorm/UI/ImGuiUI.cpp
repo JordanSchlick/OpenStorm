@@ -410,6 +410,9 @@ void AImGuiUI::Tick(float deltaTime)
 			if (ImGui::Button("Reload File")) {
 				globalState.EmitEvent("DevReloadFile");
 			}
+			if (ImGui::Button("Show Console")) {
+				NativeAPI::ShowConsole();
+			}
 			if (ImGui::Button("Cache State")) {
 				globalState.devShowCacheState = !globalState.devShowCacheState;
 			}

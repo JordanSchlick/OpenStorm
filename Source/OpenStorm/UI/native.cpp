@@ -17,16 +17,55 @@ extern "C" {
 	__declspec(dllimport) HWND __stdcall GetConsoleWindow();
 	__declspec(dllimport) BOOL __stdcall AllocConsole();
 	__declspec(dllimport) HINSTANCE LoadLibraryA(const char* lpLibFileName);
+	__declspec(dllimport) HINSTANCE LoadLibraryW(const wchar_t* lpLibFileName);
+	__declspec(dllimport) BOOL FreeLibrary(HINSTANCE hLibModule);
 	__declspec(dllimport) void* GetProcAddress(HINSTANCE hModule, const char* lpProcName);
+	__declspec(dllimport) BOOL ShowWindow(HWND hWnd, int nCmdShow);
 	typedef BOOL(__stdcall* ShowWindowDef)(HWND hWnd, int nCmdShow);
 	typedef HRESULT(__stdcall* GetScaleFactorForMonitorDef)(HMONITOR hMon, int* pScale);
 	typedef HMONITOR(__stdcall* MonitorFromWindowDef)(HWND hwnd, DWORD dwFlags);
 }
+
+
+#include "Microsoft/MinimalWindowsApi.h"
 #endif
 
 
 namespace NativeAPI{
-	
+	void AllocateConsole() {
+#ifdef _WIN32
+		HANDLE conHandleExisted = GetConsoleWindow();
+		if (conHandleExisted == NULL)
+		{
+			AllocConsole();
+		}
+		HANDLE conHandle = GetConsoleWindow();
+		if (conHandle != NULL)
+		{
+			freopen("CONOUT$", "w", stdout);
+			freopen("CONOUT$", "w", stderr);
+			//HINSTANCE hGetProcIDDLL = LoadLibraryW(L"user32.dll");
+			/*auto hGetProcIDDLL = Windows::LoadLibraryW(L"User32.dll");
+			if (!hGetProcIDDLL) {
+				ShowWindowDef ShowWindow = (ShowWindowDef)GetProcAddress(hGetProcIDDLL, "ShowWindow");
+				if (ShowWindow) {
+					ShowWindow((HWND)conHandle, SW_HIDE);
+				} else {
+					fprintf(stderr, "ShowWindow load failed\n");
+				}
+				//FreeLibrary(hGetProcIDDLL);
+				Windows::FreeLibrary(hGetProcIDDLL);
+			} else {
+				fprintf(stderr, "user32.dll load failed\n");
+			}*/
+			ShowWindow((HWND)conHandle, SW_HIDE);
+		} else {
+			fprintf(stderr, "No console handle found\n");
+		}
+#endif
+	}
+
+
 	void ShowConsole(){
 	#ifdef __INTELLISENSE__
 	#else
@@ -40,22 +79,26 @@ namespace NativeAPI{
 		HANDLE conHandle = GetConsoleWindow();
 		if (conHandle != NULL)
 		{
-			HINSTANCE hGetProcIDDLL = LoadLibraryA("user32.dll");
+
+			freopen("CONOUT$", "w", stdout);
+			freopen("CONOUT$", "w", stderr);
+			//HINSTANCE hGetProcIDDLL = LoadLibraryW(L"user32.dll");
+			/*auto hGetProcIDDLL = Windows::LoadLibraryW(L"User32.dll");
 			if (!hGetProcIDDLL) {
 				ShowWindowDef ShowWindow = (ShowWindowDef)GetProcAddress(hGetProcIDDLL, "ShowWindow");
 				if (ShowWindow) {
 					ShowWindow((HWND)conHandle, SW_SHOW);
 				} else {
-					fprintf(stderr, "ShowWindow load failed");
+					fprintf(stderr, "ShowWindow load failed\n");
 				}
+				//FreeLibrary(hGetProcIDDLL);
+				Windows::FreeLibrary(hGetProcIDDLL);
 			} else {
-				fprintf(stderr, "user32.dll load failed");
-			}
-			//ShowWindow((HWND)conHandle, SW_SHOW);
-			freopen("CONOUT$", "w", stdout);
-			freopen("CONOUT$", "w", stderr);
+				fprintf(stderr, "user32.dll load failed\n");
+			}*/
+			ShowWindow((HWND)conHandle, SW_SHOW);
 		} else {
-			fprintf(stderr, "No console handle gound");
+			fprintf(stderr, "No console handle found");
 		}
 	#endif
 	}

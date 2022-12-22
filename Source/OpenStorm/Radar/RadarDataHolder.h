@@ -67,7 +67,7 @@ public:
 	RadarCollection* collection = NULL;
 	// info about the file on disk
 	RadarFile fileInfo = {};
-	// all products to be loaded
+	// all products loaded or to be loaded
 	std::vector<ProductHolder*> products;
 	// map of radar products that point to products
 	std::map<RadarData::VolumeType, ProductHolder*> productsMap;
@@ -82,7 +82,7 @@ public:
 	void Unload();
 	// get a product to be loaded or add it if it is not found
 	ProductHolder* GetProduct(RadarData::VolumeType type);
-	// create a UID for use with threading
+	// create a unique ID for use with threading
 	static uint64_t CreateUID();
 	
 protected:
