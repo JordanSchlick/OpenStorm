@@ -4,8 +4,13 @@ RadarData *RadarProduct::deriveVolume(std::map<RadarData::VolumeType, RadarData 
 	return NULL;
 }
 
-RadarProductBase::RadarProductBase(RadarData::VolumeType type, std::string productName){
+RadarProduct::~RadarProduct(){
+	
+}
+
+RadarProductBase::RadarProductBase(RadarData::VolumeType type, std::string productName, std::string shortProductName){
 	volumeType = type;
 	productType = PRODUCT_BASE;
 	name = productName;
+	shortName = shortProductName;
 }

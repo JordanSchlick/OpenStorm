@@ -86,12 +86,16 @@ public:
 	// initiates a move for the user
 	void MoveManual(int delta);
 	
+	// set the radar product
+	void ChangeProduct(RadarData::VolumeType volumeType);
+	
 	// this function should be called regularly on the main thread
 	void EventLoop();
 	
 	// register a callback for when radar data
 	void RegisterListener(std::function<void(RadarUpdateEvent)> callback);
 	
+	// get the radar data holder, may not be loaded
 	RadarDataHolder* GetCurrentRadarData();
 	
 	// visually describe the state of the cache

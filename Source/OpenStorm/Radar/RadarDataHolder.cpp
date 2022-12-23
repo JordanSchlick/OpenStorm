@@ -17,7 +17,6 @@ public:
 		radarSettings = radarDataSettings;
 		radarHolder = radarDataHolder;
 		initialUid = RadarDataHolder::CreateUID();
-		radarHolder->fileInfo = fileInfo;
 		radarHolder->uid = initialUid;
 		radarHolder->loader = this;
 		radarHolder->state = RadarDataHolder::State::DataStateLoading;
@@ -26,37 +25,48 @@ public:
 	void Task(){
 		
 		//radarData->ReadNexrad(path.c_str());
-		void* nexradData = RadarData::ReadNexradData(path.c_str());
-		if(!canceled){
-			// load base products
-			for(RadarDataHolder::ProductHolder* productHolder : radarHolder->products){
-				if(productHolder->product->productType == RadarProduct::PRODUCT_BASE && productHolder->isLoaded == false && !canceled){
-					RadarData* radarData = new RadarData();
-					radarData->compress = !productHolder->isDependency;
-					radarData->radiusBufferCount = radarSettings.radiusBufferCount;
-					radarData->thetaBufferCount = radarSettings.thetaBufferCount;
-					radarData->sweepBufferCount = radarSettings.sweepBufferCount;
-					bool success = radarData->LoadNexradVolume(nexradData, productHolder->product->volumeType);
-					if(!success){
-						fprintf(stderr, "RadarDataHolder.cpp(RadarLoader::Task) VolumeType %i %s is missingfrom file\n", productHolder->volumeType, productHolder->product->name.c_str());
-					}
-					if(success && !canceled && initialUid == radarHolder->uid){
-						if(productHolder->radarData != NULL){
-							delete productHolder->radarData;
+		
+		
+		int baseProductToLoadCount = 0;
+		for(RadarDataHolder::ProductHolder* productHolder : radarHolder->products){
+			if(productHolder->product->productType == RadarProduct::PRODUCT_BASE && productHolder->isLoaded == false){
+				baseProductToLoadCount++;
+			}
+		}
+		if(baseProductToLoadCount > 0){
+			void* nexradData = RadarData::ReadNexradData(path.c_str());
+			if(!canceled){
+				// load base products
+				for(RadarDataHolder::ProductHolder* productHolder : radarHolder->products){
+					if(productHolder->product->productType == RadarProduct::PRODUCT_BASE && productHolder->isLoaded == false && !canceled){
+						RadarData* radarData = new RadarData();
+						radarData->compress = !productHolder->isDependency;
+						radarData->radiusBufferCount = radarSettings.radiusBufferCount;
+						radarData->thetaBufferCount = radarSettings.thetaBufferCount;
+						radarData->sweepBufferCount = radarSettings.sweepBufferCount;
+						bool success = radarData->LoadNexradVolume(nexradData, productHolder->product->volumeType);
+						if(!success){
+							fprintf(stderr, "RadarDataHolder.cpp(RadarLoader::Task) VolumeType %i %s is missingfrom file\n", productHolder->volumeType, productHolder->product->name.c_str());
 						}
-						productHolder->isLoaded = true;
-						productHolder->radarData = radarData;
-					}else{
-						delete radarData;
+						if(success && !canceled && initialUid == radarHolder->uid){
+							if(productHolder->radarData != NULL){
+								delete productHolder->radarData;
+							}
+							productHolder->isLoaded = true;
+							productHolder->radarData = radarData;
+						}else{
+							delete radarData;
+							break;
+						}
 					}
 				}
 			}
+			RadarData::FreeNexradData(nexradData);
 		}
-		RadarData::FreeNexradData(nexradData);
 		if(!canceled && initialUid == radarHolder->uid){
 			
 			bool deriveProducts = true;
-			while(deriveProducts){
+			while(deriveProducts && !canceled && initialUid == radarHolder->uid){
 				deriveProducts = false;
 				int productCount = radarHolder->products.size();
 				for(int i = 0; i < productCount; i++){
@@ -88,6 +98,7 @@ public:
 								productHolder->radarData = radarData;
 							}else{
 								delete radarData;
+								break;
 							}
 							deriveProducts = true;
 						}
@@ -166,7 +177,19 @@ RadarDataHolder::ProductHolder* RadarDataHolder::GetProduct(RadarData::VolumeTyp
 }
 
 void RadarDataHolder::Load(RadarFile file){
+	fileInfo = file;
+	Load();
+}
+
+void RadarDataHolder::Load(){
 	RadarCollection::RadarDataSettings settings = collection != NULL ? collection->radarDataSettings : RadarCollection::RadarDataSettings();
+
+	// cancel any existing async tasks
+	for(auto task : asyncTasks){
+		task->Cancel();
+		task->Delete();
+	}
+	asyncTasks.clear();
 	
 	// add output to requested products
 	GetProduct(settings.volumeType)->isFinal = true;
@@ -189,12 +212,14 @@ void RadarDataHolder::Load(RadarFile file){
 		}
 	}
 	
-	// run asynchronous loading
-	asyncTasks.push_back(new RadarLoader(
-		file,
-		settings,
-		this
-	));
+	if(fileInfo.path != ""){
+		// run asynchronous loading
+		asyncTasks.push_back(new RadarLoader(
+			fileInfo,
+			settings,
+			this
+		));
+	}
 }
 
 void RadarDataHolder::Unload() {

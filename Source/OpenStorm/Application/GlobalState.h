@@ -54,6 +54,8 @@ public:
 	float qualityCustomStepSize = 5.0f; // if quality is set to 10 this value is used
 	float verticalScale = 1.0f; // multiply vertical scale
 	float audioControlMultiplier = 5.0f;
+	
+	int volumeType = 1; // type of radar product, defaults to 1 which is reflectivity
 
 	std::vector<Waypoint> locationMarkers = {};
 	Globe* globe;

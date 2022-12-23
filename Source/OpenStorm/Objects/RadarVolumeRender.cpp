@@ -261,6 +261,13 @@ void ARadarVolumeRender::BeginPlay()
 		radarMaterialInstance->SetScalarParameterValue(TEXT("StepSize"), stepSize);
 		radarMaterialInstance->SetScalarParameterValue(TEXT("Fuzz"), globalState->enableFuzz ? 1 : 0);
 	}));
+	callbackIds.push_back(globalState->RegisterEvent("ChangeProduct", [this, globalState](std::string stringData, void* extraData) {
+		if (extraData == NULL) {
+			return;
+		}
+		RadarData::VolumeType volumeType = *(RadarData::VolumeType*)extraData;
+		radarCollection->ChangeProduct(volumeType);
+	}));
 	
 	//RandomizeTexture();
 }

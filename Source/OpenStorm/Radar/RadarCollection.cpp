@@ -119,6 +119,16 @@ void RadarCollection::MoveManual(int delta) {
 	lastMoveDirection = delta < 0 ? -1 : 1;
 }
 
+void RadarCollection::ChangeProduct(RadarData::VolumeType volumeType) {
+	radarDataSettings.volumeType = volumeType;
+	if(cache != NULL){
+		for(int i = 0; i < cacheSize; i++){
+			cache[i].Load();
+		}
+	}
+	needToEmit = true;
+}
+
 
 void RadarCollection::EventLoop() {
 	if(!allocated){

@@ -245,7 +245,7 @@ RadarColorIndex* RadarColorIndex::GetDefaultColorIndexForData(RadarData* radarDa
 			break;
 			
 		case RadarData::VOLUME_VELOCITY:
-		case RadarData::VOLUME_VELOCITY_ANTIALIASED:
+		case RadarData::VOLUME_VELOCITY_DEALIASED:
 			return &RadarColorIndexVelocity::defaultInstance;
 			break;
 	
@@ -332,7 +332,8 @@ RadarColorIndex::Result RadarColorIndexRelativeHue::GenerateColorIndex(Params pa
 	
 	for (int i = 0; i < 16384; i++) {
 		float value = (i / 16383.0f);
-		float hue = 0.85 - fmod(value, 1.0) * 0.9;
+		//float hue = 0.85 - fmod(value, 1.0) * 0.9;
+		float hue = 0.7 - fmod(value, 1.0) * 0.9;
 		float R = std::clamp(std::abs(hue * 6.0f - 3.0f) - 1.0f, 0.0f, 1.0f);
 		float G = std::clamp(2 - std::abs(hue * 6.0f - 2.0f), 0.0f, 1.0f);
 		float B = std::clamp(2 - std::abs(hue * 6.0f - 4.0f), 0.0f, 1.0f);

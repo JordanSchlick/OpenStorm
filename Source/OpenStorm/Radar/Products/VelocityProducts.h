@@ -1,7 +1,7 @@
 #include "RadarProduct.h"
 
-class RadarProductVelocityAntialiased : public RadarProduct {
+class RadarProductVelocityDealiased : public RadarProduct {
 public:
-	RadarProductVelocityAntialiased();
+	RadarProductVelocityDealiased();
 	virtual RadarData* deriveVolume(std::map<RadarData::VolumeType, RadarData*> inputProducts) override;
 };

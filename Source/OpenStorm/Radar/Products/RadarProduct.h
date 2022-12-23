@@ -28,6 +28,9 @@ public:
 	// full descriptive name of radar product
 	std::string name = "Missing Name";
 	
+	// short abbreviated name of radar product
+	std::string shortName = "MISSING";
+	
 	// the products that a derived product relyes on
 	std::vector<RadarData::VolumeType> dependencies = {};
 	
@@ -46,10 +49,12 @@ public:
 			return NULL;
 		}
 	}
+	
+	virtual ~RadarProduct();
 };
 
 // class for base radar products
 class RadarProductBase : public RadarProduct {
 public:
-	RadarProductBase(RadarData::VolumeType type, std::string productName);
+	RadarProductBase(RadarData::VolumeType type, std::string productName, std::string shortProductName);
 };

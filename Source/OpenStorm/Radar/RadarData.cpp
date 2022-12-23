@@ -166,7 +166,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 						for (int radius = 0; radius < radiusSize; radius++) {
 							int value = ray->h.f(ray->range[radius]);
 							//int value = ray->range[radius];
-							if (value != 131072) {
+							if (value <= BADVAL - 10) {
 								stats.minValue = value != 0 ? (value < stats.minValue ? value : stats.minValue) : stats.minValue;
 								//minValue = value < minValue ? value : minValue;
 								stats.maxValue = value > stats.maxValue ? value : stats.maxValue;
@@ -258,7 +258,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 							// 	// value for no data
 							// 	value = noDataValue;
 							// }
-							if(value == BADVAL){
+							if(value >= BADVAL - 10){
 								value = noDataValue;
 							}
 							if(value == RFVAL){

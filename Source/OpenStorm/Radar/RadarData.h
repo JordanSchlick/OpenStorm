@@ -26,7 +26,7 @@ public:
 		
 		// computed volume types
 		
-		VOLUME_VELOCITY_ANTIALIASED = 102,
+		VOLUME_VELOCITY_DEALIASED = 102,
 	};
 	
 	

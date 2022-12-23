@@ -20,6 +20,7 @@ GS->globalState.maxFPS
 #include "native.h"
 #include "uiwindow.h"
 #include "../Radar/SystemAPI.h"
+#include "../Radar/Products/RadarProduct.h"
 #include "../Radar/Globe.h"
 #include "../Objects/RadarGameStateBase.h"
 #include "../Objects/RadarViewPawn.h"
@@ -218,6 +219,28 @@ void AImGuiUI::Tick(float deltaTime)
 		if (ImGui::CollapsingHeader("Main", ImGuiTreeNodeFlags_DefaultOpen)) {
 			
 			if (ImGui::TreeNodeEx("Radar", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+				RadarData::VolumeType volumeType = (RadarData::VolumeType)globalState.volumeType;
+				ImGuiComboFlags flags = 0;
+				const char* comboPreviewValue = RadarProduct::products[volumeType]->name.c_str();  // Pass in the preview value visible before opening the combo (it could be anything)
+				if (ImGui::BeginCombo("Quality", comboPreviewValue, flags)){
+					for (auto item : RadarProduct::products){
+						RadarProduct* product = item.second;
+						const bool isSelected = product->volumeType == volumeType;
+						if (ImGui::Selectable(product->name.c_str(), isSelected)){
+							//qualityCurrentIndex = n;
+							if(!isSelected){
+								globalState.volumeType = product->volumeType;
+								globalState.EmitEvent("ChangeProduct", "", (void*)&product->volumeType);
+							}
+						}
+						// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+						if (isSelected){
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+				
 				CustomFloatInput("Cutoff", 0, 1, &globalState.cutoff, &globalState.defaults->cutoff, CustomFloatInput_SliderOnly);
 				CustomFloatInput("Opacity", 0.2, 4, &globalState.opacityMultiplier, &globalState.defaults->opacityMultiplier);
 				CustomFloatInput("Height", 1, 4, &globalState.verticalScale, &globalState.defaults->verticalScale);
@@ -338,8 +361,8 @@ void AImGuiUI::Tick(float deltaTime)
 				const char* comboPreviewValue = qualityNames[qualityCurrentIndex];  // Pass in the preview value visible before opening the combo (it could be anything)
 				if (ImGui::BeginCombo("Quality", comboPreviewValue, flags)){
 					for (int n = 0; n < IM_ARRAYSIZE(qualityNames); n++){
-						const bool is_selected = (qualityCurrentIndex == n);
-						if (ImGui::Selectable(qualityNames[n], is_selected)){
+						const bool isSelected = (qualityCurrentIndex == n);
+						if (ImGui::Selectable(qualityNames[n], isSelected)){
 							//qualityCurrentIndex = n;
 							if(globalState.quality != qualityValues[n]){
 								globalState.quality = qualityValues[n];
@@ -348,7 +371,7 @@ void AImGuiUI::Tick(float deltaTime)
 							}
 						}
 						// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-						if (is_selected){
+						if (isSelected){
 							ImGui::SetItemDefaultFocus();
 						}
 					}

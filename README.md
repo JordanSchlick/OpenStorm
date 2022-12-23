@@ -11,7 +11,7 @@ OpenStorm radar is a free and open source 3d radar viewer. It uses Unreal Engine
 You can find a pre-built download [here](https://github.com/JordanSchlick/OpenStorm/releases/latest/)
 
 
-## Contact
+## Community / Contact
 Discord server invite [https://discord.gg/K3aU2hEYvJ](https://discord.gg/K3aU2hEYvJ)
 
 

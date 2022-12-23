@@ -75,9 +75,10 @@ public:
 	RadarDataHolder();
 	~RadarDataHolder();
 	
-	//
-	// load data, existing data will be kept
+	// load file, existing data will be kept, you probably want to call unload before this
 	void Load(RadarFile file);
+	// load data such as newly selected product, existing data will be kept
+	void Load();
 	// unload data and stop any loading in progress
 	void Unload();
 	// get a product to be loaded or add it if it is not found

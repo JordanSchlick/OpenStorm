@@ -7,6 +7,7 @@ Events are named. They can also have some data associated with them. Extra data 
 * BackwardStep - Move to the next file backwards in time
 * ForwardStep - Move to the next file forwards in time
 * UpdateVolumeParameters - Used after changing settings involving the volume shader that may require expensive operations on the shader to apply
+* ChangeProduct(unused, RadarData::VolumeType*) - Change the type of product being displayed
 * LocationMarkersUpdate - Update location markers from global state
 * GlobeUpdate - Update orientation of the globe
 * LoadDirectory(directory to load,Null) - Load a directory of radar files
