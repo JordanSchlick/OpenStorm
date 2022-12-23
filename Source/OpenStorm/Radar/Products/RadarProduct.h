@@ -36,7 +36,8 @@ public:
 	
 	// derive the product from a map containing its dependencies
 	// this should not be called if the dependencies are not fulfilled or this is not a derived product
-	// inputProducts should contain all dependencies in decompressed form
+	// inputProducts should contain all dependencies
+	// the dependencies may be compressed and need to be be decompressed in deriveVolume
 	virtual RadarData* deriveVolume(std::map<RadarData::VolumeType, RadarData*> inputProducts);
 	
 	// list of all volume products

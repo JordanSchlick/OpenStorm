@@ -10,24 +10,26 @@ namespace SparseCompress{
 			state->preCompressedSize += 2;
 			state->preWasEmpty = true;
 		}
-		state->preUncompressedSize++;
+		state->preUncompressedSize += emptySize;
 	}
 	
 	
 	
 	// allocates buffer
 	void compressStart(CompressorState* state){
-		if(state->preCompressedSize <= 4){
+		if(state->preCompressedSize <= 5){
 			state->preCompressedSize = 16384;
 		}
 		state->sizeAllocated = state->preCompressedSize;
 		state->bufferFloat = new float[state->sizeAllocated];
 		state->bufferInt = (uint32_t*)state->bufferFloat;
+		state->bufferFloat[0] = state->emptyValue;
 		//fprintf(stderr, "Compressed size bytes:   %i\n", state->preCompressedSize * 4);
 		//fprintf(stderr, "Uncompressed size bytes: %i\n", state->preUncompressedSize * 4);
 	}
 	
 	void compressValues(CompressorState* state, float* values, int number){
+		float emptyValue = state->emptyValue;
 		for(int i = 0; i < number; i++){
 			float value = values[i];
 			if(state->sizeAllocated < state->size + 2){
@@ -38,7 +40,7 @@ namespace SparseCompress{
 				state->bufferFloat = newBuffer;
 				state->bufferInt = (uint32_t*)newBuffer;
 			}
-			if(value == -INFINITY){
+			if(value == emptyValue){
 				if(state->wasEmpty == false){
 					// store data amount when blank space begins
 					state->bufferInt[state->sizeInfoLocation + 1] = state->deltaLocation;
@@ -105,8 +107,9 @@ namespace SparseCompress{
 
 	int decompressToBuffer(float* destinationBuffer, float* sourceCompressedBuffer, int maxSize) {
 		uint32_t* intBuf = (uint32_t*)sourceCompressedBuffer;
+		float emptyValue = sourceCompressedBuffer[0];
 		int decompressedSize = 0;
-		int location = 0;
+		int location = 1;
 		while(decompressedSize < maxSize){
 			int blankSize = intBuf[location];
 			int dataSize = intBuf[location + 1];
@@ -116,7 +119,7 @@ namespace SparseCompress{
 			}
 			// fill destination with zeros
 			int blankSizeDo = std::min(maxSize - decompressedSize, blankSize);
-			std::fill(destinationBuffer + decompressedSize, destinationBuffer + decompressedSize + blankSizeDo, -INFINITY);
+			std::fill(destinationBuffer + decompressedSize, destinationBuffer + decompressedSize + blankSizeDo, emptyValue);
 			decompressedSize += blankSizeDo;
 			if(blankSizeDo < blankSize){
 				// destination is full

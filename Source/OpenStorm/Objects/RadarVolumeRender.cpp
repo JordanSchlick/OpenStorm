@@ -14,6 +14,7 @@
 #include "../Radar/RadarData.h"
 #include "../Radar/RadarCollection.h"
 #include "../Radar/RadarColorIndex.h"
+#include "../Radar/Products/RadarProduct.h"
 #include "../Radar/SystemAPI.h"
 #include "../Radar/Globe.h"
 
@@ -527,6 +528,11 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 				ImGui::Text("%s", radarCollection->StateString().c_str());
 				RadarDataHolder* holder = radarCollection->GetCurrentRadarData();
 				ImGui::Text("%s", holder->fileInfo.path.c_str());
+				for (auto product : holder->products) {
+					bool compressed = product->radarData ? ((product->radarData->buffer == NULL && product->radarData->bufferCompressed != NULL)) ? true : false : false;
+					int memoryUsage = product->radarData ? product->radarData->MemoryUsage() : 0;
+					ImGui::Text("%c%c%c%c %s    %i bytes", product->isLoaded ? 'L':'_', product->isFinal ? 'F':'_', product->isDependency ? 'D':'_', compressed ? 'C' : '_', product->product->name.c_str(), memoryUsage);
+				}
 				ImGui::PopFont();
 			}
 			ImGui::End();

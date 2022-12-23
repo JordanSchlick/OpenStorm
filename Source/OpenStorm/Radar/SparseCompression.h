@@ -9,19 +9,31 @@ namespace SparseCompress{
 	
 	/*
 	Sparse compression format
-	This format drops out blank space (designated by -INFINITY) in the buffer and stores data contiguously.
+	This format drops out blank space in the buffer and stores data contiguously.
 	Seeking is not supported because no index is created. It must be decompressed before use.
-	Whitespace is compressed down into two ints. The format is [uint32 blankSize,uint32 dataSize]
-	The next whitespace can be found at the end of the data size specifed.
-	The last whitespace info has a size of zero for both values
-
+	The first value contained in the compressd buffer is the value that was contained in the blank space.
+	Blank space is compressed down into two ints. The format is [uint32 blankSize,uint32 dataSize]
+	The next blank space can be found at the end of the data size specifed.
+	The last blank space info has a size of zero for both values.
+	
+	example of compressed buffer:
+	[
+		float blank space value, 
+		uint32 blankSize, uint32 dataSize, float data, ..., float data,
+		uint32 blankSize, uint32 dataSize, float data, ..., float data,
+		uint32 blankSize, uint32 dataSize, float data, ..., float data,
+		...,
+		0, 0
+	]
 	*/
 	class CompressorState{
 	public:
-		int sizeInfoLocation = 0;
+		int sizeInfoLocation = 1;
 		int deltaLocation = 0;
-		int size = 2;
+		int size = 3;
 		int sizeAllocated = 0;
+		// value to compress as empty space
+		float emptyValue = -INFINITY;
 		uint32_t* bufferInt;
 		// compressed buffer
 		float* bufferFloat;
@@ -29,9 +41,10 @@ namespace SparseCompress{
 		
 		// variables for prerun
 		// prerun can be used to find the exact size of the data and allocate buffer accordingly
+		
 		// preCompressedSize can be manually set for an initial buffer size
-		int preCompressedSize = 4;
-		int preUncompressedSize = 4;
+		int preCompressedSize = 5;
+		int preUncompressedSize = 0;
 		bool preWasEmpty = true;
 		
 		// set to true if the buffer should be resized to perfectly fit at the end
@@ -39,9 +52,11 @@ namespace SparseCompress{
 	};
 	
 	// calculates size of buffer based on values this is run on
+	// pre run is not necessary but will prevent reallocations by determining the exact buffer size ahead of time
 	inline void compressPreRun(CompressorState* state, float value);
 	
 	// calculates size of buffer based on values this is run on
+	// pre run is not necessary but will prevent reallocations by determining the exact buffer size ahead of time
 	inline void compressPreRunAddEmptySpace(CompressorState* state, int emptySize);
 	
 	// allocates buffer

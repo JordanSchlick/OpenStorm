@@ -26,7 +26,7 @@ public:
 };
 
 
-// a class that holds the radar data and related information
+// a class that holds the radar products and related information
 class RadarDataHolder{
 public:
 	enum State{
@@ -51,7 +51,18 @@ public:
 		bool isDependency = false;
 		// if the data has been fully loaded and ready for use
 		bool isLoaded = false;
+		// increment the reference counter to prevent free while in use, must call StopUsing
+		void StartUsing();
+		// decrement the reference counter to allow free
+		void StopUsing();
+		// delete the product once it is no longer in use
+		void Delete();
 		
+		// do not set directly, reference counter if the data is currently being used to determine if it is safe to free
+		int inUse = 0;
+		// should StopUsing free this product when inUse reaches 0
+		bool shouldFree = false;
+	private:
 		~ProductHolder();
 	};
 	

@@ -4,6 +4,8 @@
 #include "RadarCollection.h"
 #include "Products/RadarProduct.h"
 
+#include <algorithm>
+
 // asynchronously loads radar data on a separate thread
 // this thing is like the Daytona 500, there are no locks to be found
 class RadarLoader : public AsyncTaskRunner{
@@ -34,13 +36,14 @@ public:
 			}
 		}
 		if(baseProductToLoadCount > 0){
+			// read in radar file
 			void* nexradData = RadarData::ReadNexradData(path.c_str());
 			if(!canceled){
 				// load base products
 				for(RadarDataHolder::ProductHolder* productHolder : radarHolder->products){
 					if(productHolder->product->productType == RadarProduct::PRODUCT_BASE && productHolder->isLoaded == false && !canceled){
 						RadarData* radarData = new RadarData();
-						radarData->compress = !productHolder->isDependency;
+						radarData->doCompress = !productHolder->isDependency;
 						radarData->radiusBufferCount = radarSettings.radiusBufferCount;
 						radarData->thetaBufferCount = radarSettings.thetaBufferCount;
 						radarData->sweepBufferCount = radarSettings.sweepBufferCount;
@@ -64,16 +67,17 @@ public:
 			RadarData::FreeNexradData(nexradData);
 		}
 		if(!canceled && initialUid == radarHolder->uid){
-			
+			// calculate derived products
 			bool deriveProducts = true;
 			while(deriveProducts && !canceled && initialUid == radarHolder->uid){
 				deriveProducts = false;
 				int productCount = radarHolder->products.size();
-				for(int i = 0; i < productCount; i++){
+				for(int i = 0; i < productCount && !canceled; i++){
 					auto productHolder = radarHolder->products[i];
 					if(!productHolder->isLoaded && productHolder->product->productType == RadarProduct::PRODUCT_DERIVED_VOLUME){
 						bool dependenciesMet = true;
-						std::map<RadarData::VolumeType, RadarData *> depencyData = {};
+						std::map<RadarData::VolumeType, RadarData*> depencyData = {};
+						std::vector<RadarDataHolder::ProductHolder*> depencyDataHolders = {};
 						// check dependencies
 						for(auto &type : productHolder->product->dependencies){
 							/*if(radarHolder->productsMap.find(type) != radarHolder->productsMap.end()){
@@ -82,12 +86,17 @@ public:
 							auto dependency = radarHolder->GetProduct(type);
 							if(dependency->isLoaded){
 								depencyData[dependency->volumeType] = dependency->radarData;
+								depencyDataHolders.push_back(dependency);
 							}else{
 								dependenciesMet = false;
 								break;
 							}
 						}
 						if(dependenciesMet){
+							for(auto &depencyHolder : depencyDataHolders){
+								// ensure the dependencies do not get freed while in use
+								depencyHolder->StartUsing();
+							}
 							// derive and save the product and run the loop again
 							RadarData* radarData = productHolder->product->deriveVolume(depencyData);
 							if(!canceled && initialUid == radarHolder->uid){
@@ -98,11 +107,58 @@ public:
 								productHolder->radarData = radarData;
 							}else{
 								delete radarData;
-								break;
+							}
+							for(auto &depencyHolder : depencyDataHolders){
+								// release dependencies
+								depencyHolder->StopUsing();
 							}
 							deriveProducts = true;
 						}
 					}
+				}
+			}
+		}
+		
+		// discard dependencies
+		if(!canceled && initialUid == radarHolder->uid){
+			/*radarHolder->products.erase(std::remove_if(begin(radarHolder->products), end(radarHolder->products), [this](RadarDataHolder::ProductHolder* productHolder) { 
+				bool doRemove = productHolder->isDependency && !productHolder->isFinal && productHolder->inUse <= 0;
+				if(doRemove){
+					radarHolder->productsMap.erase(radarHolder->productsMap.find(productHolder->volumeType));
+					productHolder->Delete();
+				}
+				return doRemove; 
+			}), end(radarHolder->products));*/
+			std::vector<RadarDataHolder::ProductHolder*> productHoldersToKeep = {};
+			std::vector<RadarDataHolder::ProductHolder*> productHoldersToDestroy = {};
+			int productCount = radarHolder->products.size();
+			for(int i = 0; i < productCount && !canceled; i++){
+				auto productHolder = radarHolder->products[i];
+				bool doRemove = productHolder->isDependency && !productHolder->isFinal && productHolder->inUse <= 0;
+				if(doRemove){
+					productHoldersToDestroy.push_back(productHolder);
+				}else{
+					productHoldersToKeep.push_back(productHolder);
+				}
+			}
+			if(!canceled){
+				radarHolder->products = productHoldersToKeep;
+				for(auto productHolder : productHoldersToDestroy){
+					radarHolder->productsMap.erase(productHolder->volumeType);
+					productHolder->Delete();
+				}
+			}
+		}
+		
+		// compress all products to save memory
+		if(!canceled && initialUid == radarHolder->uid){
+			int productCount = radarHolder->products.size();
+			for(int i = 0; i < productCount && !canceled; i++){
+				auto productHolder = radarHolder->products[i];
+				if(productHolder->radarData != NULL && productHolder->inUse == 0){
+					productHolder->StartUsing();
+					productHolder->radarData->Compress();
+					productHolder->StopUsing();
 				}
 			}
 		}
@@ -134,6 +190,24 @@ public:
 		radarHolder->loader = NULL;
 	}
 };
+
+void RadarDataHolder::ProductHolder::StartUsing(){
+	inUse++;
+}
+void RadarDataHolder::ProductHolder::StopUsing(){
+	inUse--;
+	if(shouldFree && inUse <= 0){
+		delete this;
+	}
+}
+
+void RadarDataHolder::ProductHolder::Delete(){
+	if(inUse > 0){
+		shouldFree = true;
+	}else{
+		delete this;
+	}
+}
 
 RadarDataHolder::ProductHolder::~ProductHolder(){
 	if(radarData != NULL){
@@ -201,14 +275,15 @@ void RadarDataHolder::Load(){
 		int productCount = products.size();
 		for(int i = 0; i < productCount; i++){
 			auto productHolder = products[i];
-			for(auto &type : productHolder->product->dependencies){
-				if(productsMap.find(type) == productsMap.end()){
-					// found new missing dependency
-					addDependencies = true;
+			if(!productHolder->isLoaded){
+				for(auto &type : productHolder->product->dependencies){
+					if(productsMap.find(type) == productsMap.end()){
+						// found new missing dependency
+						addDependencies = true;
+					}
+					GetProduct(type)->isDependency = true;
 				}
-				GetProduct(type)->isDependency = true;
 			}
-			
 		}
 	}
 	
@@ -242,7 +317,7 @@ void RadarDataHolder::Unload() {
 	// the radar data will be freed when its product holder is freed
 	radarData = NULL;
 	for(auto product : products){
-		delete product;
+		product->Delete();
 	}
 	products.clear();
 	productsMap.clear();

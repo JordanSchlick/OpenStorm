@@ -222,7 +222,7 @@ void AImGuiUI::Tick(float deltaTime)
 				RadarData::VolumeType volumeType = (RadarData::VolumeType)globalState.volumeType;
 				ImGuiComboFlags flags = 0;
 				const char* comboPreviewValue = RadarProduct::products[volumeType]->name.c_str();  // Pass in the preview value visible before opening the combo (it could be anything)
-				if (ImGui::BeginCombo("Quality", comboPreviewValue, flags)){
+				if (ImGui::BeginCombo("Product", comboPreviewValue, flags)){
 					for (auto item : RadarProduct::products){
 						RadarProduct* product = item.second;
 						const bool isSelected = product->volumeType == volumeType;

@@ -19,6 +19,8 @@ public:
 	public:
 		// radar data for event
 		RadarData * data;
+		// the holder for the product
+		//RadarDataHolder::ProductHolder* productHolder;
 		// time to use for animations if not zero
 		float minTimeTillNext = 0;
 	};

@@ -32,6 +32,7 @@ public:
 	
 	
 	// buffer of volume values
+	// may be null if not loaded or compressed
 	// dim 0: sweep  dim 1: rotation  dim 2: radius
 	float* buffer = NULL;
 	
@@ -60,7 +61,7 @@ public:
 	int usedBufferSize = 0;
 	
 	// if the data should be compressed as it is read
-	bool compress = false;
+	bool doCompress = false;
 	// A buffer where empty space is compressed
 	float* bufferCompressed = NULL;
 	// number of elements in the compressed buffer
@@ -143,6 +144,9 @@ public:
 	
 	// returns true if it is compressed and the main buffer is unallocated
 	bool IsCompressed();
+	
+	// gets the memory usage of this object in bytes
+	int MemoryUsage();
 	
 	//frees all buffers
 	void Deallocate();

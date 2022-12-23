@@ -214,9 +214,10 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 			// pointer to beginning of a sweep buffer to write to
 			float* sweepBuffer = NULL;
 			
-			if(compress){
+			if(doCompress){
 				// store in compressed form
 				compressorState.preCompressedSize = fullBufferSize / 10;
+				compressorState.emptyValue = stats.noDataValue;
 				SparseCompress::compressStart(&compressorState);
 				sweepBuffer = new float[sweepBufferSize];
 			}else{
@@ -236,7 +237,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				Sweep* sweep = pair.second;
 				int thetaSize = sweep->h.nrays;
 				int sweepOffset = sweepIndex * sweepBufferSize;
-				if(compress){
+				if(doCompress){
 					std::fill(sweepBuffer, sweepBuffer + sweepBufferSize, noDataValue);
 				}else{
 					sweepBuffer = buffer + sweepOffset;
@@ -334,7 +335,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 					sweepBuffer + (thetaBufferSize),
 					thetaBufferSize*4);
 				
-				if(compress){
+				if(doCompress){
 					SparseCompress::compressValues(&compressorState, sweepBuffer, sweepBufferSize);
 				}
 				
@@ -343,7 +344,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 			
 			usedBufferSize = sweepIndex * sweepBufferSize;
 			
-			if(compress){
+			if(doCompress){
 				delete sweepBuffer;
 				if(bufferCompressed){
 					// remove old buffer
@@ -495,6 +496,7 @@ void RadarData::Compress() {
 	}*/
 	if(bufferCompressed == NULL && buffer != NULL){
 		SparseCompress::CompressorState compressorState = {};
+		compressorState.emptyValue = stats.noDataValue;
 		compressorState.preCompressedSize = fullBufferSize / 10;
 		SparseCompress::compressStart(&compressorState);
 		SparseCompress::compressValues(&compressorState, buffer, usedBufferSize);
@@ -503,6 +505,7 @@ void RadarData::Compress() {
 	}
 	if(buffer != NULL){
 		delete buffer;
+		buffer = NULL;
 	}
 }
 
@@ -514,6 +517,15 @@ void RadarData::Decompress() {
 
 bool RadarData::IsCompressed() {
 	return buffer == NULL && bufferCompressed != NULL;
+}
+
+int RadarData::MemoryUsage(){
+	int usage = sizeof(RadarData);
+	if(buffer != NULL){
+		usage += fullBufferSize * sizeof(float);
+	}
+	usage += compressedBufferSize * sizeof(float);
+	return usage;
 }
 
 void RadarData::Deallocate(){
