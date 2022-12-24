@@ -330,10 +330,10 @@ RadarColorIndexRelativeHue RadarColorIndexRelativeHue::defaultInstance = {};
 RadarColorIndex::Result RadarColorIndexRelativeHue::GenerateColorIndex(Params params, Result* resultToReuse) {
 	RadarColorIndex::Result result = BasicSetup(params.minValue, params.maxValue, resultToReuse);
 	
-	for (int i = 0; i < 16384; i++) {
-		float value = (i / 16383.0f);
+	/*for (int i = 0; i < 16384; i++) {
+		float value = (i / 16384.0f);
 		//float hue = 0.85 - fmod(value, 1.0) * 0.9;
-		float hue = 0.7 - fmod(value, 1.0) * 0.9;
+		float hue = 0.65 - fmod(value, 1.0) * 0.8;
 		float R = std::clamp(std::abs(hue * 6.0f - 3.0f) - 1.0f, 0.0f, 1.0f);
 		float G = std::clamp(2 - std::abs(hue * 6.0f - 2.0f), 0.0f, 1.0f);
 		float B = std::clamp(2 - std::abs(hue * 6.0f - 4.0f), 0.0f, 1.0f);
@@ -345,8 +345,15 @@ RadarColorIndex::Result RadarColorIndexRelativeHue::GenerateColorIndex(Params pa
 		result.data[i * 4 + 2] = B;
 		result.data[i * 4 + 3] = value;
 		//fprintf(stderr,"%f\n",value);
+	}*/
+	//colorRangeHSL(result.data, valueToIndex(0,100,0), valueToIndex(0,100,100),  -0.3,1,0.5, -1.1,1,0.5);
+	colorRangeHSL(result.data, valueToIndex(0,100,0), valueToIndex(0,100,90),  0.7,1,0.5, 0.01,1,0.5);
+	colorRangeHSL(result.data, valueToIndex(0,100,90), valueToIndex(0,100,95),  0.01,1,0.5, 0.0,1,0.5);
+	colorRangeHSL(result.data, valueToIndex(0,100,95), valueToIndex(0,100,100),  0.0,1,0.5, 0.0,1,0.5);
+	for (int i = 0; i < 16384; i++) {
+		float value = (i / 16383.0f);
+		result.data[i * 4 + 3] = value;
 	}
-
 	return result;
 }
 

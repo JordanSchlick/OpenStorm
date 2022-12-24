@@ -69,7 +69,9 @@
 		"regex": "cpp",
 		"set": "cpp",
 		"xthread": "cpp",
-		"thread": "cpp"
+		"thread": "cpp",
+		"queue": "cpp",
+		"deque": "cpp"
 	},
 	"editor.insertSpaces": false
 }

@@ -274,6 +274,7 @@ void ARadarVolumeRender::BeginPlay()
 }
 
 void ARadarVolumeRender::HandleRadarDataEvent(RadarCollection::RadarUpdateEvent event){
+	fprintf(stderr, "%p\n", event.data);
 	if (event.data != NULL) {
 		
 		// copy to local buffer to decompress and retain data

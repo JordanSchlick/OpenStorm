@@ -25,6 +25,17 @@ inline int modulo(int i, int n) {
 	return (i % n + n) % n;
 }
 
+// compares if argument larger is larger than argument smaller within a looped space
+inline bool moduloCompare(int smaller, int larger, int n) {
+	int offset = n/2 - smaller;
+	return modulo(smaller + offset,n) < modulo(larger + offset,n);
+}
+
+// compares if smaller is closser to zero than larger within a looped space
+inline bool moduloSmallerAbs(int smaller, int larger, int n) {
+	return std::min(modulo(smaller,n), modulo(-smaller,n)) < std::min(modulo(larger,n), modulo(-larger,n));
+}
+
 void* RadarData::ReadNexradData(const char* filename) {
 	//RSL_wsr88d_keep_sails();
 	//Radar* radar = RSL_wsr88d_to_radar("C:/Users/Admin/Desktop/stuff/projects/openstorm/files/KMKX_20220723_235820", "KMKX");
@@ -131,7 +142,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 			if (sweepInfo != NULL) {
 				delete[] sweepInfo;
 			}
-			sweepInfo = new SweepInfo[sweepBufferCount]();
+			sweepInfo = new SweepInfo[sweepBufferCount]{};
 			int sweepId = 0;
 			int maxTheta = 0;
 			int maxRadius = 0;
@@ -207,6 +218,11 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 			sweepBufferSize = (thetaBufferCount + 2) * thetaBufferSize;
 			fullBufferSize = sweepBufferCount * sweepBufferSize;
 			
+			if (rayInfo != NULL) {
+				delete[] rayInfo;
+			}
+			rayInfo = new RayInfo[sweepBufferCount * (thetaBufferCount + 2)]{};
+			
 			float noDataValue = stats.noDataValue;
 			
 			SparseCompress::CompressorState compressorState = {};
@@ -248,9 +264,13 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 					Ray* ray = sweep->ray[theta];
 					if (ray) {
 						// get real angle of ray
-						int realTheta = (int)((ray->h.azimuth * 2.0) + thetaBufferCount) % thetaBufferCount;
+						int realTheta = (int)((ray->h.azimuth * ((float)thetaBufferCount / 360.0f)) + thetaBufferCount) % thetaBufferCount;
 						usedThetas[realTheta] = true;
 						int radiusSize = std::min(ray->h.nbins, radiusBufferCount);
+						RayInfo* thisRayInfo = &rayInfo[(thetaBufferCount + 2) * sweepIndex + (realTheta + 1)];
+						thisRayInfo->actualAngle = ray->h.azimuth;
+						thisRayInfo->interpolated = false;
+						thisRayInfo->closestTheta = 0;
 						for (int radius = 0; radius < radiusSize; radius++) {
 							//int value = (ray->range[radius] - minValue) / divider;
 							float value = ray->h.f(ray->range[radius]);
@@ -259,6 +279,9 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 							// 	// value for no data
 							// 	value = noDataValue;
 							// }
+							if (value == noDataValue){
+								value = noDataValue + 0.000001;
+							}
 							if(value >= BADVAL - 10){
 								value = noDataValue;
 							}
@@ -325,6 +348,91 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				}
 				delete[] usedThetas;
 				
+				// calculate RayInfo
+				{
+					// start of rays for this sweep
+					int rayInfoOffset = (thetaBufferCount + 2) * sweepIndex + 1;
+					int firstRay = -1;
+					int lastRay = -1;
+					RayInfo* lastRayInfo = NULL;
+					for(int theta = 0; theta < thetaBufferCount; theta++){
+						RayInfo* thisRayInfo = &rayInfo[rayInfoOffset + theta];
+						if(!thisRayInfo->interpolated){
+							if(firstRay == -1){
+								firstRay = theta;
+							}else{
+								// fill in interpolated rays
+								for(int i = lastRay + 1; i < theta; i++){
+									RayInfo* interRayInfo = &rayInfo[rayInfoOffset + i];
+									interRayInfo->previousTheta = lastRay - i;
+									interRayInfo->nextTheta = theta - i;
+									interRayInfo->theta = i;
+									interRayInfo->sweep = sweepIndex;
+									// angle of center interpolated of ray
+									float angle = (i + 0.5) * 360.0f / (float)thetaBufferCount;
+									if(thisRayInfo->actualAngle - angle < angle - lastRayInfo->actualAngle){
+										interRayInfo->closestTheta = theta - i;
+									}else{
+										interRayInfo->closestTheta = lastRay - i;
+									}
+								}
+								lastRayInfo->nextTheta = theta - lastRay;
+								thisRayInfo->previousTheta = lastRay - theta;
+								thisRayInfo->sweep = sweepIndex;
+								thisRayInfo->theta = theta;
+							}
+							lastRay = theta;
+							lastRayInfo = thisRayInfo;
+						}
+					}
+					if(firstRay == -1){
+						// no rays were in the sweep
+						rayInfo[rayInfoOffset].previousTheta = thetaBufferCount - 1;
+						rayInfo[rayInfoOffset + thetaBufferCount - 1].previousTheta = 1 - thetaBufferCount;
+					}else{
+						RayInfo* firstRayInfo = &rayInfo[rayInfoOffset + firstRay];
+						// fill in warped around interpolated rays between last and first
+						//fprintf(stderr, "%i %i   ", lastRay + 1, firstRay + thetaBufferCount);
+						for(int i = lastRay + 1; i < firstRay + thetaBufferCount; i++){
+							int iWrapped = i % thetaBufferCount;
+							RayInfo* interRayInfo = &rayInfo[rayInfoOffset + iWrapped];
+							interRayInfo->previousTheta = lastRay - iWrapped;
+							interRayInfo->nextTheta = firstRay - iWrapped;
+							interRayInfo->theta = iWrapped;
+							interRayInfo->sweep = sweepIndex;
+							// angle of center interpolated of ray
+							float angle = (iWrapped + 0.5) * 360.0f / (float)thetaBufferCount;
+							//fprintf(stderr, "%i %i %f %f %f   ", sweepIndex, iWrapped, (firstRayInfo->actualAngle + 360), angle, lastRayInfo->actualAngle);
+							//if((firstRayInfo->actualAngle + 360) - angle < angle - (lastRayInfo->actualAngle)){
+							if(moduloSmallerAbs(firstRayInfo->actualAngle - angle, lastRayInfo->actualAngle - angle, 360.0f)){
+								interRayInfo->closestTheta = firstRay - iWrapped;
+							}else{
+								interRayInfo->closestTheta = lastRay - iWrapped;
+							}
+							//interRayInfo->closestTheta = -100;
+						}
+						// connect first and last ray
+						lastRayInfo->nextTheta = firstRay - lastRay;
+						lastRayInfo->theta = lastRay;
+						lastRayInfo->sweep = sweepIndex;
+						firstRayInfo->previousTheta = lastRay - firstRay;
+						firstRayInfo->theta = firstRay;
+						firstRayInfo->sweep = sweepIndex;
+					}
+					// create RayInfo for padded rays
+					rayInfo[rayInfoOffset - 1] = rayInfo[rayInfoOffset + thetaBufferCount - 1];
+					rayInfo[rayInfoOffset - 1].nextTheta += thetaBufferCount;
+					rayInfo[rayInfoOffset - 1].previousTheta += thetaBufferCount;
+					rayInfo[rayInfoOffset - 1].theta = -1;
+					rayInfo[rayInfoOffset - 1].sweep = sweepIndex;
+					rayInfo[rayInfoOffset + thetaBufferCount] = rayInfo[rayInfoOffset];
+					rayInfo[rayInfoOffset + thetaBufferCount].nextTheta -= thetaBufferCount;
+					rayInfo[rayInfoOffset + thetaBufferCount].previousTheta -= thetaBufferCount;
+					rayInfo[rayInfoOffset + thetaBufferCount].theta = thetaBufferCount;
+					rayInfo[rayInfoOffset + thetaBufferCount].sweep = sweepIndex;
+				}
+				
+				
 				// pad theta with ray from other side to allow correct interpolation in shader at edges
 				memcpy(
 					sweepBuffer,
@@ -376,30 +484,47 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 }
 
 void RadarData::CopyFrom(RadarData* data) {
-	if(buffer == NULL){
-		if (radiusBufferCount == 0) {
-			radiusBufferCount = data->radiusBufferCount;
+	if(buffer == NULL || thetaBufferCount != data->thetaBufferCount || sweepBufferCount != data->sweepBufferCount || radiusBufferCount != data->radiusBufferCount){
+		//if (radiusBufferCount == 0) {
+		radiusBufferCount = data->radiusBufferCount;
+		//}
+		//if (sweepBufferCount == 0) {
+		if(sweepBufferCount != data->sweepBufferCount){
+			if(sweepInfo != NULL){
+				delete sweepInfo;
+			}
+			sweepInfo = new SweepInfo[data->sweepBufferCount]();
 		}
-		if (thetaBufferCount == 0) {
-			thetaBufferCount = data->thetaBufferCount;
+		sweepBufferCount = data->sweepBufferCount;
+		//}
+		//if (thetaBufferCount == 0) {
+		if(thetaBufferCount != data->thetaBufferCount || sweepBufferCount != data->sweepBufferCount){
+			if(rayInfo != NULL){
+				delete rayInfo;
+			}
+			rayInfo = new RayInfo[data->sweepBufferCount * (data->thetaBufferCount + 2)]();
 		}
-		if (sweepBufferCount == 0) {
-			sweepBufferCount = data->sweepBufferCount;
-			sweepInfo = new SweepInfo[sweepBufferCount]();
-		}
+		thetaBufferCount = data->thetaBufferCount;
+		//}
 		
 		thetaBufferSize = radiusBufferCount;
 		sweepBufferSize = (thetaBufferCount + 2) * thetaBufferSize;
 		fullBufferSize = sweepBufferCount * sweepBufferSize;
 		
-		usedBufferSize = 0;
 		
 		// allocate buffer
+		if(buffer != NULL){
+			delete buffer;
+		}
 		buffer = new float[fullBufferSize];
-		std::fill(buffer, buffer+fullBufferSize, data->stats.noDataValue);
+		//std::fill(buffer, buffer+fullBufferSize, data->stats.noDataValue);
+		if(data->buffer != buffer){
+			// only set buffer used size when not copying from self
+			usedBufferSize = 0;
+		}
 	}
 	// copy data
-	if(data->buffer != NULL){
+	if(data->buffer != NULL && data->buffer != buffer){
 		memcpy(buffer, data->buffer, std::min(fullBufferSize, data->usedBufferSize) * sizeof(float));
 	}else if(data->bufferCompressed != NULL){
 		SparseCompress::decompressToBuffer(buffer, data->bufferCompressed, fullBufferSize);
@@ -407,11 +532,16 @@ void RadarData::CopyFrom(RadarData* data) {
 	// take used buffer size into account
 	if(data->usedBufferSize < usedBufferSize){
 		// fill newly unused space
-		std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, data->stats.noDataValue);
+		//std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, data->stats.noDataValue);
 	}
 	usedBufferSize = data->usedBufferSize;
 	stats = data->stats;
-	memcpy(sweepInfo, data->sweepInfo, std::min(sweepBufferCount, data->sweepBufferCount) * sizeof(SweepInfo));
+	if(data->sweepInfo && data->sweepInfo != sweepInfo){
+		memcpy(sweepInfo, data->sweepInfo, std::min(sweepBufferCount, data->sweepBufferCount) * sizeof(SweepInfo));
+	}
+	if(data->rayInfo && data->rayInfo != rayInfo){
+		memcpy(rayInfo, data->rayInfo, std::min(sweepBufferCount * (thetaBufferCount + 2), data->sweepBufferCount * (data->thetaBufferCount + 2)) * sizeof(RayInfo));
+	}
 }
 
 
@@ -490,8 +620,10 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 }
 
 void RadarData::Compress() {
-	/*if(bufferCompressed != NULL){
+	//return;
+	/*if(bufferCompressed != NULL && buffer != NULL){
 		delete bufferCompressed;
+		bufferCompressed = NULL;
 		compressedBufferSize = 0;
 	}*/
 	if(bufferCompressed == NULL && buffer != NULL){
@@ -522,9 +654,15 @@ bool RadarData::IsCompressed() {
 int RadarData::MemoryUsage(){
 	int usage = sizeof(RadarData);
 	if(buffer != NULL){
-		usage += fullBufferSize * sizeof(float);
+		usage += sizeof(float) * fullBufferSize;
 	}
-	usage += compressedBufferSize * sizeof(float);
+	usage += sizeof(float) * compressedBufferSize;
+	if(sweepInfo != NULL){
+		usage += sizeof(SweepInfo) * sweepBufferCount;
+	}
+	if(rayInfo != NULL){
+		usage += sizeof(RayInfo) * sweepBufferCount * (thetaBufferCount + 2);
+	}
 	return usage;
 }
 
@@ -541,6 +679,10 @@ void RadarData::Deallocate(){
 	if(sweepInfo != NULL){
 		delete[] sweepInfo;
 		sweepInfo = NULL;
+	}
+	if(rayInfo != NULL){
+		delete[] rayInfo;
+		rayInfo = NULL;
 	}
 }
 

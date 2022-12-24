@@ -33,6 +33,7 @@ public:
 	
 	// buffer of volume values
 	// may be null if not loaded or compressed
+	// each sweep has a padding ray at the beginning and end of it that was copied from the other side to make interpolation more efficient
 	// dim 0: sweep  dim 1: rotation  dim 2: radius
 	float* buffer = NULL;
 	
@@ -44,6 +45,7 @@ public:
 	// do not change while buffer is allocated
 	int radiusBufferCount = 0;
 	// number of data points in theta rotations
+	// there are 2 more than this count that serve as padding for interpolation in the buffer
 	// do not change while buffer is allocated
 	int thetaBufferCount = 0;
 	// number of full sweep disks in the buffer
@@ -57,7 +59,8 @@ public:
 	int sweepBufferSize = 0;
 	// size of the whole volume
 	int fullBufferSize = 0;
-	// amount of buffer currently used. indexes above this should be blank
+	// amount of buffer currently used. indexes above this should be blank.
+	// the compressed buffer will also decompress to this size
 	int usedBufferSize = 0;
 	
 	// if the data should be compressed as it is read
@@ -108,7 +111,8 @@ public:
 	Stats stats = {};
 
 
-	struct SweepInfo {
+	class SweepInfo {
+	public:
 		// elevation from flat in degrees
 		float elevation = 0;
 		int id = -1;
@@ -118,6 +122,27 @@ public:
 	// array of info about sweeps
 	SweepInfo* sweepInfo = NULL;
 
+	// info about ray, positions are relative and can be safely used as offsets in the buffer without modulo because they are already normalized to never point outside of the same sweep
+	class RayInfo {
+	public:
+		// if the ray was interpolated from actual rays
+		bool interpolated = true;
+		// relative position of closest actual ray in sweep, does not need modulo
+		int closestTheta = 0;
+		// relative position of previous actual ray in sweep, does not need modulo
+		int previousTheta = -1;
+		// relative position of next actual ray in sweep, does not need modulo
+		int nextTheta = 1;
+		// angle of the actual ray, not set for interploted rays
+		float actualAngle = 0;
+		
+		int sweep = 0;
+		int theta = 0;
+	};
+	
+	
+	// array of info about rays
+	RayInfo* rayInfo = NULL;
 	
 	// parse rsl nexrad data 
 	static void* ReadNexradData(const char* filename);
