@@ -55,6 +55,7 @@ public:
 	
 	float groupId = 0;
 	std::vector<DealiasingGroup> groups = {};
+	DealiasingGroup* currentGroup = NULL;
 	
 	// variables for breadth first search
 	// has a location been queued up
@@ -68,27 +69,32 @@ public:
 		group->startSweep = sweep;
 		group->startTheta = theta;
 		group->startRadius = radius;
+		
+		currentGroup = group;
+		
 		queueFindGroup(sweep, theta, radius, 0, fromValue);
 		
 		while(!taskQueue.empty()){
 			group->maxQueueSize = std::max(group->maxQueueSize, (int)taskQueue.size());
 			DealiasingTask nextTask = taskQueue.front();
 			taskQueue.pop();
-			runFindGroup(nextTask.sweep, nextTask.theta, nextTask.radius, nextTask.depth, nextTask.fromValue, group);
+			runFindGroup(nextTask.sweep, nextTask.theta, nextTask.radius, nextTask.depth, nextTask.fromValue);
 		}
 		
+		currentGroup = NULL;
+		
 		// pad bounds by one
-		group->boundSweepLower = std::max(group->boundSweepLower - 1, 0);
+		/*group->boundSweepLower = std::max(group->boundSweepLower - 1, 0);
 		group->boundSweepUpper = std::min(group->boundSweepUpper + 1, vol->sweepBufferCount - 1);
 		group->boundThetaLower = std::max(group->boundThetaLower - 1, 0);
 		group->boundThetaUpper = std::min(group->boundThetaUpper + 1, vol->thetaBufferCount - 1);
 		group->boundRadiusLower = std::max(group->boundRadiusLower - 1, 0);
-		group->boundRadiusUpper = std::min(group->boundRadiusUpper + 1, vol->radiusBufferCount - 1);
+		group->boundRadiusUpper = std::min(group->boundRadiusUpper + 1, vol->radiusBufferCount - 1);*/
 		
 		// clear set queued bools
 		for(int sweepClear = group->boundSweepLower; sweepClear <= group->boundSweepUpper; sweepClear++){
-			for(int thetaClear = group->boundThetaLower; thetaClear < group->boundThetaUpper; thetaClear++){
-				for(int radiusClear = group->boundRadiusLower; radiusClear < group->boundRadiusUpper; radiusClear++){
+			for(int thetaClear = group->boundThetaLower; thetaClear <= group->boundThetaUpper; thetaClear++){
+				for(int radiusClear = group->boundRadiusLower; radiusClear <= group->boundRadiusUpper; radiusClear++){
 					int location = sweepClear * vol->sweepBufferSize + (thetaClear + 1) * vol->thetaBufferSize + radiusClear;
 					queued[location] = false;
 				}
@@ -98,10 +104,10 @@ public:
 	
 	void findAllGroups(){
 		for(int sweep = 0; sweep < vol->sweepBufferCount; sweep++){
-			for(int theta = 1; theta < vol->thetaBufferCount + 2; theta++){
-				float* ray = vol->buffer + (vol->thetaBufferSize * theta + vol->sweepBufferSize * sweep);
-				float* raySRC = src->buffer + (vol->thetaBufferSize * theta + vol->sweepBufferSize * sweep);
-				if(!vol->rayInfo[sweep * (vol->thetaBufferCount + 2) + theta].interpolated){
+			for(int theta = 0; theta < vol->thetaBufferCount; theta++){
+				float* ray = vol->buffer + (vol->thetaBufferSize * (theta + 1) + vol->sweepBufferSize * sweep);
+				float* raySRC = src->buffer + (vol->thetaBufferSize * (theta + 1) + vol->sweepBufferSize * sweep);
+				if(!vol->rayInfo[sweep * (vol->thetaBufferCount + 2) + theta + 1].interpolated){
 					for(int radius = 1; radius < vol->radiusBufferCount; radius++){
 						if(raySRC[radius] == 0 || isnan(raySRC[radius])){
 							// mark no data spots with -1 in group array
@@ -116,7 +122,11 @@ public:
 							if(group.count > 100){
 								fprintf(stderr, "Group count:%i ittr:%i depthreach:%i queueSize:%i Bounds:s%i-%i,t%i-%i,r%i-%i \n", group.count, group.iterations, group.depthReachCount, group.maxQueueSize, group.boundSweepLower , group.boundSweepUpper , group.boundThetaLower , group.boundThetaUpper , group.boundRadiusLower, group.boundRadiusUpper);
 							}
-							groups.push_back(group);
+							if(group.count > 0){
+								groups.push_back(group);
+							}else{
+								fprintf(stderr, "Group count:%i ittr:%i depthreach:%i queueSize:%i Bounds:s%i-%i,t%i-%i,r%i-%i \n", group.count, group.iterations, group.depthReachCount, group.maxQueueSize, group.boundSweepLower , group.boundSweepUpper , group.boundThetaLower , group.boundThetaUpper , group.boundRadiusLower, group.boundRadiusUpper);
+							}
 						}
 					}
 				}
@@ -126,22 +136,35 @@ public:
 	}
 private:
 	// add task to taskQueue if it has not already been done
-	void queueFindGroup(const int sweep, int theta, const int radius, int depth, const float fromValue){
+	void queueFindGroup(const int sweep, int thetaOrig, const int radius, int depth, const float fromValue){
 		
 		// move to an actual ray
+		int theta = thetaOrig;
 		int rayLocation = sweep * (vol->thetaBufferCount + 2) + (theta + 1);
 		theta += vol->rayInfo[rayLocation].closestTheta;
 		rayLocation += vol->rayInfo[rayLocation].closestTheta;
 		int location = sweep * vol->sweepBufferSize + (theta + 1) * vol->thetaBufferSize + radius;
+		if(location >= vol->fullBufferSize || location < 0){
+			fprintf(stderr, "out of bounds %i  %i %i %i %i\n", location, sweep, theta, radius, thetaOrig);
+			return;
+		}
 		// add to queue if it is not already added
 		if(!queued[location]){
 			queued[location] = true;
 			taskQueue.emplace() = {sweep, theta, radius, depth, fromValue};
+			DealiasingGroup* group = currentGroup;
+			group->boundSweepLower = std::min(group->boundSweepLower, sweep);
+			group->boundSweepUpper = std::max(group->boundSweepUpper, sweep);
+			group->boundThetaLower = std::min(group->boundThetaLower, theta);
+			group->boundThetaUpper = std::max(group->boundThetaUpper, theta);
+			group->boundRadiusLower = std::min(group->boundRadiusLower, radius);
+			group->boundRadiusUpper = std::max(group->boundRadiusUpper, radius);
 		}
 	}
 	
 	// try to add a value to a group
-	void runFindGroup(const int sweep, int theta, const int radius, int depth, const float fromValue, DealiasingGroup* group){
+	void runFindGroup(const int sweep, int theta, const int radius, int depth, const float fromValue){
+		DealiasingGroup* group = currentGroup;
 		depth++;
 		group->iterations++;
 		//group->id += 0.01f;
@@ -161,7 +184,7 @@ private:
 		int location = sweep * vol->sweepBufferSize + (theta + 1) * vol->thetaBufferSize + radius;
 		// value of current location
 		float value = src->buffer[location];
-		if(vol->buffer[location] != 0.0f || value == 0.0f || abs(value - fromValue) > threashold){
+		if(vol->buffer[location] != 0.0f || value == 0.0f || isnan(value)|| abs(value - fromValue) > threashold){
 			//if(group->id != vol->buffer[location]){
 			//	fprintf(stderr, "%f", vol->buffer[location]);
 			//}
@@ -173,17 +196,17 @@ private:
 		// join the group
 		vol->buffer[location] = group->id;
 		group->count++;
-		group->boundSweepLower = std::min(group->boundSweepLower, sweep);
-		group->boundSweepUpper = std::max(group->boundSweepUpper, sweep);
-		group->boundThetaLower = std::min(group->boundThetaLower, theta);
-		group->boundThetaUpper = std::max(group->boundThetaUpper, theta);
-		group->boundRadiusLower = std::min(group->boundRadiusLower, radius);
-		group->boundRadiusUpper = std::max(group->boundRadiusUpper, radius);
 		
 		
-		/*if (theta + vol->rayInfo[rayLocation].previousTheta < 0) {
+		
+		if (theta + vol->rayInfo[rayLocation].previousTheta < 0) {
+			fprintf(stderr, "a");
 			return;
-		}*/
+		}
+		if (theta + vol->rayInfo[rayLocation].nextTheta >= vol->thetaBufferCount) {
+			fprintf(stderr, "b");
+			return;
+		}
 		//if (vol->rayInfo[rayLocation].nextTheta == 0) {
 		//	fprintf(stderr, "a");
 		//	return;

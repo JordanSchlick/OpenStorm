@@ -420,12 +420,17 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 						firstRayInfo->sweep = sweepIndex;
 					}
 					// create RayInfo for padded rays
+					// I think these are broken so don't use them
 					rayInfo[rayInfoOffset - 1] = rayInfo[rayInfoOffset + thetaBufferCount - 1];
+					rayInfo[rayInfoOffset - 1].interpolated = true;
+					rayInfo[rayInfoOffset - 1].closestTheta += thetaBufferCount;
 					rayInfo[rayInfoOffset - 1].nextTheta += thetaBufferCount;
 					rayInfo[rayInfoOffset - 1].previousTheta += thetaBufferCount;
 					rayInfo[rayInfoOffset - 1].theta = -1;
 					rayInfo[rayInfoOffset - 1].sweep = sweepIndex;
 					rayInfo[rayInfoOffset + thetaBufferCount] = rayInfo[rayInfoOffset];
+					rayInfo[rayInfoOffset + thetaBufferCount].interpolated = true;
+					rayInfo[rayInfoOffset + thetaBufferCount].closestTheta -= thetaBufferCount;
 					rayInfo[rayInfoOffset + thetaBufferCount].nextTheta -= thetaBufferCount;
 					rayInfo[rayInfoOffset + thetaBufferCount].previousTheta -= thetaBufferCount;
 					rayInfo[rayInfoOffset + thetaBufferCount].theta = thetaBufferCount;
