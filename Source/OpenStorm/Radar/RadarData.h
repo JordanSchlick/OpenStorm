@@ -27,6 +27,7 @@ public:
 		// computed volume types
 		
 		VOLUME_VELOCITY_DEALIASED = 102,
+		VOLUME_ROTATION = 103,
 	};
 	
 	

@@ -45,6 +45,9 @@ public:
 		// offset in the same units as the velocity data
 		float offsetUnits = 0;
 		
+		// count of items in this group and all its child groups
+		int totalCount = 0;
+		
 		// info about group search
 		int count = 0;
 		int iterations = 0;
@@ -151,6 +154,8 @@ public:
 		//fprintf(stderr, "centroid %i %i %i\n", (int)group->centroidSweep, group->centroidTheta, (int)group->centroidRadius);
 		//vol->buffer[centroidLocation] = 100000;
 		
+		group->totalCount = group->count;
+		
 		// clear set used bools
 		for(int sweepClear = group->boundSweepLower; sweepClear <= group->boundSweepUpper; sweepClear++){
 			for(int thetaClear = group->boundThetaLower; thetaClear <= group->boundThetaUpper; thetaClear++){
@@ -203,7 +208,10 @@ public:
 	// sort groups by size and create a map that points to the elements of the vector
 	// as such do not modify the vector after running this function
 	void SortGroups(){
-		std::sort(groups.begin(), groups.end(), [](DealiasingGroup g1, DealiasingGroup g2){return g1.count < g2.count;});
+		std::sort(groups.begin(), groups.end(), [](DealiasingGroup g1, DealiasingGroup g2){
+			// sort by sweep and size
+			return /*g1.centroidSweep > g2.centroidSweep ||*/ g1.count < g2.count;
+		});
 		//groups[groups.size()-1].PrintInfo();
 		groupsMap.clear();
 		for(auto &group : groups){
@@ -219,7 +227,8 @@ public:
 		neighborInfo = new NeighborInfo[groupId + 1]{};
 		int mergedGroups = 0;
 		// merge groups group smallest to largest
-		for(int i = 0; i < groups.size() - 1; i++){
+		//for(int i = 0; i < groups.size() - 1; i++){
+		for(int i = groups.size() - 2; i >= 0; i--){
 			DealiasingGroup* group = &groups[i];
 			if(group->parentId > 0){
 				// already merged
@@ -227,6 +236,7 @@ public:
 			}
 			currentGroup = group;
 			float currentGroupId = group->id;
+			float sweepWeight = 0.01;//sqrtf((float)group->count) / (float)group->count * 2.0f;
 			for(int sweep = group->boundSweepLower; sweep <= group->boundSweepUpper; sweep++){
 				for(int theta = group->boundThetaLower; theta <= group->boundThetaUpper; theta++){
 					int rayLocation = sweep * (vol->thetaBufferCount + 2) + (theta + 1);
@@ -237,29 +247,29 @@ public:
 								float velocityValue = src->buffer[location];
 								if(radius + 1 < vol->radiusBufferCount){
 									//out
-									NeighborCheck(sweep, theta, radius + 1, velocityValue);
+									NeighborCheck(sweep, theta, radius + 1, velocityValue, 1.0f);
 								}
 								int nextTheta = vol->rayInfo[rayLocation].nextTheta;
 								if(moduloDistance(nextTheta, vol->thetaBufferCount) < 10){
 									//right/clockwise
-									NeighborCheck(sweep, theta + nextTheta, radius, velocityValue);
+									NeighborCheck(sweep, theta + nextTheta, radius, velocityValue, 1.0f);
 								}
 								if(sweep + 1 < vol->sweepBufferCount){
 									//up
-									NeighborCheck(sweep + 1, theta, radius, velocityValue);
+									NeighborCheck(sweep + 1, theta, radius, velocityValue, sweepWeight);
 								}
 								int previousTheta = vol->rayInfo[rayLocation].previousTheta;
 								if(moduloDistance(previousTheta, vol->thetaBufferCount) < 10){
 									//left/counterclockwise
-									NeighborCheck(sweep, theta + previousTheta, radius, velocityValue);
+									NeighborCheck(sweep, theta + previousTheta, radius, velocityValue, 1.0f);
 								}
 								if(radius > 0){
 									//in
-									NeighborCheck(sweep, theta, radius - 1, velocityValue);
+									NeighborCheck(sweep, theta, radius - 1, velocityValue, 1.0f);
 								}
 								if(sweep > 0){
 									//down
-									NeighborCheck(sweep - 1, theta, radius, velocityValue);
+									NeighborCheck(sweep - 1, theta, radius, velocityValue, sweepWeight);
 								}
 							}
 						}
@@ -271,29 +281,35 @@ public:
 			// this may not be completely optimal because it does not treat joined groups as the same group when picking the largest group
 			float largestGroupId = -1;
 			float largestGroupOffset = 0;
-			int largestGroupSize = 0;
+			float largestGroupSize = 0;
 			for(auto id2 : isNeighborMap){
 				int id = id2.first;
 				float count = neighborInfo[id].count;
-				if(count > largestGroupSize){
-					bool invalid = false;
-					int maxLoops = 10000;
-					// recurse through parents to make sure of no recursive dependencies
-					DealiasingGroup* largestGroup = groupsMap[id];
-					while(largestGroup->parentId > 0 && maxLoops > 0){
-						largestGroup = groupsMap[largestGroup->parentId];
-						if(largestGroup->id == group->id){
-							invalid = true;
-						}
-						maxLoops--;
+				float offset = neighborInfo[id].offset / (count * range);
+				DealiasingGroup* largestGroup = groupsMap[id];
+				bool invalid = false;
+				// recurse through parents to make sure of no recursive dependencies
+				int maxLoops = 10000;
+				while(largestGroup->parentId > 0 && maxLoops > 0){
+					largestGroup = groupsMap[largestGroup->parentId];
+					if(largestGroup->id == group->id){
+						invalid = true;
 					}
-					if(maxLoops == 0){
-						fprintf(stderr, "You fool! You have made the loop run to long.\n");
+					maxLoops--;
+				}
+				if(maxLoops == 0){
+					fprintf(stderr, "You fool! You have made the loop run to long.\n");
+				}
+				float score = count * sqrt(largestGroup->totalCount) * (abs(offset) < 0.4 ? 1.5 : 1) * (abs(offset) < 0.2 ? 1.5 : 1);
+				if(score > largestGroupSize){
+					// dont join significantly smaller groups
+					if(largestGroup->totalCount < group->totalCount * 0.5f){
+						invalid = true;
 					}
 					if(!invalid){
-						largestGroupOffset = neighborInfo[id].offset / (count * range);
+						largestGroupOffset = offset;
 						largestGroupId = id;
-						largestGroupSize = count;
+						largestGroupSize = score;
 					}
 				}
 			}
@@ -302,6 +318,7 @@ public:
 			if(largestGroupId > 0){
 				DealiasingGroup* largestGroup = groupsMap[largestGroupId];
 				largestGroup->children.push_back(group->id);
+				largestGroup->totalCount += group->totalCount;
 				group->parentId = largestGroupId;
 				mergedGroups++;
 				// determine offset from parent group from offset of values between groups
@@ -311,6 +328,16 @@ public:
 				}
 				if(largestGroupOffset < -0.5f){
 					group->parentOffset = -1;
+				}
+				// add to total count of all parent groups
+				int maxLoops = 10000;
+				while(largestGroup->parentId > 0){
+					largestGroup = groupsMap[largestGroup->parentId];
+					largestGroup->totalCount += group->totalCount;
+					maxLoops--;
+				}
+				if(maxLoops == 0){
+					fprintf(stderr, "You fool! You have made the loop run to long.\n");
 				}
 			}
 			
@@ -394,7 +421,7 @@ public:
 	
 private:
 	// check neighbors of group to determine how to merge
-	void NeighborCheck(const int sweep, const int theta, const int radius, const float fromValue){
+	void NeighborCheck(const int sweep, const int theta, const int radius, const float fromValue, float weight){
 		int location = sweep * vol->sweepBufferSize + (theta + 1) * vol->thetaBufferSize + radius;
 		float groupValue = vol->buffer[location];
 		if(groupValue != currentGroup->id && groupValue > 0 && !used[location]){
@@ -405,8 +432,8 @@ private:
 				fprintf(stderr, "float does not match int");
 			}
 			float velocityValue = src->buffer[location];
-			neighborInfo[groupValueInt].count++;
-			neighborInfo[groupValueInt].offset += velocityValue - fromValue;
+			neighborInfo[groupValueInt].count += weight;
+			neighborInfo[groupValueInt].offset += (velocityValue - fromValue) * weight;
 			isNeighborMap[groupValueInt] = true;
 		}
 	}
@@ -459,7 +486,7 @@ private:
 		int location = sweep * vol->sweepBufferSize + (theta + 1) * vol->thetaBufferSize + radius;
 		// value of current location
 		float velocityValue = src->buffer[location];
-		if(vol->buffer[location] != 0.0f || velocityValue == 0.0f || isnan(velocityValue) || (fromValue > 0) != (velocityValue > 0) || abs(velocityValue - fromValue) > threashold){
+		if(vol->buffer[location] != 0.0f || velocityValue == 0.0f || isnan(velocityValue) || (fromValue > 0) != (velocityValue > 0) /*|| abs(velocityValue - fromValue) > threashold*/){
 			//if(group->id != vol->buffer[location]){
 			//	fprintf(stderr, "%f", vol->buffer[location]);
 			//}
