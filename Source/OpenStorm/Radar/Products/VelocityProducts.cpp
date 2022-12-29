@@ -86,7 +86,7 @@ public:
 	};
 	// info about neighboring groups used for merging groups
 	struct NeighborInfo{
-		int count;
+		float count;
 		float offset;
 	};
 	// the group of each data point is stored in this volume
@@ -274,7 +274,7 @@ public:
 			int largestGroupSize = 0;
 			for(auto id2 : isNeighborMap){
 				int id = id2.first;
-				int count = neighborInfo[id].count;
+				float count = neighborInfo[id].count;
 				if(count > largestGroupSize){
 					bool invalid = false;
 					int maxLoops = 10000;
@@ -459,7 +459,7 @@ private:
 		int location = sweep * vol->sweepBufferSize + (theta + 1) * vol->thetaBufferSize + radius;
 		// value of current location
 		float velocityValue = src->buffer[location];
-		if(vol->buffer[location] != 0.0f || velocityValue == 0.0f || isnan(velocityValue)|| abs(velocityValue - fromValue) > threashold){
+		if(vol->buffer[location] != 0.0f || velocityValue == 0.0f || isnan(velocityValue) || (fromValue > 0) != (velocityValue > 0) || abs(velocityValue - fromValue) > threashold){
 			//if(group->id != vol->buffer[location]){
 			//	fprintf(stderr, "%f", vol->buffer[location]);
 			//}
@@ -502,10 +502,10 @@ private:
 			//right/clockwise
 			QueueFindGroup(sweep, theta + nextTheta, radius, depth, velocityValue);
 		}
-		if(sweep + 1 < vol->sweepBufferCount){
+		//if(sweep + 1 < vol->sweepBufferCount){
 			//up
-			QueueFindGroup(sweep + 1, theta, radius, depth, velocityValue);
-		}
+			//QueueFindGroup(sweep + 1, theta, radius, depth, velocityValue);
+		//}
 		int previousTheta = vol->rayInfo[rayLocation].previousTheta;
 		if(moduloDistance(previousTheta, vol->thetaBufferCount) < 10){
 			//left/counterclockwise
@@ -515,10 +515,10 @@ private:
 			//in
 			QueueFindGroup(sweep, theta, radius - 1, depth, velocityValue);
 		}
-		if(sweep > 0){
+		//if(sweep > 0){
 			//down
-			QueueFindGroup(sweep - 1, theta, radius, depth, velocityValue);
-		}
+			//QueueFindGroup(sweep - 1, theta, radius, depth, velocityValue);
+		//}
 		if(radius + 2 < vol->radiusBufferCount){
 			//out farther
 			QueueFindGroup(sweep, theta, radius + 2, depth, velocityValue);
