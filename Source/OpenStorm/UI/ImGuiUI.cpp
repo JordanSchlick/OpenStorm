@@ -225,17 +225,19 @@ void AImGuiUI::Tick(float deltaTime)
 				if (ImGui::BeginCombo("Product", comboPreviewValue, flags)){
 					for (auto item : RadarProduct::products){
 						RadarProduct* product = item.second;
-						const bool isSelected = product->volumeType == volumeType;
-						if (ImGui::Selectable(product->name.c_str(), isSelected)){
-							//qualityCurrentIndex = n;
-							if(!isSelected){
-								globalState.volumeType = product->volumeType;
-								globalState.EmitEvent("ChangeProduct", "", (void*)&product->volumeType);
+						if (!product->development || globalState.developmentMode) {
+							const bool isSelected = product->volumeType == volumeType;
+							if (ImGui::Selectable(product->name.c_str(), isSelected)) {
+								//qualityCurrentIndex = n;
+								if (!isSelected) {
+									globalState.volumeType = product->volumeType;
+									globalState.EmitEvent("ChangeProduct", "", (void*)&product->volumeType);
+								}
 							}
-						}
-						// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-						if (isSelected){
-							ImGui::SetItemDefaultFocus();
+							// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+							if (isSelected) {
+								ImGui::SetItemDefaultFocus();
+							}
 						}
 					}
 					ImGui::EndCombo();

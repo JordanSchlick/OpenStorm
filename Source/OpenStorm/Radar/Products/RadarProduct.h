@@ -25,6 +25,10 @@ public:
 	// the type of product that this product is
 	ProductType productType = PRODUCT_DERIVED_VOLUME;
 	
+	// if the product is for development and should not be shown by default
+	// this could be set because the product is not ready for use or is strictly for debugging
+	bool development = false;
+	
 	// full descriptive name of radar product
 	std::string name = "Missing Name";
 	
@@ -43,13 +47,14 @@ public:
 	// list of all volume products
 	static std::map<RadarData::VolumeType, RadarProduct*> products;
 	
-	static RadarProduct* GetProduct(RadarData::VolumeType type){
-		if(products.find(type) != products.end()){
-			return products[type];
-		}else{
-			return NULL;
-		}
-	}
+	// get the RadarProduct subclass for a given volume type
+	static RadarProduct* GetProduct(RadarData::VolumeType type);
+	
+	// starts at 1000 and is incremented to provide volume types for products defined durring runtime
+	static int dynamicVolumeTypeId;
+	
+	// get new VolumeType for products defined during runtime
+	static RadarData::VolumeType CreateDynamicVolumeType();
 	
 	virtual ~RadarProduct();
 };

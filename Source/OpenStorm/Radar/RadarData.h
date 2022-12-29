@@ -127,11 +127,11 @@ public:
 	public:
 		// if the ray was interpolated from actual rays
 		bool interpolated = true;
-		// relative position of closest actual ray in sweep, does not need modulo
+		// relative position of closest actual ray in sweep, does not need modulo before using as offset
 		int closestTheta = 0;
-		// relative position of previous actual ray in sweep, does not need modulo
+		// relative position of previous actual ray in sweep,  does not need modulo before using as offset
 		int previousTheta = -1;
-		// relative position of next actual ray in sweep, does not need modulo
+		// relative position of next actual ray in sweep, does not need modulo before using as offset
 		int nextTheta = 1;
 		// angle of the actual ray, not set for interploted rays
 		float actualAngle = 0;
