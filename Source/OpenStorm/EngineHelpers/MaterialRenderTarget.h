@@ -18,7 +18,7 @@ public:
 	
 	
 
-	static UMaterialRenderTarget* Create(int width, int height, EPixelFormat pixelFormat, UMaterialInterface* material, UObject* parent);
+	static UMaterialRenderTarget* Create(int width, int height, EPixelFormat pixelFormat, UMaterialInterface* material, UObject* parent, const char* name = "");
 
 	void Initialize(int width, int height, EPixelFormat pixelFormat);
 

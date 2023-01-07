@@ -67,7 +67,16 @@ void SCacheState::UpdateState() {
 		if(fileName.IsValid()){
 			//int lastSlash = std::max(std::max((int)path.find_last_of('/'), (int)path.find_last_of('\\')), 0);
 			//filePath = path.substr(0, lastSlash + 1);
-			fileName->SetText(FText::FromString(radarCollection->GetCurrentRadarData()->fileInfo.name.c_str()));
+			RadarDataHolder* holder = radarCollection->GetCurrentRadarData();
+			
+			if(holder->state == RadarDataHolder::DataStateFailed){
+				fileName->SetColorAndOpacity(FSlateColor(FLinearColor(0.6, 0.1, 0.1, 1)));
+			}else if(holder->state == RadarDataHolder::DataStateLoading){
+				fileName->SetColorAndOpacity(FSlateColor(FLinearColor(0.1, 0.1, 1.0, 1)));
+			}else{
+				fileName->SetColorAndOpacity(FSlateColor(FLinearColor(1.0, 1.0, 1.0, 1)));
+			}
+			fileName->SetText(FText::FromString(holder->fileInfo.name.c_str()));
 		}
 		
 		for(int i = 0; i < cellCount; i++){

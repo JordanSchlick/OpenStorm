@@ -1,8 +1,8 @@
 #include "MaterialRenderTarget.h"
 #include "Engine/Canvas.h"
 
-UMaterialRenderTarget* UMaterialRenderTarget::Create(int width, int height, EPixelFormat pixelFormat, UMaterialInterface* material, UObject* parent){
-	UMaterialRenderTarget* renderTarget = (UMaterialRenderTarget*)NewObject<class UMaterialRenderTarget>(parent);
+UMaterialRenderTarget* UMaterialRenderTarget::Create(int width, int height, EPixelFormat pixelFormat, UMaterialInterface* material, UObject* parent, const char* name){
+	UMaterialRenderTarget* renderTarget = (UMaterialRenderTarget*)NewObject<class UMaterialRenderTarget>(parent, name);
 	renderTarget->renderMaterial = material;
 	renderTarget->Initialize(width, height, pixelFormat);
 	return renderTarget;

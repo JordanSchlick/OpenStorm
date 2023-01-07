@@ -40,6 +40,10 @@ GS->globalState.maxFPS
 #include "HAL/FileManager.h"
 #include "UnrealClient.h"
 
+#if WITH_EDITOR
+//#include "Toolkits/AssetEditorManager.h"
+#endif
+
 static bool inlineLabel = false;
 
 typedef int CustomFloatInputFlags;
@@ -416,6 +420,7 @@ void AImGuiUI::Tick(float deltaTime)
 				unsafeFrames = 10;
 				return;
 			}
+
 			if (ImGui::Button("External win")) {
 				ExternalWindow();
 			}
@@ -432,15 +437,58 @@ void AImGuiUI::Tick(float deltaTime)
 			if (ImGui::Button("Lock")) {
 				LockMouse();
 			}
+
 			if (ImGui::Button("Reload File")) {
 				globalState.EmitEvent("DevReloadFile");
 			}
+			ImGui::SameLine();
 			if (ImGui::Button("Show Console")) {
 				NativeAPI::ShowConsole();
 			}
+			ImGui::SameLine();
 			if (ImGui::Button("Cache State")) {
 				globalState.devShowCacheState = !globalState.devShowCacheState;
 			}
+			
+			#if WITH_EDITOR
+			static std::string assetName = "/Engine/Transient.VolumeTexture1";
+			ImGui::InputText("Asset", &assetName);
+			if (ImGui::Button("Open Asset")) {
+				//FAssetEditorManager::Get().OpenEditorsForAssets(assetName.c_str());
+				FString assetPath = FString(assetName.c_str());
+				//GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(assetPath);
+				UObject* foundObject = FindObject<UObject>(ANY_PACKAGE, *assetPath);
+				if (foundObject != NULL)
+				{
+					GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(foundObject);
+				}
+			}
+			/*ImGui::SameLine();
+			if (ImGui::Button("Asset List")) {
+				//FAssetEditorManager::Get().OpenEditorsForAssets(assetName.c_str());
+				FString assetPath = FString(assetName.c_str());
+				//GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(assetPath);
+				//UPackage* Package = LoadPackage(NULL, *assetPath, LOAD_NoRedirects);
+				UPackage* package = FindPackage(NULL, *assetPath);
+				//UObject* package = FindObject<UObject>(ANY_PACKAGE, *assetPath);;
+
+				if (package)
+				{
+					//package->FullyLoad();
+					fprintf(stderr, "found");
+
+					FString assetBaseName = FPaths::GetBaseFilename(assetPath);
+					UObject* foundObject = FindObject<UObject>(package, *assetBaseName);
+
+
+					if (foundObject != NULL)
+					{
+						GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(foundObject);
+					}
+				}
+			}*/
+			#endif
+			
 			ImGui::Text("Custom float input:");
 			CustomFloatInput("test float", 0, 3, &globalState.testFloat);
 			CustomFloatInput("test float##2", 0, 2, &globalState.testFloat, &globalState.defaults->testFloat);

@@ -300,7 +300,7 @@ public:
 				if(maxLoops == 0){
 					fprintf(stderr, "You fool! You have made the loop run to long.\n");
 				}
-				float score = count * sqrt(largestGroup->totalCount) * (abs(offset) < 0.4 ? 1.5 : 1) * (abs(offset) < 0.2 ? 1.5 : 1);
+				float score = count * sqrt(sqrt(largestGroup->totalCount)) * (abs(offset) < 0.2 ? 1.5 : 1) * (abs(offset) < 0.1 ? 1.5 : 1);
 				if(score > largestGroupSize){
 					// dont join significantly smaller groups
 					if(largestGroup->totalCount < group->totalCount * 0.5f){
@@ -486,7 +486,7 @@ private:
 		int location = sweep * vol->sweepBufferSize + (theta + 1) * vol->thetaBufferSize + radius;
 		// value of current location
 		float velocityValue = src->buffer[location];
-		if(vol->buffer[location] != 0.0f || velocityValue == 0.0f || isnan(velocityValue) || (fromValue > 0) != (velocityValue > 0) /*|| abs(velocityValue - fromValue) > threashold*/){
+		if(vol->buffer[location] != 0.0f || velocityValue == 0.0f || isnan(velocityValue) || (fromValue > 0) != (velocityValue > 0) || abs(velocityValue - fromValue) > threashold){
 			//if(group->id != vol->buffer[location]){
 			//	fprintf(stderr, "%f", vol->buffer[location]);
 			//}
@@ -596,6 +596,8 @@ RadarData* RadarProductVelocityDealiased::deriveVolume(std::map<RadarData::Volum
 	
 	algo.SortGroups();
 	
+	algo.MergeGroups();
+	algo.MergeGroups();
 	algo.MergeGroups();
 	
 	algo.CalculateGroupOffsets();

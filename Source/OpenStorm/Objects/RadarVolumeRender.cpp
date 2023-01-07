@@ -124,9 +124,9 @@ void ARadarVolumeRender::BeginPlay()
 
 	//UE_LOG(LogTemp, Display, TEXT("%s"), StoredMaterial->GetName());
 
-	interpolationMaterialInstance = UMaterialInstanceDynamic::Create(storedInterpolationMaterial, this);
+	interpolationMaterialInstance = UMaterialInstanceDynamic::Create(storedInterpolationMaterial, this, "InterpolationMaterialInstance");
 
-	radarMaterialInstance = UMaterialInstanceDynamic::Create(cubeMeshComponent->GetMaterial(0), this);
+	radarMaterialInstance = UMaterialInstanceDynamic::Create(cubeMeshComponent->GetMaterial(0), this, "RadarMaterialInstance");
 	cubeMeshComponent->SetMaterial(0, radarMaterialInstance);
 
 
@@ -378,7 +378,7 @@ void ARadarVolumeRender::InitializeTextures() {
 		}
 		// the volume texture contains an array that is interperted as a three dimensional volume of values
 		// it corresponds to the real values of the radar
-		volumeTexture = UTexture2D::CreateTransient(textureWidth, textureHeight, pixelFormat);
+		volumeTexture = UTexture2D::CreateTransient(textureWidth, textureHeight, pixelFormat, TEXT("VolumeTexture1"));
 		//FTexture2DMipMap* MipMap = &(volumeTexture->PlatformData->Mips[0]);
 		//volumeImageData = &(MipMap->BulkData);
 		volumeTexture->UpdateResource();
@@ -388,10 +388,10 @@ void ARadarVolumeRender::InitializeTextures() {
 	
 	
 	if (doTimeInterpolation) {
-		volumeMaterialRenderTarget = UMaterialRenderTarget::Create(textureWidth, textureHeight, pixelFormat, interpolationMaterialInstance, this);
+		volumeMaterialRenderTarget = UMaterialRenderTarget::Create(textureWidth, textureHeight, pixelFormat, interpolationMaterialInstance, this, "VolumeInterplationRenderTarget");
 		volumeMaterialRenderTarget->Update();
 		
-		volumeTexture2 = UTexture2D::CreateTransient(textureWidth, textureHeight, pixelFormat);
+		volumeTexture2 = UTexture2D::CreateTransient(textureWidth, textureHeight, pixelFormat, TEXT("VolumeTexture2"));
 		//MipMap = &(volumeTexture2->PlatformData->Mips[0]);
 		//volumeImageData2 = &(MipMap->BulkData);
 		volumeTexture2->UpdateResource();
@@ -415,7 +415,7 @@ void ARadarVolumeRender::InitializeTextures() {
 		// the angle index texture maps the angle from the ground to a sweep
 		// pixel 65536 is strait up, pixel 32768 is parallel with the ground, pixel 0 is strait down
 		// values less than zero mean no sweep, value 0.0-255.0 specify the index of the sweep, value 0.0 specifies first sweep, values in-between integers will interpolate sweeps
-		angleIndexTexture = UTexture2D::CreateTransient(256, 256, PF_R32_FLOAT);
+		angleIndexTexture = UTexture2D::CreateTransient(256, 256, PF_R32_FLOAT, TEXT("AngleIndexTexture"));
 		//MipMap = &(angleIndexTexture->PlatformData->Mips[0]);
 		//angleIndexImageData = &(MipMap->BulkData);
 		radarMaterialInstance->SetTextureParameterValue(TEXT("AngleIndex"), angleIndexTexture);
@@ -424,7 +424,7 @@ void ARadarVolumeRender::InitializeTextures() {
 	
 	if(valueIndexTexture == NULL){
 		// the value index texture maps the real values of the radar to color and alpha values
-		valueIndexTexture = UTexture2D::CreateTransient(128, 128, PF_A32B32G32R32F);
+		valueIndexTexture = UTexture2D::CreateTransient(128, 128, PF_A32B32G32R32F, TEXT("ColorIndexTexture"));
 		//MipMap = &(valueIndexTexture->PlatformData->Mips[0]);
 		//valueIndexImageData = &(MipMap->BulkData);
 		radarMaterialInstance->SetTextureParameterValue(TEXT("ValueIndex"), valueIndexTexture);

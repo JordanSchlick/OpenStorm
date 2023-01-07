@@ -22,6 +22,8 @@ RadarData* RadarProductRotation::deriveVolume(std::map<RadarData::VolumeType, Ra
 	src->Decompress();
 	RadarData* srcSW = inputProducts[RadarData::VOLUME_SPECTRUM_WIDTH];
 	srcSW->Decompress();
+	// when the spectrum width is below this the outout will be decreased
+	float spectrumWidthThreshold = 20;
 	for(int sweep = 0; sweep < vol->sweepBufferCount; sweep++){
 		for(int theta = 0; theta < vol->thetaBufferCount; theta++){
 			RadarData::RayInfo* rayInfo = &vol->rayInfo[sweep * (vol->thetaBufferCount + 2) + theta + 1];
@@ -81,7 +83,7 @@ RadarData* RadarProductRotation::deriveVolume(std::map<RadarData::VolumeType, Ra
 					// 	minVal = std::min(minVal, val);
 					// 	maxVal = std::max(maxVal, val);
 					// }
-					val = std::max(maxVal - minVal, 0.0f) * raySrcSW[radius];
+					val = std::max(maxVal - minVal, 0.0f) * std::min(raySrcSW[radius] , spectrumWidthThreshold) / spectrumWidthThreshold;
 					ray[radius] = val;
 					maxValue = std::max(maxValue, val);
 				}
