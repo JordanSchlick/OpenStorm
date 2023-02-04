@@ -225,10 +225,14 @@ void AImGuiUI::Tick(float deltaTime)
 			if (ImGui::TreeNodeEx("Radar", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				RadarData::VolumeType volumeType = (RadarData::VolumeType)globalState.volumeType;
 				ImGuiComboFlags flags = 0;
-				const char* comboPreviewValue = RadarProduct::products[volumeType]->name.c_str();  // Pass in the preview value visible before opening the combo (it could be anything)
+				RadarProduct* currentProduct = RadarProduct::GetProduct(volumeType);
+				const char* comboPreviewValue = "Unknown";  // Pass in the preview value visible before opening the combo (it could be anything)
+				if(currentProduct != NULL){
+					comboPreviewValue = currentProduct->name.c_str();
+				}
 				if (ImGui::BeginCombo("Product", comboPreviewValue, flags)){
-					for (auto item : RadarProduct::products){
-						RadarProduct* product = item.second;
+					for (RadarProduct* product : RadarProduct::products){
+						//RadarProduct* product = item.second;
 						if (!product->development || globalState.developmentMode) {
 							const bool isSelected = product->volumeType == volumeType;
 							if (ImGui::Selectable(product->name.c_str(), isSelected)) {

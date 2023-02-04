@@ -28,6 +28,7 @@ public:
 		
 		VOLUME_VELOCITY_DEALIASED = 102,
 		VOLUME_ROTATION = 103,
+		VOLUME_STORM_RELATIVE_VELOCITY = 104,
 	};
 	
 	
@@ -46,7 +47,7 @@ public:
 	// do not change while buffer is allocated
 	int radiusBufferCount = 0;
 	// number of data points in theta rotations
-	// there are 2 more than this count that serve as padding for interpolation in the buffer
+	// there are 2 more than this count in the buffer that serve as padding for interpolation
 	// do not change while buffer is allocated
 	int thetaBufferCount = 0;
 	// number of full sweep disks in the buffer

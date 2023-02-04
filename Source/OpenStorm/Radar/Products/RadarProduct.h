@@ -35,7 +35,7 @@ public:
 	// short abbreviated name of radar product
 	std::string shortName = "MISSING";
 	
-	// the products that a derived product relyes on
+	// the products that a derived product relies on
 	std::vector<RadarData::VolumeType> dependencies = {};
 	
 	// derive the product from a map containing its dependencies
@@ -45,7 +45,8 @@ public:
 	virtual RadarData* deriveVolume(std::map<RadarData::VolumeType, RadarData*> inputProducts);
 	
 	// list of all volume products
-	static std::map<RadarData::VolumeType, RadarProduct*> products;
+	static std::vector<RadarProduct*> products;
+	//static std::map<RadarData::VolumeType, RadarProduct*> productsMap;
 	
 	// get the RadarProduct subclass for a given volume type
 	static RadarProduct* GetProduct(RadarData::VolumeType type);

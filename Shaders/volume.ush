@@ -164,6 +164,14 @@ if(fuzz >= 1){
 			cos(animationTime)
 		) * 43758.5453f 
 	);
+	// float noise = frac(
+	// 	abs((fmod(
+	// 		dot(screenPosition / 2048.0f, float2(12.9898f, 78.2337f)) * 
+	// 		dot(screenPosition / 2048.0f, float2(51.5372f, 97.1857f)) + 
+	// 		animationTime * 5.0f /*+ 
+	// 		cos(animationTime)*/
+	// 	, 6.0f) - 3.0f) - 1.5f) / 1.5f * 43758.5453f 
+	// );
 	//return noise;
 	startingDistance += noise * stepSize;
 }

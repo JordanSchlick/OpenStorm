@@ -30,7 +30,7 @@ public:
 	bool spatialInterpolation = true; // interpolate data over time when animating
 	bool isMouseCaptured = false; // true if mouse is currently captured
 	bool vrMode = false; // true if in vr
-	bool pollData = false; // should the data be polled for updates
+	bool pollData = true; // should the data be polled for updates
 	bool devShowCacheState = false; // if the state of the cache buffer should be displayed on screen
 	bool devShowImGui = false; // if it is safe to show ImGui debuging windows
 	bool developmentMode = false; // show development features

@@ -2,11 +2,17 @@
 
 
 RadarProduct* RadarProduct::GetProduct(RadarData::VolumeType type){
-	if(products.find(type) != products.end()){
-		return products[type];
-	}else{
-		return NULL;
+	// if(productsMap.find(type) != productsMap.end()){
+	// 	return productsMap[type];
+	// }else{
+	// 	return NULL;
+	// }
+	for(RadarProduct* product : RadarProduct::products){
+		if(product->volumeType == type){
+			return product;
+		}
 	}
+	return NULL;
 }
 
 int RadarProduct::dynamicVolumeTypeId = 1000;
