@@ -647,6 +647,7 @@ RadarData* RadarProductVelocityDealiased::deriveVolume(std::map<RadarData::Volum
 			}
 		}
 	}*/
+	radarData->Interpolate();
 	return radarData;
 }
 

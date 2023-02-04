@@ -115,5 +115,6 @@ RadarData* RadarProductStormRelativeVelocity::deriveVolume(std::map<RadarData::V
 	// radarData->stats.volumeType = RadarData::VOLUME_UNKNOWN;
 	// delete algo.used;
 	
+	radarData->Interpolate();
 	return radarData;
 };

@@ -93,5 +93,6 @@ RadarData* RadarProductRotation::deriveVolume(std::map<RadarData::VolumeType, Ra
 	radarData->stats.minValue = 0;
 	radarData->stats.maxValue = std::max(maxValue, 0.0001f);
 	radarData->stats.volumeType = volumeType;
+	radarData->Interpolate();
 	return radarData;
 }

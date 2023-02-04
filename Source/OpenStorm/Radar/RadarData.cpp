@@ -303,50 +303,51 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				}
 				
 
-				for (int theta = 0; theta < thetaBufferCount; theta++) {
-					if (!usedThetas[theta]) {
-						// fill in blank by interpolating surroundings
-						int previousRay = 0;
-						int nextRay = 0;
-						// find 2 nearby populated rays
-						if (usedThetas[modulo(theta - 3, thetaBufferCount)]) {
-							previousRay = -3;
-						}
-						if (usedThetas[modulo(theta - 2, thetaBufferCount)]) {
-							previousRay = -2;
-						}
-						if (usedThetas[modulo(theta - 1, thetaBufferCount)]) {
-							previousRay = -1;
-						}
-						if (usedThetas[modulo(theta + 3, thetaBufferCount)]) {
-							nextRay = 4;
-						}
-						if (usedThetas[modulo(theta + 2, thetaBufferCount)]) {
-							nextRay = 2;
-						}
-						if (usedThetas[modulo(theta + 1, thetaBufferCount)]) {
-							nextRay = 1;
-						}
-						if (previousRay != 0 && nextRay != 0) {
-							int previousRayAbs = modulo(theta + previousRay, thetaBufferCount);
-							int nextRayAbs = modulo(theta + nextRay, thetaBufferCount);
-							for (int radius = 0; radius < radiusBufferCount; radius++) {
-								float previousValue = sweepBuffer[radius + (previousRayAbs + 1) * thetaBufferSize];
-								float nextValue = sweepBuffer[radius + (nextRayAbs + 1) * thetaBufferSize];
-								for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
-									float interLocation = (float)(thetaTo - previousRay) / (float)(nextRay - previousRay);
-									// write interpolated value
-									sweepBuffer[radius + (modulo(theta + thetaTo, thetaBufferCount) + 1) * thetaBufferSize] = previousValue * (1.0 - interLocation) + nextValue * interLocation;
-								}
-							}
-							for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
-								// mark as filled
-								usedThetas[modulo(theta + thetaTo, thetaBufferCount)] = true;
-							}
-						}
-					}
-				}
+				// for (int theta = 0; theta < thetaBufferCount; theta++) {
+				// 	if (!usedThetas[theta]) {
+				// 		// fill in blank by interpolating surroundings
+				// 		int previousRay = 0;
+				// 		int nextRay = 0;
+				// 		// find 2 nearby populated rays
+				// 		if (usedThetas[modulo(theta - 3, thetaBufferCount)]) {
+				// 			previousRay = -3;
+				// 		}
+				// 		if (usedThetas[modulo(theta - 2, thetaBufferCount)]) {
+				// 			previousRay = -2;
+				// 		}
+				// 		if (usedThetas[modulo(theta - 1, thetaBufferCount)]) {
+				// 			previousRay = -1;
+				// 		}
+				// 		if (usedThetas[modulo(theta + 3, thetaBufferCount)]) {
+				// 			nextRay = 4;
+				// 		}
+				// 		if (usedThetas[modulo(theta + 2, thetaBufferCount)]) {
+				// 			nextRay = 2;
+				// 		}
+				// 		if (usedThetas[modulo(theta + 1, thetaBufferCount)]) {
+				// 			nextRay = 1;
+				// 		}
+				// 		if (previousRay != 0 && nextRay != 0) {
+				// 			int previousRayAbs = modulo(theta + previousRay, thetaBufferCount);
+				// 			int nextRayAbs = modulo(theta + nextRay, thetaBufferCount);
+				// 			for (int radius = 0; radius < radiusBufferCount; radius++) {
+				// 				float previousValue = sweepBuffer[radius + (previousRayAbs + 1) * thetaBufferSize];
+				// 				float nextValue = sweepBuffer[radius + (nextRayAbs + 1) * thetaBufferSize];
+				// 				for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
+				// 					float interLocation = (float)(thetaTo - previousRay) / (float)(nextRay - previousRay);
+				// 					// write interpolated value
+				// 					sweepBuffer[radius + (modulo(theta + thetaTo, thetaBufferCount) + 1) * thetaBufferSize] = previousValue * (1.0 - interLocation) + nextValue * interLocation;
+				// 				}
+				// 			}
+				// 			for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
+				// 				// mark as filled
+				// 				usedThetas[modulo(theta + thetaTo, thetaBufferCount)] = true;
+				// 			}
+				// 		}
+				// 	}
+				// }
 				delete[] usedThetas;
+				
 				
 				// calculate RayInfo
 				{
@@ -437,16 +438,8 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 					rayInfo[rayInfoOffset + thetaBufferCount].sweep = sweepIndex;
 				}
 				
+				InterpolateSweep(sweepIndex, sweepBuffer);
 				
-				// pad theta with ray from other side to allow correct interpolation in shader at edges
-				memcpy(
-					sweepBuffer,
-					sweepBuffer + (thetaBufferCount * thetaBufferSize),
-					thetaBufferSize*4);
-				memcpy(
-					sweepBuffer + (((thetaBufferCount + 1) * thetaBufferSize)),
-					sweepBuffer + (thetaBufferSize),
-					thetaBufferSize*4);
 				
 				if(doCompress){
 					SparseCompress::compressValues(&compressorState, sweepBuffer, sweepBufferSize);
@@ -656,6 +649,83 @@ bool RadarData::IsCompressed() {
 	return buffer == NULL && bufferCompressed != NULL;
 }
 
+
+void RadarData::Interpolate(){
+	if(!buffer){
+		fprintf(stderr, "Error: cannot interpolate without main buffer allocated\n");
+		return;
+	}
+	for(int sweep = 0; sweep < sweepBufferCount; sweep++){
+		InterpolateSweep(sweep, buffer + (sweep * sweepBufferSize));
+	}
+}
+
+void RadarData::InterpolateSweep(int sweepIndex, float *sweepBuffer){
+	int rayInfoOffset = (thetaBufferCount + 2) * sweepIndex + 1;
+	// this can probably be slightly optimized by fully utilizing rayInfo
+	for (int theta = 0; theta < thetaBufferCount; theta++) {
+		if (rayInfo[rayInfoOffset + theta].interpolated) {
+			// fill in blank by interpolating surroundings
+			int previousRay = 0;
+			int nextRay = 0;
+			// find 2 nearby populated rays
+			if (!rayInfo[rayInfoOffset + modulo(theta - 3, thetaBufferCount)].interpolated) {
+				previousRay = -3;
+			}
+			if (!rayInfo[rayInfoOffset + modulo(theta - 2, thetaBufferCount)].interpolated) {
+				previousRay = -2;
+			}
+			if (!rayInfo[rayInfoOffset + modulo(theta - 1, thetaBufferCount)].interpolated) {
+				previousRay = -1;
+			}
+			if (!rayInfo[rayInfoOffset + modulo(theta + 3, thetaBufferCount)].interpolated) {
+				nextRay = 3;
+			}
+			if (!rayInfo[rayInfoOffset + modulo(theta + 2, thetaBufferCount)].interpolated) {
+				nextRay = 2;
+			}
+			if (!rayInfo[rayInfoOffset + modulo(theta + 1, thetaBufferCount)].interpolated) {
+				nextRay = 1;
+			}
+			if (previousRay != 0 && nextRay != 0) {
+				int previousRayAbs = modulo(theta + previousRay, thetaBufferCount);
+				int nextRayAbs = modulo(theta + nextRay, thetaBufferCount);
+				for (int radius = 0; radius < radiusBufferCount; radius++) {
+					float previousValue = sweepBuffer[radius + (previousRayAbs + 1) * thetaBufferSize];
+					float nextValue = sweepBuffer[radius + (nextRayAbs + 1) * thetaBufferSize];
+					for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
+						float interLocation = (float)(thetaTo - previousRay) / (float)(nextRay - previousRay);
+						// write interpolated value
+						sweepBuffer[radius + (modulo(theta + thetaTo, thetaBufferCount) + 1) * thetaBufferSize] = previousValue * (1.0 - interLocation) + nextValue * interLocation;
+					}
+				}
+				//for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
+					// mark as filled
+					//usedThetas[modulo(theta + thetaTo, thetaBufferCount)] = true;
+				//}
+				// advance past filled rays
+				if(nextRayAbs >= theta){
+					theta = nextRayAbs;
+				}else{
+					break;
+				}
+				
+			}
+		}
+	}
+	
+	
+	// pad theta with ray from other side to allow correct interpolation in shader at edges
+	memcpy(
+		sweepBuffer,
+		sweepBuffer + (thetaBufferCount * thetaBufferSize),
+		thetaBufferSize * sizeof(float));
+	memcpy(
+		sweepBuffer + (((thetaBufferCount + 1) * thetaBufferSize)),
+		sweepBuffer + (thetaBufferSize),
+		thetaBufferSize * sizeof(float));
+}
+
 int RadarData::MemoryUsage(){
 	int usage = sizeof(RadarData);
 	if(buffer != NULL){
@@ -692,7 +762,9 @@ void RadarData::Deallocate(){
 }
 
 
-RadarData::~RadarData(){
+
+RadarData::~RadarData()
+{
 	RadarData::Deallocate();
 	fprintf(stderr,"freed RadarData\n");
 }

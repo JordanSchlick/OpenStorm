@@ -135,7 +135,7 @@ public:
 		int previousTheta = -1;
 		// relative position of next actual ray in sweep, does not need modulo before using as offset
 		int nextTheta = 1;
-		// angle of the actual ray, not set for interploted rays
+		// angle of the actual ray, not set for interpolated rays
 		float actualAngle = 0;
 		
 		int sweep = 0;
@@ -171,6 +171,12 @@ public:
 	
 	// returns true if it is compressed and the main buffer is unallocated
 	bool IsCompressed();
+	
+	// interpolate real rays to fill buffer
+	void Interpolate();
+	
+	// interpolate real rays to fill buffer for a single sweep
+	void InterpolateSweep(int sweepIndex, float* sweepBuffer);
 	
 	// gets the memory usage of this object in bytes
 	int MemoryUsage();
