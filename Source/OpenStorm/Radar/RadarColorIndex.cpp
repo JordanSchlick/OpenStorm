@@ -5,6 +5,7 @@
 #include <math.h>
 #include <cmath>
 #include <algorithm>
+#include "PolyFillUtils.h"
 
 typedef struct float3 {
 	float x = 0.0;

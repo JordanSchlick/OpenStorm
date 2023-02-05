@@ -447,6 +447,9 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				
 				sweepIndex++;
 			}
+			if(sweepIndex * sweepBufferSize < usedBufferSize){
+				std::fill(buffer + sweepIndex * sweepBufferSize, buffer + usedBufferSize, stats.noDataValue);
+			}
 			
 			usedBufferSize = sweepIndex * sweepBufferSize;
 			
@@ -530,7 +533,7 @@ void RadarData::CopyFrom(RadarData* data) {
 	// take used buffer size into account
 	if(data->usedBufferSize < usedBufferSize){
 		// fill newly unused space
-		//std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, data->stats.noDataValue);
+		std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, data->stats.noDataValue);
 	}
 	usedBufferSize = data->usedBufferSize;
 	stats = data->stats;

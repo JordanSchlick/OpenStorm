@@ -40,7 +40,14 @@ void AsyncTaskRunner::Start(bool autoDeleteTask) {
 	});
 	task->StartBackgroundTask();
 }
-
+#else
+#include <future>
+void AsyncTaskRunner::Start(bool autoDeleteTask) {
+	this->autoDelete = autoDeleteTask;
+	std::async(std::launch::async, [this] {
+		InternalTask();
+	});
+}
 #endif
 
 

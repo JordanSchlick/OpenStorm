@@ -453,7 +453,17 @@ private:
 		// add to queue if it is not already added
 		if(!used[location]){
 			used[location] = true;
+			#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
 			taskQueue.emplace() = {sweep, theta, radius, depth, fromValue};
+			#else
+			DealiasingTask task;
+			task.sweep = sweep;
+			task.theta = theta;
+			task.radius = radius;
+			task.depth = depth;
+			task.fromValue = fromValue;
+			taskQueue.push(task);
+			#endif
 			DealiasingGroup* group = currentGroup;
 			group->boundSweepLower = std::min(group->boundSweepLower, sweep);
 			group->boundSweepUpper = std::max(group->boundSweepUpper, sweep);

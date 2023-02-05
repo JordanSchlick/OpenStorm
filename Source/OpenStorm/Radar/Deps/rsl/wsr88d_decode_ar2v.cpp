@@ -7,21 +7,25 @@
 #include <string.h>
 #include <sys/types.h>
 #ifdef _WIN32
-#include <io.h>
+	#include <io.h>
 #else
-#include <unistd.h>
+	#include <unistd.h>
 #endif
 
 #include "../bzip2/bzlib.h"
-#include "CoreMinimal.h"
-#include "HAL/Runnable.h"
-#include "HAL/RunnableThread.h"
-//#include <unistd.h>
+#ifdef UE_GAME
+	#include "CoreMinimal.h"
+	#include "HAL/Runnable.h"
+	#include "HAL/RunnableThread.h"
+	//#include <unistd.h>
+#else
+	#include <thread>
+#endif
 
 static const char *compression_type = "BZIP2";
 
 #ifdef _WIN32
-#define fdopen _fdopen
+	#define fdopen _fdopen
 #endif
 
 
@@ -248,7 +252,7 @@ void uncompress_pipe_ar2v_thread(FILE* inFile, FILE* outFile) {
 	fclose(outFile);
 }
 
-
+#ifdef UE_GAME
 // This must never share the same thread pool with radar decodeing or it will deadlock
 class FDecompressWorker : public FRunnable
 {
@@ -303,7 +307,7 @@ private:
 	// Used to know when the thread should exit, changed in Stop(), read in Run()
 	bool bRunThread;
 };
-
+#endif
 
 
 FILE* uncompress_pipe_ar2v(FILE* inFile)
@@ -329,10 +333,12 @@ FILE* uncompress_pipe_ar2v(FILE* inFile)
 
 	//fprintf(stderr, "bzip2 decompressing FILE*: %p  %p\n", outFile, returnFile);
 	//fprintf(stderr, "bzip2 decompressing\n");
-
+	#ifdef UE_GAME
 	FDecompressWorker* thread = new FDecompressWorker(inFile, outFile);
+	#else
+	std::thread decompressThread(uncompress_pipe_ar2v_thread, inFile, outFile);
+	decompressThread.detach();
+	#endif
 
-	//std::thread decompressThread(inFile, outFile);
-	//decompressThread.detach();
 	return returnFile;
 }
