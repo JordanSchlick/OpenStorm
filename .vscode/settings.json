@@ -71,7 +71,24 @@
 		"xthread": "cpp",
 		"thread": "cpp",
 		"queue": "cpp",
-		"deque": "cpp"
+		"deque": "cpp",
+		"bit": "cpp",
+		"*.tcc": "cpp",
+		"bitset": "cpp",
+		"cctype": "cpp",
+		"clocale": "cpp",
+		"compare": "cpp",
+		"concepts": "cpp",
+		"cstdarg": "cpp",
+		"cwctype": "cpp",
+		"memory_resource": "cpp",
+		"numeric": "cpp",
+		"optional": "cpp",
+		"random": "cpp",
+		"fstream": "cpp",
+		"ranges": "cpp",
+		"sstream": "cpp",
+		"stop_token": "cpp"
 	},
 	"editor.insertSpaces": false
 }

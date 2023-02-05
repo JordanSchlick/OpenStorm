@@ -40,7 +40,7 @@ public:
 	// static Result velocityColors(Params params, Result* reuseResult);
 	
 	// Generates a valueIndex to map data to colors and opacity
-	virtual Result GenerateColorIndex(Params params, Result* resultToReuse) = NULL;
+	virtual Result GenerateColorIndex(Params params, Result* resultToReuse) = 0;
 	
 	// modify the opacity with a multiplier and a relative cutoff
 	virtual void ModifyOpacity(float opacityMultiplier, float cutoff, Result* existingResult);

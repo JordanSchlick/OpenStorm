@@ -61,7 +61,7 @@ RadarData* RadarProductStormRelativeVelocity::deriveVolume(std::map<RadarData::V
 			}
 		}
 	}
-	delete binCounts;
+	delete[] binCounts;
 	
 	// create output data
 	for(int sweep = 0; sweep < radarData->sweepBufferCount; sweep++){
@@ -92,7 +92,7 @@ RadarData* RadarProductStormRelativeVelocity::deriveVolume(std::map<RadarData::V
 			}
 		}
 	}
-	delete bins;
+	delete[] bins;
 	
 	
 	// float valueRange = radarData->stats.maxValue - radarData->stats.minValue;

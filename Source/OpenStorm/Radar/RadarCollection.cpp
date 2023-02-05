@@ -199,6 +199,10 @@ void RadarCollection::PollFiles(std::string defaultFilename) {
 	}
 	std::vector<RadarFile> radarFilesNew = {};
 	auto files = SystemAPI::ReadDirectory(filePath);
+	#ifndef _WIN32
+		// windows sorts files automatically
+		std::sort(files.begin(), files.end());
+	#endif
 	//fprintf(stderr, "files %i\n", (int)files.size());
 	float aReallyBadWayOfAssigningAnArbitraryTime = 1;
 	double now = SystemAPI::CurrentTime();
