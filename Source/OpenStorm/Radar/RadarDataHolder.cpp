@@ -11,10 +11,10 @@
 class RadarLoader : public AsyncTaskRunner{
 public:
 	std::string path;
-	RadarCollection::RadarDataSettings radarSettings;
+	RadarDataSettings radarSettings;
 	RadarDataHolder* radarHolder;
 	uint64_t initialUid = 0;
-	RadarLoader(RadarFile fileInfo, RadarCollection::RadarDataSettings radarDataSettings, RadarDataHolder* radarDataHolder){
+	RadarLoader(RadarFile fileInfo, RadarDataSettings radarDataSettings, RadarDataHolder* radarDataHolder){
 		path = fileInfo.path;
 		radarSettings = radarDataSettings;
 		radarHolder = radarDataHolder;
@@ -256,8 +256,6 @@ void RadarDataHolder::Load(RadarFile file){
 }
 
 void RadarDataHolder::Load(){
-	RadarCollection::RadarDataSettings settings = collection != NULL ? collection->radarDataSettings : RadarCollection::RadarDataSettings();
-
 	// cancel any existing async tasks
 	for(auto task : asyncTasks){
 		task->Cancel();
@@ -265,8 +263,20 @@ void RadarDataHolder::Load(){
 	}
 	asyncTasks.clear();
 	
-	// add output to requested products
-	GetProduct(settings.volumeType)->isFinal = true;
+	if(collection != NULL){
+		radarDataSettings = collection->radarDataSettings;
+		// add output to requested products
+		GetProduct(radarDataSettings.volumeType)->isFinal = true;
+	}else{
+		// add product if there are no products
+		if(products.size() == 0){
+			GetProduct(radarDataSettings.volumeType)->isFinal = true;
+		}
+	}
+
+	
+	
+	
 	
 	// add dependencies to requested outputs
 	bool addDependencies = true;
@@ -291,7 +301,7 @@ void RadarDataHolder::Load(){
 		// run asynchronous loading
 		asyncTasks.push_back(new RadarLoader(
 			fileInfo,
-			settings,
+			radarDataSettings,
 			this
 		));
 	}

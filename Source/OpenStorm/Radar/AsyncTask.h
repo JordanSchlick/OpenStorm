@@ -9,6 +9,8 @@ public:
 	
 	// is task finished
 	bool finished = false;
+	// if the task is currently running
+	bool running = false;
 	
 	
 	// this function must be overriden and will be run on a separate thread

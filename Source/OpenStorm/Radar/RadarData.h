@@ -16,6 +16,7 @@
 class RadarData {
 public:
 	enum VolumeType {
+		VOLUME_NONE = -1,
 		VOLUME_UNKNOWN = 0,
 		
 		// raw volume types

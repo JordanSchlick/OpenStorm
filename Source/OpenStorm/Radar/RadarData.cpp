@@ -240,7 +240,9 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				// store in continuous buffer
 				if (buffer == NULL) {
 					buffer = new float[fullBufferSize];
-					std::fill(buffer, buffer+fullBufferSize, noDataValue);
+					std::fill(buffer, buffer + fullBufferSize, noDataValue);
+				}else if(usedBufferSize > 0){
+					std::fill(buffer, buffer + usedBufferSize, noDataValue);
 				}
 			}
 			
@@ -446,9 +448,6 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				}
 				
 				sweepIndex++;
-			}
-			if(sweepIndex * sweepBufferSize < usedBufferSize){
-				std::fill(buffer + sweepIndex * sweepBufferSize, buffer + usedBufferSize, stats.noDataValue);
 			}
 			
 			usedBufferSize = sweepIndex * sweepBufferSize;

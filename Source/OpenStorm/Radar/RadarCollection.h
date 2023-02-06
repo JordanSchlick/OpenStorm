@@ -26,17 +26,6 @@ public:
 	};
 	
 	
-	// settings for radar data that is read in
-	class RadarDataSettings{
-	public:
-		// define standard max size for radar
-		int radiusBufferCount = 1832;
-		int thetaBufferCount = 720;
-		int sweepBufferCount = 14;
-		
-		// type of volume to display
-		RadarData::VolumeType volumeType = RadarData::VOLUME_REFLECTIVITY;
-	};
 	
 	// settings for radar data
 	RadarDataSettings radarDataSettings = {};

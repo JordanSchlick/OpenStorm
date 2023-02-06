@@ -12,8 +12,8 @@
 - [X] Initial public release
 - [ ] Add Support for filtering or modifying Color/Opacity in radar data 
 - [ ] Find and order by radar dates
-- [ ] Allow multiple products
-- [ ] Allow computed products
+- [X] Allow multiple products
+- [X] Allow computed products
 - [ ] Pull data from http server
 - [ ] Add designated thread pools to AsyncTask and multi-thread radar decompression
 - [X] Add linux support to ImGUI and get linux working for everything
@@ -21,10 +21,11 @@
 - [ ] More Advanced Tools/Options for interacting, measuring, and viewing data
 - [ ] Top down radar view panning
 - [ ] Save settings to disk
+- [ ] Implement map data
+- [ ] Pseudo-2D single sweep view
 
 ## Future:
 - [ ] Mobile Support (Possibly)
 - [ ] Combining radar data from multiple stations
 - [ ] Change radar decoder to one that is more performant and uses less memory
 - [ ] Display real time lightning
-- [ ] Implement map data

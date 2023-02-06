@@ -34,6 +34,11 @@ public:
 
 
 void AsyncTaskRunner::Start(bool autoDeleteTask) {
+	if(running || finished){
+		fprintf(stderr, "Error: tried to start AsyncTaskRunner multiple times\n");
+		return;
+	}
+	running = true;
 	this->autoDelete = autoDeleteTask;
 	FAutoDeleteAsyncTask<FUnrealAsyncTask>* task = new FAutoDeleteAsyncTask<FUnrealAsyncTask>([this] {
 		InternalTask();
@@ -42,11 +47,22 @@ void AsyncTaskRunner::Start(bool autoDeleteTask) {
 }
 #else
 #include <future>
+#include <vector>
+#include <chrono>
+std::vector<std::future<void>> pendingFutures;
+
+
 void AsyncTaskRunner::Start(bool autoDeleteTask) {
+	if(running || finished){
+		fprintf(stderr, "Error: tried to start AsyncTaskRunner multiple times\n");
+		return;
+	}
+	running = true;
 	this->autoDelete = autoDeleteTask;
-	std::async(std::launch::async, [this] {
+	std::future<void> future = std::async(std::launch::async, [this] {
 		InternalTask();
 	});
+	pendingFutures.push_back(std::move(future));
 }
 #endif
 
@@ -73,6 +89,26 @@ void AsyncTaskRunner::InternalTask() {
 		Task();
 	}
 	finished = true;
+	running = false;
+	
+	#ifdef UE_GAME
+	#else
+	// clean up futures
+	std::vector<std::future<void>> stillPendingFutures;
+	fprintf(stderr, "stillPending before %i\n", (int)pendingFutures.size());
+	for(auto& future : pendingFutures){
+		if(future.wait_for(std::chrono::seconds(0)) != std::future_status::ready){
+			stillPendingFutures.push_back(std::move(future));
+		}
+	}
+	fprintf(stderr, "stillPendingFutures %i\n", (int)stillPendingFutures.size());
+	pendingFutures.clear();
+	for(auto& future : stillPendingFutures){
+		pendingFutures.push_back(std::move(future));
+	}
+	fprintf(stderr, "stillPending after %i\n", (int)pendingFutures.size());
+	#endif
+	
 	if (autoDelete) {
 		clearedForDeletion = true;
 		delete this;

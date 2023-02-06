@@ -397,6 +397,9 @@ void ARadarVolumeRender::InitializeTextures() {
 		volumeTexture2->UpdateResource();
 
 		interpolationMaterialInstance->SetScalarParameterValue(TEXT("Amount"), 0);
+		interpolationMaterialInstance->SetScalarParameterValue(TEXT("RadiusSize"), radarData->radiusBufferCount);
+		interpolationMaterialInstance->SetScalarParameterValue(TEXT("ThetaSize"), radarData->thetaBufferCount + 2);
+		interpolationMaterialInstance->SetScalarParameterValue(TEXT("SweepCount"), radarData->sweepBufferCount);
 		interpolationMaterialInstance->SetTextureParameterValue(TEXT("Texture1"), volumeTexture);
 		interpolationMaterialInstance->SetTextureParameterValue(TEXT("Texture2"), volumeTexture2);
 		radarMaterialInstance->SetTextureParameterValue(TEXT("Volume"), volumeMaterialRenderTarget);
@@ -409,6 +412,8 @@ void ARadarVolumeRender::InitializeTextures() {
 	
 	
 	
+	interpolationMaterialInstance->SetScalarParameterValue(TEXT("RadiusSize"), radarData->radiusBufferCount);
+	interpolationMaterialInstance->SetScalarParameterValue(TEXT("ThetaSize"), radarData->thetaBufferCount);
 	
 	
 	if(angleIndexTexture == NULL){

@@ -25,8 +25,21 @@ public:
 	std::string name = "";
 };
 
+// settings for radar data that is read in
+class RadarDataSettings{
+public:
+	// define standard max size for radar
+	int radiusBufferCount = 1832;
+	int thetaBufferCount = 720;
+	int sweepBufferCount = 15;
+	
+	// type of volume to display
+	RadarData::VolumeType volumeType = RadarData::VOLUME_REFLECTIVITY;
+};
+
 
 // a class that holds the radar products and related information
+// it also manages loading in radar files and products asynchronously
 class RadarDataHolder{
 public:
 	enum State{
@@ -36,13 +49,13 @@ public:
 		DataStateFailed
 	};
 	
-	// holds info about a product and the data related to it
+	// holds info about a product and the radar data related to it
 	class ProductHolder {
 	public:
 		// volume data
 		RadarData* radarData = NULL;
 		// the product that is being held
-		RadarProduct* product= NULL;
+		RadarProduct* product = NULL;
 		// type of volume
 		RadarData::VolumeType volumeType;
 		// if final data that should be kept around
@@ -55,7 +68,7 @@ public:
 		void StartUsing();
 		// decrement the reference counter to allow free
 		void StopUsing();
-		// delete the product once it is no longer in use
+		// delete the product if/once it is no longer in use
 		void Delete();
 		
 		// do not set directly, reference counter if the data is currently being used to determine if it is safe to free
@@ -83,6 +96,8 @@ public:
 	// map of radar products that point to products
 	std::map<RadarData::VolumeType, ProductHolder*> productsMap;
 	
+	RadarDataSettings radarDataSettings;
+	
 	RadarDataHolder();
 	~RadarDataHolder();
 	
@@ -92,7 +107,7 @@ public:
 	void Load();
 	// unload data and stop any loading in progress
 	void Unload();
-	// get a product to be loaded or add it if it is not found
+	// get a product to be loaded or add it if it is not found, should be called before Load if adding new product
 	ProductHolder* GetProduct(RadarData::VolumeType type);
 	// create a unique ID for use with threading
 	static uint64_t CreateUID();
