@@ -412,8 +412,8 @@ void ARadarVolumeRender::InitializeTextures() {
 	
 	
 	
-	interpolationMaterialInstance->SetScalarParameterValue(TEXT("RadiusSize"), radarData->radiusBufferCount);
-	interpolationMaterialInstance->SetScalarParameterValue(TEXT("ThetaSize"), radarData->thetaBufferCount);
+	radarMaterialInstance->SetScalarParameterValue(TEXT("RadiusSize"), radarData->radiusBufferCount);
+	radarMaterialInstance->SetScalarParameterValue(TEXT("ThetaSize"), radarData->thetaBufferCount);
 	
 	
 	if(angleIndexTexture == NULL){

@@ -21,12 +21,12 @@ Discord server invite [https://discord.gg/K3aU2hEYvJ](https://discord.gg/K3aU2hE
 3. Get submodules `git submodule update --init --recursive`
 4. Open the project in unreal engine
 5. Hit ctrl+alt+f11 to build project
-
+To build a standalone build, select package project within the desired platform under the Platforms dropdown.
 
 ## Getting data
 Currently only bzip2 or uncompressed NEXRAD data is supported  
 You can get NEXRAD data from
 * https://github.com/JordanSchlick/radar-data to download data in real time.
-* https://s3.amazonaws.com/noaa-nexrad-level2/index.html for historical data. Data from 2017 onwards works as is, but earlier data may need to be manually decompressed before it can be read.
+* https://s3.amazonaws.com/noaa-nexrad-level2/index.html for historical data.
 
-To build a standalone build, select package project within the desired platform under the Platforms dropdown.
+

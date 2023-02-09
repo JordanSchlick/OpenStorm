@@ -88,7 +88,11 @@
 		"fstream": "cpp",
 		"ranges": "cpp",
 		"sstream": "cpp",
-		"stop_token": "cpp"
+		"stop_token": "cpp",
+		"gzguts.h": "c",
+		"io.h": "c",
+		"inffast.h": "c",
+		"stdlib.h": "c"
 	},
 	"editor.insertSpaces": false
 }

@@ -13,6 +13,7 @@
 #endif
 
 #include "../bzip2/bzlib.h"
+#include "../zlib/zlib.h"
 #ifdef UE_GAME
 	#include "CoreMinimal.h"
 	#include "HAL/Runnable.h"
@@ -252,6 +253,107 @@ void uncompress_pipe_ar2v_thread(FILE* inFile, FILE* outFile) {
 	fclose(outFile);
 }
 
+#define CHUNK_SIZE 262144
+
+
+int uncompress_pipe_gzip_thread(FILE* inFile, FILE* outFile) {
+#ifdef _WIN32
+	_set_fmode(_O_BINARY);
+#endif // _WIN32
+	
+	int ret;
+    //unsigned int have;
+    z_stream zStream;
+    unsigned char inBuffer[CHUNK_SIZE];
+    unsigned char outBuffer[CHUNK_SIZE];
+	
+	// allocate inflate state
+	zStream.zalloc = Z_NULL;
+    zStream.zfree = Z_NULL;
+    zStream.opaque = Z_NULL;
+    zStream.avail_in = 0;
+    zStream.next_in = Z_NULL;
+    //ret = inflateInit(&zStream);
+	// 16+MAX_WBITS for gzip
+    ret = inflateInit2(&zStream, 16+MAX_WBITS);
+    if (ret != Z_OK){
+		fclose(inFile);
+		fclose(outFile);
+        return ret;
+	}
+	
+	//decompress until deflate stream ends or end of file
+	do{
+		zStream.avail_in = fread(inBuffer, 1, CHUNK_SIZE, inFile);
+        if (ferror(inFile)) {
+            (void)inflateEnd(&zStream);
+			fclose(inFile);
+			fclose(outFile);
+            return Z_ERRNO;
+        }
+        if (zStream.avail_in == 0)
+            break;
+        zStream.next_in = inBuffer;
+		
+		// run inflate() on input until output buffer not full
+        do {
+			zStream.avail_out = CHUNK_SIZE;
+            zStream.next_out = outBuffer;
+			
+			ret = inflate(&zStream, Z_NO_FLUSH);
+			if(ret == Z_STREAM_ERROR){
+				// state clobbered 
+				fprintf(stderr, "Z_STREAM_ERROR\n");
+                (void)inflateEnd(&zStream);
+				fclose(inFile);
+				fclose(outFile);
+				return Z_STREAM_ERROR;
+			}
+            switch (ret) {
+			case Z_NEED_DICT:
+				fprintf(stderr, "Z_NEED_DICT\n");
+				break;
+            case Z_DATA_ERROR:
+				fprintf(stderr, "Z_DATA_ERROR\n");
+				break;
+			case Z_MEM_ERROR:
+				fprintf(stderr, "Z_MEM_ERROR\n");
+				break;
+			}
+            switch (ret) {
+            case Z_NEED_DICT:
+                ret = Z_DATA_ERROR;     // and fall through
+            case Z_DATA_ERROR:
+            case Z_MEM_ERROR:
+                (void)inflateEnd(&zStream);
+				fclose(inFile);
+				fclose(outFile);
+                return ret;
+            }
+			
+			unsigned int have = CHUNK_SIZE - zStream.avail_out;
+            if (fwrite(outBuffer, 1, have, outFile) != have || ferror(outFile)) {
+                (void)inflateEnd(&zStream);
+				fclose(inFile);
+				fclose(outFile);
+                return Z_ERRNO;
+            }
+		} while (zStream.avail_out == 0);
+		// done when inflate() says it's done
+	} while (ret != Z_STREAM_END);
+	
+	// clean up and return
+    (void)inflateEnd(&zStream);
+	fclose(inFile);
+	fclose(outFile);
+    return ret == Z_STREAM_END ? Z_OK : Z_DATA_ERROR;
+}
+
+
+
+
+
+
 #ifdef UE_GAME
 // This must never share the same thread pool with radar decodeing or it will deadlock
 class FDecompressWorker : public FRunnable
@@ -259,10 +361,12 @@ class FDecompressWorker : public FRunnable
 public:
 	FILE* inFile;
 	FILE* outFile;
+	int type;
 	// Constructor, create the thread by calling this
-	FDecompressWorker(FILE* inFile, FILE* outFile) {
+	FDecompressWorker(FILE* inFile, FILE* outFile, int type) {
 		this->inFile = inFile;
 		this->outFile = outFile;
+		this->type = type;
 		thread = FRunnableThread::Create(this, TEXT("Bzip2 Decode"));
 	}
 
@@ -288,7 +392,18 @@ public:
 
 	virtual uint32_t Run() {
 		// Main data processing happens here
-		uncompress_pipe_ar2v_thread(inFile, outFile);
+		switch (type)
+		{
+		case 1:
+			uncompress_pipe_ar2v_thread(inFile, outFile);
+			break;
+		case 2:
+			uncompress_pipe_gzip_thread(inFile, outFile);
+			break;
+		
+		default:
+			break;
+		}
 		return 0;
 	};
 
@@ -334,9 +449,43 @@ FILE* uncompress_pipe_ar2v(FILE* inFile)
 	//fprintf(stderr, "bzip2 decompressing FILE*: %p  %p\n", outFile, returnFile);
 	//fprintf(stderr, "bzip2 decompressing\n");
 	#ifdef UE_GAME
-	FDecompressWorker* thread = new FDecompressWorker(inFile, outFile);
+	FDecompressWorker* thread = new FDecompressWorker(inFile, outFile, 1);
 	#else
 	std::thread decompressThread(uncompress_pipe_ar2v_thread, inFile, outFile);
+	decompressThread.detach();
+	#endif
+
+	return returnFile;
+}
+
+
+FILE* uncompress_pipe_gzip(FILE* inFile)
+{
+
+	//char* outfile;
+	int tostdout = 0;
+
+	int pipeFDs[2];
+	// windows specific
+	#ifdef _WIN32
+	if (_pipe(pipeFDs, 655360, _O_BINARY) != 0) {
+		fprintf(stderr, "Could not create pipe\n");
+	}
+	#else
+	if (pipe(pipeFDs) != 0) {
+		fprintf(stderr, "Could not create pipe\n");
+	}
+	#endif
+	FILE* outFile = fdopen(pipeFDs[1], "w");
+	FILE* returnFile = fdopen(pipeFDs[0], "r");
+
+
+	//fprintf(stderr, "bzip2 decompressing FILE*: %p  %p\n", outFile, returnFile);
+	//fprintf(stderr, "bzip2 decompressing\n");
+	#ifdef UE_GAME
+	FDecompressWorker* thread = new FDecompressWorker(inFile, outFile, 2);
+	#else
+	std::thread decompressThread(uncompress_pipe_gzip_thread, inFile, outFile);
 	decompressThread.detach();
 	#endif
 

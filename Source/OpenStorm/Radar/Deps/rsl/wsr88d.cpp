@@ -291,9 +291,10 @@ Wsr88d_file *wsr88d_open(char *filename)
 	}
 
 	// first check how the data are compressed by reading first few of magic bytes
-	char hdrplus4[28];
+	unsigned char hdrplus4[28];
 	char bzmagic[4];
 	int ar2v6bzip = 0;
+	int isGzip = 0;
 	fpos_t pos;
 	fgetpos(wf->fptr, &pos);
 	if (fread(hdrplus4, sizeof(hdrplus4), 1, wf->fptr) != 1) {
@@ -305,7 +306,13 @@ Wsr88d_file *wsr88d_open(char *filename)
 		 return NULL;
 	}
 	// test for bzip2 magic.
-	if (strncmp("BZ",bzmagic,2) == 0) ar2v6bzip = 1;
+	if (strncmp("BZ", bzmagic,2) == 0){
+		ar2v6bzip = 1;
+	}
+	// test for gzip magic bytes
+	if (hdrplus4[0] == 0x1f && hdrplus4[1] == 0x8b){
+		isGzip = 1;
+	}
 
 	fclose(wf->fptr);
 
@@ -340,12 +347,17 @@ Wsr88d_file *wsr88d_open(char *filename)
 	*/
 
 	// decompress
-	if(ar2v6bzip){
-		 wf->fptr = uncompress_pipe_ar2v(wf->fptr);
+	if(isGzip){
+		//fprintf(stderr, "decode gzip here\n");
+		wf->fptr = uncompress_pipe_gzip(wf->fptr);
+	} else if(ar2v6bzip){
+		wf->fptr = uncompress_pipe_ar2v(wf->fptr);
 	}
 	//else{
 	//	 wf->fptr = uncompress_pipe(wf->fptr);
 	//}
+	
+	
 
 
 	if(wf->fptr == NULL){
