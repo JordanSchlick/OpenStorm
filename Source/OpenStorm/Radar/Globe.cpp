@@ -39,6 +39,11 @@ SimpleVector3<> Globe::GetPoint(double latitudeRadians, double longitudeRadians,
 	return vector;
 }
 
+SimpleVector3<> Globe::GetPointDegrees(double latitudeDegrees, double longitudeDegrees, double altitude) {
+	SimpleVector3<> vector = GetPoint(latitudeDegrees / 180 * M_PI, longitudeDegrees / 180 * M_PI, altitude);
+	return vector;
+}
+
 SimpleVector3<> Globe::GetPointScaled(double latitudeRadians, double longitudeRadians, double altitude){
 	SimpleVector3<> vector = GetPoint(latitudeRadians,longitudeRadians, altitude);
 	vector.Multiply(scale);
