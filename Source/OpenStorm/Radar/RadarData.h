@@ -24,6 +24,9 @@ public:
 		VOLUME_REFLECTIVITY = 1,
 		VOLUME_VELOCITY = 2,
 		VOLUME_SPECTRUM_WIDTH = 3,
+		VOLUME_CORELATION_COEFFICIENT = 4,
+		VOLUME_DIFFERENTIAL_REFLECTIVITY = 5,
+		VOLUME_DIFFERENTIAL_PHASE_SHIFT = 6,
 		
 		// computed volume types
 		
@@ -82,6 +85,10 @@ public:
 		float maxValue = 0;
 		// length of a pixel along the radius in meters
 		float pixelSize = 250;
+		// date time as seconds since epoch when the volume scan started
+		double beginTime = 0;
+		// date time as seconds since epoch when the volume scan ended
+		double endTime = 0;
 		// value for when there is no data, the default is -infinity
 		float noDataValue = -INFINITY;
 		// ( TODO: Implement NaN support in the shader) value for invalid data such as range folding, the defaults is NaN

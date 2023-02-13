@@ -17,6 +17,7 @@
 #include <map>
 #include <algorithm>
 #include <cmath>
+#include <ctime>
 
 #define PIF 3.14159265358979323846f
 
@@ -78,6 +79,15 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 			case VOLUME_SPECTRUM_WIDTH:
 				nexradType = SW_INDEX;
 				break;
+			case VOLUME_CORELATION_COEFFICIENT:
+				nexradType = RH_INDEX;
+				break;
+			case VOLUME_DIFFERENTIAL_REFLECTIVITY:
+				nexradType = DR_INDEX;
+				break;
+			case VOLUME_DIFFERENTIAL_PHASE_SHIFT:
+				nexradType = PH_INDEX;
+				break;
 			default:
 				return false;
 				break;
@@ -121,10 +131,11 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 						fprintf(stderr, "sweep ray estimated length %i meters\n", sweep->ray[0]->h.gate_size * sweep->ray[0]->h.nbins + sweep->ray[0]->h.range_bin1);
 						fprintf(stderr, "sweep ray unam_rng %f meters\n", sweep->ray[0]->h.unam_rng);
 						fprintf(stderr, "sweep ray lat %f lon %f\n", sweep->ray[1]->h.lat, sweep->ray[1]->h.lon);
-					}*/
-
+					}
+					fprintf(stderr, "%i-%i-%i %i:%i:%f\n", sweep->ray[0]->h.year, sweep->ray[0]->h.month, sweep->ray[0]->h.day, sweep->ray[0]->h.hour, sweep->ray[0]->h.minute, sweep->ray[0]->h.sec);
+					*/
 					
-
+					
 					// add sweeps but skip duplicates
 					float roundedElevation = std::round(sweep->h.elev * 100.0f) / 100.0f;
 					if (sweeps.find(roundedElevation) == sweeps.end()) {
@@ -151,6 +162,8 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 			stats.boundUpper = 0;
 			stats.boundLower = 1e-10;
 			stats.boundRadius = 0;
+			stats.beginTime = INFINITY;
+			stats.endTime = -INFINITY;
 			
 			// do a pass of the data to find info
 			for (const auto pair : sweeps) {
@@ -172,6 +185,21 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 					Ray* ray = sweep->ray[theta];
 					int maxDataDistance = 0;
 					if (ray) {
+						struct tm t = {0};  // Initalize to all 0's
+						t.tm_year = ray->h.year - 1900; 
+						t.tm_mon = ray->h.month - 1;
+						t.tm_mday = ray->h.day;
+						t.tm_hour = ray->h.hour;
+						t.tm_min = ray->h.minute;
+						t.tm_sec = ray->h.sec;
+						#ifdef _WIN32
+						time_t timeSinceEpoch = _mkgmtime(&t);
+						#else
+						time_t timeSinceEpoch = timegm(&t);
+						#endif
+						double rayDate = timeSinceEpoch + fmod(ray->h.sec, 1.0);
+						stats.beginTime = std::min(stats.beginTime, rayDate);
+						stats.endTime = std::max(stats.endTime, rayDate);
 						int radiusSize = ray->h.nbins;
 						maxRadius = std::max(maxRadius, radiusSize);
 						for (int radius = 0; radius < radiusSize; radius++) {
@@ -202,6 +230,10 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 			if (stats.minValue == INFINITY) {
 				stats.minValue = 0;
 				stats.maxValue = 1;
+			}
+			if (stats.beginTime == INFINITY) {
+				stats.beginTime = 0;
+				stats.endTime = 0;
 			}
 			if (radiusBufferCount == 0) {
 				radiusBufferCount = maxRadius;

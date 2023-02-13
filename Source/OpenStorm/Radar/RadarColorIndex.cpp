@@ -247,7 +247,12 @@ RadarColorIndex* RadarColorIndex::GetDefaultColorIndexForData(RadarData* radarDa
 			
 		case RadarData::VOLUME_VELOCITY:
 		case RadarData::VOLUME_VELOCITY_DEALIASED:
+		case RadarData::VOLUME_STORM_RELATIVE_VELOCITY:
 			return &RadarColorIndexVelocity::defaultInstance;
+			break;
+		
+		case RadarData::VOLUME_CORELATION_COEFFICIENT:
+			return &RadarColorIndexCorrelationCoefficient::defaultInstance;
 			break;
 	
 		default:
@@ -327,6 +332,35 @@ RadarColorIndex::Result RadarColorIndexVelocity::GenerateColorIndex(Params param
 	return result;
 }
 
+
+RadarColorIndexCorrelationCoefficient RadarColorIndexCorrelationCoefficient::defaultInstance = {};
+RadarColorIndex::Result RadarColorIndexCorrelationCoefficient::GenerateColorIndex(Params params, Result* resultToReuse) {
+	float l = 0;
+	float u = 1.05;
+	RadarColorIndex::Result result = BasicSetup(l, u, resultToReuse);
+	
+	// gray
+	colorRangeHSL(result.data, valueToIndex(l,u,0.0), valueToIndex(l,u,0.2),  0.66,0,0.2,  0.66,0,0.5);
+	// gray to blue
+	colorRangeHSL(result.data, valueToIndex(l,u,0.2), valueToIndex(l,u,0.5),  0.66,0,0.5,  0.66,1,0.5);
+	// blue to red
+	colorRangeHSL(result.data, valueToIndex(l,u,0.5), valueToIndex(l,u,0.95),  0.66,1,0.5,  0,1,0.5);
+	// red
+	colorRangeHSL(result.data, valueToIndex(l,u,0.95), valueToIndex(l,u,0.98),  0,1,0.5,  0,1,0.5);
+	// red to magenta
+	colorRangeHSL(result.data, valueToIndex(l,u,0.98), valueToIndex(l,u,1.01),  1,1,0.5,  0.9,1,0.5);
+	// magenta to pink
+	colorRangeHSL(result.data, valueToIndex(l,u,1.01), valueToIndex(l,u,1.05),  0.9,1,0.5,  0.9,1,0.65);
+	
+	for (int i = 0; i < 16384; i++) {
+		float value = (i / 16383.0f);
+		result.data[i * 4 + 3] = 1;
+	}
+	result.data[3] = 0;
+	return result;
+}
+
+
 RadarColorIndexRelativeHue RadarColorIndexRelativeHue::defaultInstance = {};
 RadarColorIndex::Result RadarColorIndexRelativeHue::GenerateColorIndex(Params params, Result* resultToReuse) {
 	RadarColorIndex::Result result = BasicSetup(params.minValue, params.maxValue, resultToReuse);
@@ -353,7 +387,7 @@ RadarColorIndex::Result RadarColorIndexRelativeHue::GenerateColorIndex(Params pa
 	colorRangeHSL(result.data, valueToIndex(0,100,95), valueToIndex(0,100,100),  0.0,1,0.5, 0.0,1,0.5);
 	for (int i = 0; i < 16384; i++) {
 		float value = (i / 16383.0f);
-		result.data[i * 4 + 3] = value;
+		result.data[i * 4 + 3] = value * 2;
 	}
 	return result;
 }

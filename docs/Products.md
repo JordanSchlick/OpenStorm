@@ -13,6 +13,17 @@ How fast the precipitation is moving towards or away from the radar.
 ### Spectrum Width (SW)
 How much variation there is within the radial velocity.
 
+### Correlation Coefficient (CC)
+It measures how similar objects are in the radar volume. 
+High values mean the contents of the volume are all similar wile lower values indicate variation in shape of the objects reflecting the radar beam.
+
+### Differential Reflectivity (DR)
+It is the ratio between vertical and horizontal reflectivity. It can give some insight into the shape of precipitation.
+
+### Differential Phase Shift (DPS)
+It is a measure of the difference in 2-way attenuation for the horizontal and vertical pulses in a pulse volume.
+
+
 
 ## Derived Product Types
 Derived products are generated from the base products within OpenStorm
@@ -22,11 +33,19 @@ Dependencies: Radial Velocity
 Radial velocity has some artifacts where the velocity wraps around to the wrong direction. 
 This derived products tries remove them, but does not always work perfect.
 
+### Storm Relative Velocity (SRV)
+Dependencies: Radial Velocity De-aliased 
+This product is very similar to Radial Velocity De-aliased except it has the average velocity subtracted from it to make variations in velocity more visible.
+
+### Rotaion (ROT)
+Dependencies: Radial Velocity De-aliased, Spectrum Width
+Attempts to detect rotation by measuring how large of a difference there is in velocities.
+
 
 
 ## Adding a product
 * Add a volume type in RadarData.h
-* Create a new class derived from RadarProduct. Look at RadarProductVelocityDealiased for an example.
+* Create a new class derived from RadarProduct. Look at RadarProductRotation for an example.
 * Add that new product to the list in ProductList.cpp
 * Add a new color index if necessary
 * Modify RadarColorIndex::GetDefaultColorIndexForData to choose the correct color index for the data

@@ -67,6 +67,12 @@ public:
 	static RadarColorIndexVelocity defaultInstance;
 };
 
+class RadarColorIndexCorrelationCoefficient : public RadarColorIndex {
+public:
+	virtual Result GenerateColorIndex(Params params, Result* resultToReuse) override;
+	static RadarColorIndexCorrelationCoefficient defaultInstance;
+};
+
 class RadarColorIndexRelativeHue : public RadarColorIndex {
 public:
 	virtual Result GenerateColorIndex(Params params, Result* resultToReuse) override;
