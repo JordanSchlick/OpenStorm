@@ -33,6 +33,8 @@ Discord server invite [https://discord.gg/K3aU2hEYvJ](https://discord.gg/K3aU2hE
 5. Hit ctrl+alt+f11 to build project
 To build a standalone build, select package project within the desired platform under the Platforms dropdown.
 
+To pull the latest changes to an existing copy of the repo use `git pull --recurse-submodules`
+
 ## Getting data
 Currently only NEXRAD data is supported  
 You can get NEXRAD data from
