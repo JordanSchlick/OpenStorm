@@ -59,6 +59,9 @@ void RadarCollection::Allocate(int newCacheSize) {
 	cacheSizeSide = cacheSize / 2 - 1;
 	reservedCacheSize = cacheSizeSide / 2;
 	reservedCacheSize = std::max(std::min(reservedCacheSize,10),std::min(cacheSizeSide,4));
+	reservedCacheSizeMin = reservedCacheSize;
+	reservedCacheSizeMax = cacheSizeSide;
+	desiredLoadingDistance = reservedCacheSize / 2;
 	currentPosition = cacheSize / 2;
 	cache = new RadarDataHolder[cacheSize];
 	for(int i = 0; i < cacheSize; i++){
@@ -167,6 +170,28 @@ void RadarCollection::EventLoop() {
 		}
 	}else{
 		nextPollTime = 0;
+	}
+	for(int i = -desiredLoadingDistance; i <= desiredLoadingDistance; i++){
+		int checkLocation = modulo(currentPosition + i, cacheSize);
+		if(cache[checkLocation].state == RadarDataHolder::State::DataStateLoading){
+			isDesiredLoadingDistanceClear = false;
+		}
+	}
+	if(nextReservedCacheChangeTime <= now){
+		nextReservedCacheChangeTime = now + (double)(1.0f / reservedCacheChangePerSecond);
+		int oldReservedCacheSize = reservedCacheSize;
+		if(isDesiredLoadingDistanceClear){
+			// shrink reserved size
+			reservedCacheSize = std::max(reservedCacheSize - 1, reservedCacheSizeMin);
+		}else{
+			// expand reserved size
+			reservedCacheSize = std::min(reservedCacheSize + 1, reservedCacheSizeMax);
+		}
+		if(oldReservedCacheSize != reservedCacheSize){
+			UnloadOldData();
+			LoadNewData();
+		}
+		isDesiredLoadingDistanceClear = true;
 	}
 }
 

@@ -120,8 +120,29 @@ private:
 	// size of one side of cache when balanced excluding curent pos and empty spot
 	int cacheSizeSide = 0;
 	
-	// number of items that should be reserved in either direction from being to reallocated to the other direction
+	// number of items that should be reserved in either direction from the current position to allow loading new data
+	// if the separation position is less than this value away from the current position than the other side is freed to make room the expand the close side
+	// this allows new data to load in as the current position moves
+	// set based on allocation size
 	int reservedCacheSize = 0;
+	
+	// minimum value for reservedCacheSize
+	int reservedCacheSizeMin = 0;
+	
+	// maximum value for reservedCacheSize
+	int reservedCacheSizeMax = 0;
+	
+	// how fast resevered size can change
+	float reservedCacheChangePerSecond = 2.0f;
+	
+	// next time to change the reserved size
+	double nextReservedCacheChangeTime = 0;
+	
+	// desired number of spaces between the current position and the closest loading position, used for changing reserved size
+	int desiredLoadingDistance = 0;
+	
+	// if the desired loading distance has remained free of loading
+	bool isDesiredLoadingDistanceClear = true;
 	
 	// current position in the cache buffer
 	int currentPosition = 0;
