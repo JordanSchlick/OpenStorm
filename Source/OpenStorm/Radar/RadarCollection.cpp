@@ -125,8 +125,14 @@ void RadarCollection::MoveManual(int delta) {
 void RadarCollection::ChangeProduct(RadarData::VolumeType volumeType) {
 	radarDataSettings.volumeType = volumeType;
 	if(cache != NULL){
-		for(int i = 0; i < cacheSize; i++){
-			cache[i].Load();
+		cache[currentPosition].Load();
+		for(int i = 1; i < cacheSize; i++){
+			if(cachedAfter >= i){
+				cache[modulo(currentPosition + i, cacheSize)].Load();
+			}
+			if(cachedBefore >= i){
+				cache[modulo(currentPosition - i, cacheSize)].Load();
+			}
 		}
 	}
 	needToEmit = true;
