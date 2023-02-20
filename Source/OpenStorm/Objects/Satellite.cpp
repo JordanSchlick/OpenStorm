@@ -51,8 +51,8 @@ void ASatellite::Tick(float DeltaTime){
 		globe = *globalState->globe;
 	}
 	SimpleVector3 vector = globe.GetPointScaledDegrees(latitude, longitude, altitude);
-	fprintf(stderr, "vec %f %f %f \n", vector.x,vector.y,vector.z);
-	fprintf(stderr, "lng %f\n", longitude);
+	//fprintf(stderr, "vec %f %f %f \n", vector.x,vector.y,vector.z);
+	//fprintf(stderr, "lng %f\n", longitude);
 	SetActorLocation(FVector(vector.x,vector.y,vector.z));
 	//fprintf(stderr,"tick2 ");
 }

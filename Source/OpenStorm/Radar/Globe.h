@@ -41,8 +41,14 @@ public:
 	// get point in meters from latitude radians, longitude radians and altitude meters
 	SimpleVector3<> GetPoint(double latitudeRadians, double longitudeRadians, double altitude);
 	
+	// get point in meters from location in radians
+	SimpleVector3<> GetPoint(SimpleVector3<> location);
+	
 	// get point in game units from latitude radians, longitude radians and altitude meters
 	SimpleVector3<> GetPointScaled(double latitudeRadians, double longitudeRadians, double altitude);
+	
+	// get point in game units from location in radians
+	SimpleVector3<> GetPointScaled(SimpleVector3<> location);
 	
 	// get point in game units from latitude degrees, longitude degrees and altitude meters
 	SimpleVector3<> GetPointScaledDegrees(double latitudeDegrees, double longitudeDegrees, double altitude);
@@ -50,4 +56,9 @@ public:
 	// get point in meters from latitude degrees, longitude degrees and altitude meters
 	SimpleVector3<> GetPointDegrees(double latitudeDegrees, double longitudeDegrees, double altitude);
 	
+	// get location in radians from point in meters
+	SimpleVector3<> GetLocation(SimpleVector3<> point);
+	
+	// get location in radians from point in game units
+	SimpleVector3<> GetLocationScaled(SimpleVector3<> point);
 };

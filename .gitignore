@@ -9,6 +9,7 @@ Intermediate
 .vs3
 /OpenStorm.sln
 /Content/Data/Demo/*
+/Content/Data/elevation.bin
 /Content/testing
 /Content/Testing
 !.gitkeep

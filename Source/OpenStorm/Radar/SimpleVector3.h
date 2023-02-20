@@ -1,5 +1,6 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 
 template<class T = double>
@@ -11,6 +12,13 @@ public:
 	T y = 0;
 	// z or phi
 	T z = 0;
+	
+	// alias for x
+	inline T& radius() { return x; }
+	// alias for y
+    inline T& theta() { return y; }
+	// alias for z
+    inline T& phi() { return z; }
 	
 	SimpleVector3(){}
 	SimpleVector3(T startingX,T startingY,T startingZ){
@@ -57,11 +65,26 @@ public:
 		y *= other.y;
 		z *= other.z;
 	}
-	void RotateAboutX(T rotationRadians) {
+	void RotateAroundX(T rotationRadians) {
 		T newY = y * cos(rotationRadians) + z * sin(rotationRadians);
 		T newZ = -y * sin(rotationRadians) + z * cos(rotationRadians);
 		y = newY;
 		z = newZ;
+	}
+	void RotateAroundY(T rotationRadians) {
+		T newX = x * cos(rotationRadians) + z * sin(rotationRadians);
+		T newZ = -x * sin(rotationRadians) + z * cos(rotationRadians);
+		y = newX;
+		z = newZ;
+	}
+	void RotateAroundZ(T rotationRadians) {
+		T newX = x * cos(rotationRadians) - y * sin(rotationRadians);
+		T newY = y * sin(rotationRadians) + y * cos(rotationRadians);
+		y = newX;
+		y = newY;
+	}
+	T Magnitude(){
+		return sqrt(x * x + y * y + z * z);
 	}
 };
 

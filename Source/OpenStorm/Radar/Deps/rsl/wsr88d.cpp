@@ -298,12 +298,14 @@ Wsr88d_file *wsr88d_open(char *filename)
 	fpos_t pos;
 	fgetpos(wf->fptr, &pos);
 	if (fread(hdrplus4, sizeof(hdrplus4), 1, wf->fptr) != 1) {
-		 fprintf(stderr,"failed to read first 28 bytes of Wsr88d file\n");
-		 return NULL;
+		fprintf(stderr,"failed to read first 28 bytes of Wsr88d file\n");
+		fclose(wf->fptr);
+		return NULL;
 	}
 	if (fread(bzmagic, sizeof(bzmagic), 1, wf->fptr) != 1) {
-		 fprintf(stderr,"failed to read bzip magic bytes from Wsr88d file\n");
-		 return NULL;
+		fprintf(stderr,"failed to read bzip magic bytes from Wsr88d file\n");
+		fclose(wf->fptr);
+		return NULL;
 	}
 	// test for bzip2 magic.
 	if (strncmp("BZ", bzmagic,2) == 0){

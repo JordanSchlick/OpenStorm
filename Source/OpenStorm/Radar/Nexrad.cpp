@@ -19,12 +19,14 @@ int Nexrad::RecompressArchive(std::string inFileName, std::string outFileName){
 	unsigned char hdrplus4[28];
 	char bzmagic[4];
 	if (fread(hdrplus4, sizeof(hdrplus4), 1, inFile) != 1) {
-		 fprintf(stderr,"failed to read first 28 bytes of Wsr88d file\n");
-		 return -1;
+		fprintf(stderr,"failed to read first 28 bytes of Wsr88d file\n");
+		fclose(inFile);
+		return -1;
 	}
 	if (fread(bzmagic, sizeof(bzmagic), 1, inFile) != 1) {
-		 fprintf(stderr,"failed to read bzip magic bytes from Wsr88d file\n");
-		 return -1;
+		fprintf(stderr,"failed to read bzip magic bytes from Wsr88d file\n");
+		fclose(inFile);
+		return -1;
 	}
 	bool isGzip = false;
 	bool isBzip = false;
@@ -56,6 +58,6 @@ int Nexrad::RecompressArchive(std::string inFileName, std::string outFileName){
 	}
 	delete[] buffer;
 	gzclose(outGzFile);
-	
+	fclose(inFile);
 	return 0;
 }
