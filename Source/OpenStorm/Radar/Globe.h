@@ -13,12 +13,12 @@ public:
 	// radius of the surface of the globe
 	double surfaceRadius = 6371000.0;
 	
-	// use SetCenter to change
+	// in meters, use SetCenter to change
 	SimpleVector3<> center = SimpleVector3<>(0.0, 0.0, 0.0);
 	
-	// use SetRotation to change
-	double rotationTheta = 0;
-	double rotationPhi = 0;
+	// in radians, use SetRotation to change
+	double rotationAroundPolls = 0;
+	double rotationAroundX = 0;
 	
 	// set center in meters from origin
 	void SetCenter(double centerMetersX, double centerMetersY, double centerMetersZ);

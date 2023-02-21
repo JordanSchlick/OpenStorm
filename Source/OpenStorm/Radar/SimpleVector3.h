@@ -74,13 +74,13 @@ public:
 	void RotateAroundY(T rotationRadians) {
 		T newX = x * cos(rotationRadians) + z * sin(rotationRadians);
 		T newZ = -x * sin(rotationRadians) + z * cos(rotationRadians);
-		y = newX;
+		x = newX;
 		z = newZ;
 	}
 	void RotateAroundZ(T rotationRadians) {
-		T newX = x * cos(rotationRadians) - y * sin(rotationRadians);
-		T newY = y * sin(rotationRadians) + y * cos(rotationRadians);
-		y = newX;
+		T newX = x * cos(rotationRadians) + y * sin(rotationRadians);
+		T newY = -x * sin(rotationRadians) + y * cos(rotationRadians);
+		x = newX;
 		y = newY;
 	}
 	T Magnitude(){

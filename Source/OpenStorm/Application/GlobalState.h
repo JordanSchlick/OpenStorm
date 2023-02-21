@@ -40,6 +40,7 @@ public:
 	bool audioControlledHeight = false;
 	bool audioControlledOpacity = false;
 	bool audioControlledCutoff = false;
+	bool enableMap = false; // if the globe should be rendered
 	
 	float maxFPS = 60.0f; // maximum frames per second
 	float animateSpeed = 3.0f; // speed of animation

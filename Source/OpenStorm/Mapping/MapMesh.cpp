@@ -25,10 +25,10 @@ AMapMesh::AMapMesh(){
 
 void AMapMesh::BeginPlay(){
 	static Globe defaultGlobe = {};
-	defaultGlobe.scale = 1.0 / 10000.0 * 100.0;
-	defaultGlobe.SetCenter(0, 0, -defaultGlobe.surfaceRadius);
+	//defaultGlobe.scale = 1.0 / 10000.0 * 100.0;
+	//defaultGlobe.SetCenter(0, 0, -defaultGlobe.surfaceRadius);
 	//defaultGlobe.SetTopCoordinates(45, 0);
-	defaultGlobe.SetTopCoordinates(27.9879493, 86.9172718); //mt everest
+	//defaultGlobe.SetTopCoordinates(27.9879493, 86.9172718); //mt everest
 	//defaultGlobe.SetTopCoordinates(63.06630592, -151.00722251); //mt Denali
 	//defaultGlobe.SetTopCoordinates(45.8991878, -115.0331426); //mountains in america
 	//defaultGlobe.SetTopCoordinates(42.967900, -88.550667);// KMKX
@@ -143,7 +143,7 @@ void AMapMesh::MakeChildren(){
 					latitudeHeightRadians / 2.0,
 					longitudeWidthRadians / 2.0
 				);
-				child->UpdatePosition(FVectorToSimpleVector3(GetActorLocation()), FVectorToSimpleVector3(GetActorRotation()));
+				child->UpdatePosition(FVectorToSimpleVector3(GetActorLocation()), appliedRotation);
 				mapChildren[i] = child;
 				madeChildren = true;
 			}
@@ -201,8 +201,15 @@ void AMapMesh::UpdatePosition(SimpleVector3<> position, SimpleVector3<> rotation
 		}
 	}
 	SetActorLocation(FVector(position.x, position.y, position.z));
-	SetActorRotation(FRotator(rotation.y, rotation.z, rotation.x));
+	
+	//SetActorRotation(FRotator(rotation.y, rotation.z, rotation.x));
 	centerPosition = globe->GetPointScaled(latitudeRadians, longitudeRadians, ElevationData::GetDataAtPointRadians(latitudeRadians, longitudeRadians));
+	centerPosition.RotateAroundZ(rotation.z);
+	centerPosition.RotateAroundX(rotation.x);
+	appliedRotation = rotation;
+	SetActorRotation(FQuat(FVector(1, 0, 0), -rotation.x) * FQuat(FVector(0, 0, 1), -rotation.z));
+	
+	//centerPosition.RotateAroundY(rotation.y);
 	centerPosition.Add(position);
 }
 

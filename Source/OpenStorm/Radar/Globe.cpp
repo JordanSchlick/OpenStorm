@@ -10,8 +10,8 @@ void Globe::SetCenter(double centerMetersX, double centerMetersY, double centerM
 
 // latitude and longitude in radians
 void Globe::SetRotation(double latitudeRadians, double longitudeRadians){
-	rotationPhi = latitudeRadians;
-	rotationTheta = longitudeRadians;
+	rotationAroundX = -latitudeRadians;
+	rotationAroundPolls = longitudeRadians;
 }
 
 void Globe::SetRotationDegrees(double latitudeDegrees, double longitudeDegrees){
@@ -23,26 +23,26 @@ void Globe::SetTopCoordinates(double latitudeDegrees, double longitudeDegrees) {
 }
 
 double Globe::GetTopLatitudeDegrees() {
-	return -rotationPhi / M_PI * 180.0 + 90.0;
+	return rotationAroundX / M_PI * 180.0 + 90.0;
 }
 
 double Globe::GetTopLongitudeDegrees() {
-	return -rotationTheta / M_PI * 180.0;
+	return -rotationAroundPolls / M_PI * 180.0;
 }
 
 // get point in meters from latitude radians, longitude radians and altitude meters
 SimpleVector3<> Globe::GetPoint(double latitudeRadians, double longitudeRadians, double altitude){
-	SimpleVector3<> vector = SimpleVector3<>(altitude + surfaceRadius,  M_PI / 2.0 - longitudeRadians - rotationTheta, M_PI/2 - latitudeRadians);
+	SimpleVector3<> vector = SimpleVector3<>(altitude + surfaceRadius,  M_PI / 2.0 - longitudeRadians - rotationAroundPolls, M_PI/2 - latitudeRadians);
 	vector.SphericalToRectangular();
-	vector.RotateAroundX(-rotationPhi);
+	vector.RotateAroundX(rotationAroundX);
 	vector.Add(center);
 	return vector;
 }
 
 SimpleVector3<> Globe::GetPoint(SimpleVector3<> location){
-	SimpleVector3<> vector = SimpleVector3<>(location.radius() + surfaceRadius,  M_PI / 2.0 - location.theta() - rotationTheta, M_PI/2 - location.phi());
+	SimpleVector3<> vector = SimpleVector3<>(location.radius() + surfaceRadius,  M_PI / 2.0 - location.theta() - rotationAroundPolls, M_PI/2 - location.phi());
 	vector.SphericalToRectangular();
-	vector.RotateAroundX(-rotationPhi);
+	vector.RotateAroundX(rotationAroundX);
 	vector.Add(center);
 	return vector;
 	return SimpleVector3<>();
@@ -74,10 +74,10 @@ SimpleVector3<> Globe::GetPointScaledDegrees(double latitudeDegrees, double long
 SimpleVector3<> Globe::GetLocation(SimpleVector3<> point){
 	SimpleVector3<> vector = SimpleVector3<>(point);
 	vector.Add(center);
-	vector.RotateAroundX(rotationPhi);
+	vector.RotateAroundX(-rotationAroundX);
 	vector.RectangularToSpherical();
 	vector.radius() -= surfaceRadius;
-	vector.theta() = -vector.theta() - M_PI / 2.0 + rotationTheta;
+	vector.theta() = -vector.theta() - M_PI / 2.0 + rotationAroundPolls;
 	vector.phi() = -vector.phi() - M_PI / 2.0;
 	return vector;
 	return SimpleVector3<>();

@@ -17,28 +17,40 @@ class AMapMesh : public AActor{
 	GENERATED_BODY()
 	
 public:
+	// number of sections to divide each axis of the mesh into
 	UPROPERTY(EditAnywhere)
 	int divisions = 8;
+	// id of the child for the parent
 	UPROPERTY(EditAnywhere)
 	int childId = -1;
+	// what zoom layer this is a part of
 	UPROPERTY(EditAnywhere)
 	int layer = 0;
+	// max layers of zoom
 	UPROPERTY(EditAnywhere)
 	int maxLayer = 15;
+	// if this mesh is loaded
 	UPROPERTY(EditAnywhere)
 	bool loaded = true;
+	// location
 	UPROPERTY(EditAnywhere)
 	double latitudeRadians = 0;
 	UPROPERTY(EditAnywhere)
+	// location
 	double longitudeRadians = 0;
+	// height
 	UPROPERTY(EditAnywhere)
 	double latitudeHeightRadians = 1;
+	// width
 	UPROPERTY(EditAnywhere)
 	double longitudeWidthRadians = 1;
 	// when closer than this to the camera subdivide into next layer
 	UPROPERTY(EditAnywhere)
 	float subdivideDistance = 0;
+	// center of the tile in game units
 	SimpleVector3<> centerPosition = {};
+	// last rotation from UpdateRotation to pass to children
+	SimpleVector3<> appliedRotation = {};
 	
 
 	Globe* globe = NULL;

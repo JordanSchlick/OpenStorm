@@ -64,6 +64,15 @@ namespace ElevationData{
 		fprintf(stderr, "Elevation size %i %i\n", elevationDataHeight, elevationDataWidth);
 	}
 	
+	void UnloadData(){
+		if(elevationData != NULL){
+			delete[] elevationData;
+			elevationData = NULL;
+		}
+		elevationDataHeight = 0;
+		elevationDataWidth = 0;
+	}
+	
 	
 	inline float GetDataAtIndex(float x, float y){
 		// sample data

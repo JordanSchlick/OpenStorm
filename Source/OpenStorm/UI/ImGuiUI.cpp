@@ -323,6 +323,7 @@ void AImGuiUI::Tick(float deltaTime)
 				if(markersChanged){
 					globalState.EmitEvent("LocationMarkersUpdate");
 				}
+				ImGui::Checkbox("Show Map", &globalState.enableMap);
 				ImGui::TreePop();
 			}
 			//ImGui::Separator();
