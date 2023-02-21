@@ -19,6 +19,7 @@ inline SimpleVector3<> FVectorToSimpleVector3(FRotator vec){
 AMapMesh::AMapMesh(){
 	material = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/TestImageMaterial.TestImageMaterial'")).Object;
 	proceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>("ProceduralMesh");
+	proceduralMesh->bUseAsyncCooking = true;
 	RootComponent = proceduralMesh;
 }
 
@@ -27,8 +28,9 @@ void AMapMesh::BeginPlay(){
 	defaultGlobe.scale = 1.0 / 10000.0 * 100.0;
 	defaultGlobe.SetCenter(0, 0, -defaultGlobe.surfaceRadius);
 	//defaultGlobe.SetTopCoordinates(45, 0);
-	//defaultGlobe.SetTopCoordinates(27.9879493, 86.9172718); //mnt everest
-	defaultGlobe.SetTopCoordinates(45.8991878, -115.0331426); //mountains
+	defaultGlobe.SetTopCoordinates(27.9879493, 86.9172718); //mt everest
+	//defaultGlobe.SetTopCoordinates(63.06630592, -151.00722251); //mt Denali
+	//defaultGlobe.SetTopCoordinates(45.8991878, -115.0331426); //mountains in america
 	//defaultGlobe.SetTopCoordinates(42.967900, -88.550667);// KMKX
 	if(globe == NULL){
 		globe = &defaultGlobe;
@@ -200,7 +202,7 @@ void AMapMesh::UpdatePosition(SimpleVector3<> position, SimpleVector3<> rotation
 	}
 	SetActorLocation(FVector(position.x, position.y, position.z));
 	SetActorRotation(FRotator(rotation.y, rotation.z, rotation.x));
-	centerPosition = globe->GetPointScaled(latitudeRadians, longitudeRadians, 0);
+	centerPosition = globe->GetPointScaled(latitudeRadians, longitudeRadians, ElevationData::GetDataAtPointRadians(latitudeRadians, longitudeRadians));
 	centerPosition.Add(position);
 }
 
