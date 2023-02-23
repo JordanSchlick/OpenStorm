@@ -4,6 +4,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "Data/ElevationData.h"
+#include "Data/TileProvider.h"
 #include "../Objects/RadarGameStateBase.h"
 #include "../Application/GlobalState.h"
 #include "../Radar/Globe.h"
@@ -31,6 +32,7 @@ void AMapMeshManager::BeginPlay(){
 	}else{
 		EnableMap();
 	}
+	
 }
 
 void AMapMeshManager::Tick(float DeltaTime){
@@ -62,6 +64,12 @@ void UpdateMapMeshPositionFromGlobe(AMapMesh* mapMesh, Globe* globe){
 	mapMesh->UpdatePosition(center, SimpleVector3<>(globe->rotationAroundX, 0, globe->rotationAroundPolls));
 }
 
+inline std::string GetRelativePath(FString inString){
+	FString file =  FPaths::Combine(FPaths::ProjectDir(), inString);
+	FString fullFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*file);
+	return std::string(StringCast<ANSICHAR>(*fullFilePath).Get());
+}
+
 void AMapMeshManager::EnableMap(){
 	if(enabled){
 		return;
@@ -75,11 +83,16 @@ void AMapMeshManager::EnableMap(){
 	fprintf(stderr, "path %s\n", fullElevationFilePathCstr);
 	ElevationData::LoadData(std::string(fullElevationFilePathCstr));
 	
+	std::string staticCacheLocation = GetRelativePath(TEXT("Content/Data/Map/USGSImageryOnly/"));
+	fprintf(stderr, "path %s\n", staticCacheLocation.c_str());
+	tileProvider = new TileProvider("USGSImageryOnly", "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}", "image/jpeg", 16);
+	tileProvider->SetCache(staticCacheLocation, "");
+	
 	rootMapMesh = GetWorld()->SpawnActor<AMapMesh>(AMapMesh::StaticClass());
 	rootMapMesh->SetBounds(
 		0,
 		0,
-		M_PI,
+		2.968844, //M_PI,
 		M_PI * 2
 	);
 	rootMapMesh->manager = this;
@@ -115,5 +128,9 @@ void AMapMeshManager::DisableMap(){
 	if(rootMapMesh != NULL){
 		rootMapMesh->Destroy();
 		rootMapMesh = NULL;
+	}
+	if(tileProvider != NULL){
+		delete tileProvider;
+		tileProvider = NULL;
 	}
 }

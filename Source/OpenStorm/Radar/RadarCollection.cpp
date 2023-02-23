@@ -171,8 +171,8 @@ void RadarCollection::EventLoop() {
 	}
 	if(poll){
 		if(nextPollTime <= now){
-			nextPollTime = now + pollInterval;
 			PollFiles();
+			nextPollTime = now + pollInterval;
 		}
 	}else{
 		nextPollTime = 0;
@@ -230,10 +230,7 @@ void RadarCollection::PollFiles(std::string defaultFilename) {
 	}
 	std::vector<RadarFile> radarFilesNew = {};
 	auto files = SystemAPI::ReadDirectory(filePath);
-	#ifndef _WIN32
-		// windows sorts files automatically
-		std::sort(files.begin(), files.end());
-	#endif
+	std::sort(files.begin(), files.end());
 	//fprintf(stderr, "files %i\n", (int)files.size());
 	float aReallyBadWayOfAssigningAnArbitraryTime = 1;
 	double now = SystemAPI::CurrentTime();

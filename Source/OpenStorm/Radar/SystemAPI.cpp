@@ -78,6 +78,7 @@ SystemAPI::FileStats SystemAPI::GetFileStats(std::string path){
 	if(!statData.bIsValid){
 		return stats;
 	}
+	stats.exists = true;
 	stats.isDirectory = statData.bIsDirectory;
 	stats.size = (statData.FileSize == -1) ? 0 : statData.FileSize;
 	stats.mtime = (double)statData.ModificationTime.ToUnixTimestamp() + statData.ModificationTime.GetMillisecond() / 1000.0;

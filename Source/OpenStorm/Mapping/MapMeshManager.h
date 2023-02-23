@@ -9,6 +9,7 @@
 
 class AMapMesh;
 class Globe;
+class TileProvider;
 
 UCLASS()
 class AMapMeshManager : public AActor{
@@ -28,6 +29,8 @@ public:
 	// root of map mesh tree
 	UPROPERTY(EditAnywhere);
 	AMapMesh* rootMapMesh = NULL;
+	
+	TileProvider* tileProvider = NULL;
 	
 	
 	AMapMeshManager();

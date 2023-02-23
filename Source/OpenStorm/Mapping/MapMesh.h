@@ -11,6 +11,10 @@ class UProceduralMeshComponent;
 class UMaterialInterface;
 class Globe;
 class AMapMeshManager;
+class UMaterialInstanceDynamic;
+class UTexture2D;
+class UTexture;
+class AsyncTaskRunner;
 
 UCLASS()
 class AMapMesh : public AActor{
@@ -26,12 +30,21 @@ public:
 	// what zoom layer this is a part of
 	UPROPERTY(EditAnywhere)
 	int layer = 0;
+	// tile for given zoom layer
+	UPROPERTY(EditAnywhere)
+	int tileX = 0;
+	// tile for given zoom layer
+	UPROPERTY(EditAnywhere)
+	int tileY = 0;
 	// max layers of zoom
 	UPROPERTY(EditAnywhere)
 	int maxLayer = 15;
 	// if this mesh is loaded
 	UPROPERTY(EditAnywhere)
 	bool loaded = true;
+	// if this mesh has a texture loaded
+	UPROPERTY(EditAnywhere)
+	bool fullyLoaded = false;
 	// location
 	UPROPERTY(EditAnywhere)
 	double latitudeRadians = 0;
@@ -58,12 +71,23 @@ public:
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* material;
 	
+	UPROPERTY(VisibleAnywhere)
+	UMaterialInstanceDynamic* materialInstance = NULL;
+	
+	// texture generated asynchronously
+	UPROPERTY(VisibleAnywhere)
+	UTexture2D* texture = NULL;
+	// is a new texture ready
+	bool pendingTexture = false;
+	
 	UPROPERTY(EditAnywhere);
 	UProceduralMeshComponent* proceduralMesh;
 	
 	UPROPERTY(EditAnywhere);
 	AMapMeshManager* manager = NULL;
 	
+	AsyncTaskRunner* tileLoader = NULL;
+	AsyncTaskRunner* textureLoader = NULL;
 	
 	UPROPERTY(EditAnywhere);
 	AMapMesh* mapParent = NULL;
@@ -79,6 +103,9 @@ public:
 	
 	void GenerateMesh();
 	
+	// attempt to load the tile texture
+	void LoadTile();
+	
 	// set the bounds of for the section
 	void SetBounds(double latitudeRadians, double longitudeRadians, double latitudeHeightRadians, double longitudeWidthRadians);
 	
@@ -86,12 +113,16 @@ public:
 	void MakeChildren();
 	void DestroyChildren();
 	
-	// update and check for changes
+	// update and check for changes, is run every tick
 	void Update();
 	
 	// set center and rotation of globe
 	void UpdatePosition(SimpleVector3<> position, SimpleVector3<> rotation);
 	
+	void UpdateTexture(UTexture* texture, bool fromParent);
+	
+	// pull updated data from AMapMeshManager
+	void UpdateParameters();
 	
 	void ProjectionOntoGlobeTest();
 };

@@ -9,6 +9,8 @@ Intermediate
 .vs3
 /OpenStorm.sln
 /Content/Data/Demo/*
+/Content/Data/Map/*
+!/Content/Data/Map/download.js
 /Content/Data/elevation.bin
 /Content/testing
 /Content/Testing
