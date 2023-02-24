@@ -27,6 +27,9 @@ TileProvider::TileProvider(std::string name, std::string url, std::string imageT
 Tile *TileProvider::GetTile(int zoom, int y, int x){
 	Tile* tile = new Tile();
 	tile->tileProvider = this;
+	if(zoom > maxZoom){
+		return tile;
+	}
 	int numSize = std::to_string((int)pow(2, zoom)).length();
 	std::string nameX = std::to_string(x);
 	nameX = std::string(numSize - nameX.length(), '0') + nameX;
@@ -54,6 +57,24 @@ Tile *TileProvider::GetTile(int zoom, int y, int x){
 				tile->dataSize = stats.size;
 				fclose(file);
 				tile->isReady = true;
+				return tile;
+			}
+		}
+	}
+	if(dynamicCache != ""){
+		std::string path = dynamicCache + tile->fileName;
+		//fprintf(stderr, "%s", path.c_str());
+		SystemAPI::FileStats stats = SystemAPI::GetFileStats(path);
+		if(stats.exists){
+			FILE* file = fopen(path.c_str(), "r");
+			if(file != NULL){
+				uint8_t* fileData = new uint8_t[stats.size];
+				fread(fileData, 1, stats.size, file);
+				tile->data = fileData;
+				tile->dataSize = stats.size;
+				fclose(file);
+				tile->isReady = true;
+				return tile;
 			}
 		}
 	}
@@ -72,6 +93,10 @@ void TileProvider::SetCache(std::string staticCacheFolder, std::string dynamicCa
 	if(dynamicCache != "" && dynamicCache.back() != '/' && dynamicCache.back() != '\\'){
 		dynamicCache = dynamicCache + "/";
 	}
+	if(dynamicCache != ""){
+		SystemAPI::CreateDirectory(dynamicCache);
+	}
+	
 }
 
 void TileProvider::EventLoop(){

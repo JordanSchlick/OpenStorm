@@ -57,9 +57,13 @@ public:
 	float audioControlMultiplier = 5.0f;
 	
 	int volumeType = 1; // type of radar product, defaults to 1 which is reflectivity
-
+	
 	std::vector<Waypoint> locationMarkers = {};
+	
+	// globe that is lined up with radar data
 	Globe* globe;
+	
+	// copy of global state with default values
 	GlobalState* defaults = NULL;
 	
 	// this section contains pointers to objects within the application

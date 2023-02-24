@@ -2,6 +2,8 @@
 
 #include "../Radar/SimpleVector3.h"
 
+#include <vector>
+
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "GameFramework/Actor.h"

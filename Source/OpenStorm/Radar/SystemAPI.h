@@ -15,4 +15,5 @@ public:
 	static double CurrentTime();
 	static std::vector<std::string> ReadDirectory(std::string path);
 	static FileStats GetFileStats(std::string path);
+	static bool CreateDirectory(std::string path);
 };

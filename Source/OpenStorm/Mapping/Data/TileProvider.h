@@ -39,7 +39,7 @@ public:
 	// the static cache is meant for pre-downloaded data and the dynamicCacheFolder will have any tiles written to it
 	// empty strings will disable the caches
 	void SetCache(std::string staticCacheFolder, std::string dynamicCacheFolder);
-	// get a tile for a given location
+	// get a tile for a given location, it needs to be manually deleted
 	Tile* GetTile(int zoom, int y, int x);
 	void EventLoop();
 };

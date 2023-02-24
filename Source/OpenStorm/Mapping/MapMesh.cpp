@@ -5,6 +5,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "IImageWrapperModule.h"
 #include "IImageWrapper.h"
+#include "Modules/ModuleManager.h"
 
 #include "../Radar/SimpleVector3.h"
 #include "../Radar/AsyncTask.h"
@@ -79,8 +80,8 @@ public:
 		}
 
 		// Most important difference with UTexture2D::CreateTransient: we provide the new texture with a name and an owner
-		FName TextureName = MakeUniqueObjectName(Outer, UTexture2D::StaticClass(), BaseName);
-		UTexture2D* NewTexture = NewObject<UTexture2D>(Outer, TextureName, RF_Transient);
+		FName TextureName = MakeUniqueObjectName(GetTransientPackage(), UTexture2D::StaticClass(), BaseName);
+		UTexture2D* NewTexture = NewObject<UTexture2D>(GetTransientPackage(), TextureName, RF_Transient);
 
 		
 		NewTexture->SetPlatformData(new FTexturePlatformData());
@@ -171,7 +172,7 @@ public:
 		//fprintf(stderr, "TileLoader::Task");
 		Tile* tile = mapMesh->manager->tileProvider->GetTile(mapMesh->layer, mapMesh->tileY, mapMesh->tileX);
 		tile->SetCallback([this, tile]() {
-			fprintf(stderr, "TileLoader::Task::SetCallback");
+			//fprintf(stderr, "TileLoader::Task::SetCallback");
 			if (tile->data != NULL && !canceled) {
 				mapMesh->textureLoader = new TextureLoader(mapMesh, tile);
 				mapMesh->textureLoader->Start();

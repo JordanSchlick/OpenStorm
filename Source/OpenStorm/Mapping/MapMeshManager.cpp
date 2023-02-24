@@ -1,8 +1,13 @@
 #define _USE_MATH_DEFINES
 #include "MapMeshManager.h"
 #include "MapMesh.h"
+#include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
+#include "GenericPlatform/GenericPlatformProcess.h"
+#include "Misc/Paths.h"
+#include "HAL/FileManager.h"
+
 #include "Data/ElevationData.h"
 #include "Data/TileProvider.h"
 #include "../Objects/RadarGameStateBase.h"
@@ -70,6 +75,12 @@ inline std::string GetRelativePath(FString inString){
 	return std::string(StringCast<ANSICHAR>(*fullFilePath).Get());
 }
 
+inline std::string GetUserPath(FString inString){
+	FString file =  FPaths::Combine(FPaths::Combine(FPlatformProcess::UserSettingsDir(), TEXT("OpenStorm")), inString);
+	FString fullFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*file);
+	return std::string(StringCast<ANSICHAR>(*fullFilePath).Get());
+}
+
 void AMapMeshManager::EnableMap(){
 	if(enabled){
 		return;
@@ -83,10 +94,13 @@ void AMapMeshManager::EnableMap(){
 	fprintf(stderr, "path %s\n", fullElevationFilePathCstr);
 	ElevationData::LoadData(std::string(fullElevationFilePathCstr));
 	
+	
 	std::string staticCacheLocation = GetRelativePath(TEXT("Content/Data/Map/USGSImageryOnly/"));
+	std::string dynamicCacheLocation = GetUserPath(TEXT("Map/USGSImageryOnly/"));
 	fprintf(stderr, "path %s\n", staticCacheLocation.c_str());
-	tileProvider = new TileProvider("USGSImageryOnly", "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}", "image/jpeg", 16);
-	tileProvider->SetCache(staticCacheLocation, "");
+	fprintf(stderr, "path %s\n", dynamicCacheLocation.c_str());
+	tileProvider = new TileProvider("USGSImageryOnly", "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}", "image/jpeg", 10);
+	tileProvider->SetCache(staticCacheLocation, dynamicCacheLocation);
 	
 	rootMapMesh = GetWorld()->SpawnActor<AMapMesh>(AMapMesh::StaticClass());
 	rootMapMesh->SetBounds(

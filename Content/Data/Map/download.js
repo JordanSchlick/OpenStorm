@@ -40,6 +40,10 @@ async function downloadMap(options){
 				let data = await new Promise((resolve) => {
 					let req = https.request(requestUrl, (res) => {
 						let buffers = []
+						if(res.statusCode != 200){
+							resolve(undefined)
+							return
+						}
 						res.on("data", (data) => {
 							buffers.push(data)
 						})
@@ -54,7 +58,7 @@ async function downloadMap(options){
 						resolve(undefined)
 					})
 					req.setHeader("Accept", options.imageType)
-					req.setHeader("User-Agent", "OpenStorm/1.0.0")
+					req.setHeader("User-Agent", "nodejs/"+process.version)
 					req.end()
 				})
 				if(!data){
