@@ -16,7 +16,10 @@
 class RadarData {
 public:
 	enum VolumeType {
+		// can be used to indicate there is no volume, a RadarData object should never have this type and instead have VOLUME_UNKNOWN
 		VOLUME_NONE = -1,
+		
+		// used when the type of a volume is not known
 		VOLUME_UNKNOWN = 0,
 		
 		// raw volume types
@@ -94,7 +97,7 @@ public:
 		// ( TODO: Implement NaN support in the shader) value for invalid data such as range folding, the defaults is NaN
 		// float invalidValue = NAN;
 		
-		// bounds in pixels including the inner distance defined by a sphere with a radius of boundRadius and the top and bottom cut off
+		// bounds in pixels including the inner distance, defined by a sphere with a radius of boundRadius and the top and bottom cut off
 		float boundRadius = 0;
 		float boundUpper = 0;
 		float boundLower = 0;
@@ -108,6 +111,7 @@ public:
 		VolumeType volumeType = VOLUME_UNKNOWN;
 	};
 	
+	// hold data for a texture
 	class TextureBuffer {
 	public:
 		float* data = NULL;
@@ -120,7 +124,7 @@ public:
 	// information about the volume
 	Stats stats = {};
 
-
+	// info about a single sweep
 	class SweepInfo {
 	public:
 		// elevation from flat in degrees

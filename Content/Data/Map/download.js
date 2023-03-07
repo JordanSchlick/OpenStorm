@@ -6,7 +6,7 @@ let https = require("https")
 function padInt(num, padToSize){
 	let str = "" + num
 	while(str.length < padToSize){
-		str = "0" + num;
+		str = "0" + str;
 	}
 	return str
 }
