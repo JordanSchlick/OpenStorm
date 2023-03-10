@@ -2,6 +2,7 @@
 
 class RadarProductVelocityDealiased : public RadarProduct {
 public:
+	static bool verbose;
 	RadarProductVelocityDealiased();
 	virtual RadarData* deriveVolume(std::map<RadarData::VolumeType, RadarData*> inputProducts) override;
 };

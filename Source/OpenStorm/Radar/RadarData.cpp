@@ -37,6 +37,8 @@ inline bool moduloSmallerAbs(int smaller, int larger, int n) {
 	return std::min(modulo(smaller,n), modulo(-smaller,n)) < std::min(modulo(larger,n), modulo(-larger,n));
 }
 
+bool RadarData::verbose = false;
+
 void* RadarData::ReadNexradData(const char* filename) {
 	//RSL_wsr88d_keep_sails();
 	//Radar* radar = RSL_wsr88d_to_radar("C:/Users/Admin/Desktop/stuff/projects/openstorm/files/KMKX_20220723_235820", "KMKX");
@@ -46,7 +48,7 @@ void* RadarData::ReadNexradData(const char* filename) {
 
 	//UE_LOG(LogTemp, Display, TEXT("================ %i"), radar);
 	
-	if(true && radar){
+	if(verbose && radar){
 		for(int i = 0; i <= 46; i++){
 			Volume* volume = radar->v[i];
 			if(volume){
@@ -93,7 +95,9 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				break;
 		}
 		Volume* volume = radar->v[nexradType];
-		fprintf(stderr, "site name %s\n", radar->h.name);
+		if(verbose){
+			fprintf(stderr, "site name %s\n", radar->h.name);
+		}
 		NexradSites::Site* site = NexradSites::GetSite(radar->h.name);
 		if(site != NULL){
 			stats.latitude = site->latitude;
@@ -103,9 +107,10 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 		if (volume) {
 			stats.volumeType = volumeType;
 			std::map<float, Sweep*> sweeps = {};
-
-			fprintf(stderr, "volume type_str %s\n", volume->h.type_str);
-			fprintf(stderr, "volume nsweeps %i\n", volume->h.nsweeps);
+			if(verbose){
+				fprintf(stderr, "volume type_str %s\n", volume->h.type_str);
+				fprintf(stderr, "volume nsweeps %i\n", volume->h.nsweeps);
+			}
 			for (int sweepIndex = 0; sweepIndex < volume->h.nsweeps; sweepIndex++) {
 				Sweep* sweep = volume->sweep[sweepIndex];
 				if (sweep) {
@@ -225,7 +230,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				sweepId++;
 			}
 			
-			fprintf(stderr, "bounds %f %f %f\n",stats.boundRadius,stats.boundUpper,stats.boundLower);
+			//fprintf(stderr, "bounds %f %f %f\n",stats.boundRadius,stats.boundUpper,stats.boundLower);
 			
 			if (stats.minValue == INFINITY) {
 				stats.minValue = 0;
@@ -242,8 +247,9 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				thetaBufferCount = maxTheta;
 			}
 
-
-			fprintf(stderr, "min: %f   max: %f\n", stats.minValue, stats.maxValue);
+			if(verbose){
+				fprintf(stderr, "min: %f   max: %f\n", stats.minValue, stats.maxValue);
+			}
 			
 			// sizes of sections of the buffer
 			thetaBufferSize = radiusBufferCount;
@@ -492,8 +498,10 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				}
 				bufferCompressed = SparseCompress::compressEnd(&compressorState);
 				compressedBufferSize = compressorState.sizeAllocated;
-				fprintf(stderr, "Compressed size bytes:   %i\n", compressedBufferSize * 4);
-				fprintf(stderr, "Uncompressed size bytes: %i\n", fullBufferSize * 4);
+				if(verbose){
+					fprintf(stderr, "Compressed size bytes:   %i\n", compressedBufferSize * 4);
+					fprintf(stderr, "Uncompressed size bytes: %i\n", fullBufferSize * 4);
+				}
 			}
 			
 
@@ -800,7 +808,9 @@ void RadarData::Deallocate(){
 RadarData::~RadarData()
 {
 	RadarData::Deallocate();
-	fprintf(stderr,"freed RadarData\n");
+	if(verbose){
+		fprintf(stderr,"freed RadarData\n");
+	}
 }
 
 void RadarData::TextureBuffer::Delete() {

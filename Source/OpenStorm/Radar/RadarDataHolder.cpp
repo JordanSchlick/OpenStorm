@@ -49,7 +49,7 @@ public:
 						radarData->sweepBufferCount = radarSettings.sweepBufferCount;
 						bool success = radarData->LoadNexradVolume(nexradData, productHolder->product->volumeType);
 						if(!success){
-							fprintf(stderr, "RadarDataHolder.cpp(RadarLoader::Task) VolumeType %i %s is missingfrom file\n", productHolder->volumeType, productHolder->product->name.c_str());
+							fprintf(stderr, "RadarDataHolder.cpp(RadarLoader::Task) VolumeType %i %s is missing from file\n", productHolder->volumeType, productHolder->product->name.c_str());
 						}
 						if(success && !canceled && initialUid == radarHolder->uid){
 							if(productHolder->radarData != NULL){

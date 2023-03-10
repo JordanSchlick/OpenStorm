@@ -38,7 +38,8 @@ public:
 		VOLUME_STORM_RELATIVE_VELOCITY = 104,
 	};
 	
-	
+	// log extra information
+	static bool verbose;
 	
 	// buffer of volume values
 	// may be null if not loaded or compressed

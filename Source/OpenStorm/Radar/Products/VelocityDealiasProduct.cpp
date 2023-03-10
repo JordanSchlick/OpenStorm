@@ -92,6 +92,7 @@ public:
 		float count;
 		float offset;
 	};
+	bool verbose = true;
 	// the group of each data point is stored in this volume
 	// in the end the groups are combined with the source data to create the final output
 	RadarData* vol = NULL;
@@ -202,7 +203,9 @@ public:
 				}
 			}
 		}
-		fprintf(stderr, "Groups found: %i\n", (int)groups.size());
+		if(verbose){
+			fprintf(stderr, "Groups found: %i\n", (int)groups.size());
+		}
 	}
 	
 	// sort groups by size and create a map that points to the elements of the vector
@@ -361,7 +364,9 @@ public:
 			}
 		}
 		delete[] neighborInfo;
-		fprintf(stderr, "%i out of %i groups merged\n", mergedGroups, (int)groups.size());
+		if(verbose){
+			fprintf(stderr, "%i out of %i groups merged\n", mergedGroups, (int)groups.size());
+		}
 		currentGroup = NULL;
 	}
 	
@@ -567,6 +572,7 @@ private:
 	}
 };
 
+bool RadarProductVelocityDealiased::verbose = false;
 
 RadarProductVelocityDealiased::RadarProductVelocityDealiased(){
 	volumeType = RadarData::VOLUME_VELOCITY_DEALIASED;
@@ -586,6 +592,7 @@ RadarData* RadarProductVelocityDealiased::deriveVolume(std::map<RadarData::Volum
 	float threshold = valueRange * 0.2f;
 	
 	DealiasingAlgorithm algo = {};
+	algo.verbose = verbose;
 	algo.threashold = threshold;
 	algo.range = valueRange;
 	algo.vol = radarData;

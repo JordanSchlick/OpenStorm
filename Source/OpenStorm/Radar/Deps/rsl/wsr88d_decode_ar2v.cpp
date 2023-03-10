@@ -245,7 +245,7 @@ void uncompress_pipe_ar2v_thread(FILE* inFile, FILE* outFile) {
 	
 	totalTime = SystemAPI::CurrentTime() - totalTime;
 	
-	fprintf(stderr,"BZ2 decompress writes:%i usage:%.2f%% time:%f\n", writeCount, (1-writeTime/totalTime)*100, totalTime);
+	//fprintf(stderr,"BZ2 decompress writes:%i usage:%.2f%% time:%f\n", writeCount, (1-writeTime/totalTime)*100, totalTime);
 	
 	free(oblock);
 	free(block);

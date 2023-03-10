@@ -95,18 +95,18 @@ void AsyncTaskRunner::InternalTask() {
 	#else
 	// clean up futures
 	std::vector<std::future<void>> stillPendingFutures;
-	fprintf(stderr, "stillPending before %i\n", (int)pendingFutures.size());
+	//fprintf(stderr, "stillPending before %i\n", (int)pendingFutures.size());
 	for(auto& future : pendingFutures){
 		if(future.wait_for(std::chrono::seconds(0)) != std::future_status::ready){
 			stillPendingFutures.push_back(std::move(future));
 		}
 	}
-	fprintf(stderr, "stillPendingFutures %i\n", (int)stillPendingFutures.size());
+	//fprintf(stderr, "stillPendingFutures %i\n", (int)stillPendingFutures.size());
 	pendingFutures.clear();
 	for(auto& future : stillPendingFutures){
 		pendingFutures.push_back(std::move(future));
 	}
-	fprintf(stderr, "stillPending after %i\n", (int)pendingFutures.size());
+	//fprintf(stderr, "stillPending after %i\n", (int)pendingFutures.size());
 	#endif
 	
 	if (autoDelete) {
