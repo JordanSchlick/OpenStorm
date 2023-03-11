@@ -3,6 +3,7 @@
 #include "Deps/zlib/zlib.h"
 #include <fcntl.h>
 #include <stdio.h>
+#include <cstring>
 
 int Nexrad::RecompressArchive(std::string inFileName, std::string outFileName){
 	#ifdef _WIN32

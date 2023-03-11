@@ -227,7 +227,7 @@ public:
 	
 	// merge groups into their surrounding groups
 	void MergeGroups(){
-		neighborInfo = new NeighborInfo[groupId + 1]{};
+		neighborInfo = new NeighborInfo[(int)groupId + 1]{};
 		int mergedGroups = 0;
 		// merge groups group smallest to largest
 		//for(int i = 0; i < groups.size() - 1; i++){

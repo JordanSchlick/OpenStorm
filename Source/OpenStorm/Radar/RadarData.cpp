@@ -219,7 +219,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 						}
 					}
 					float realMaxDistance = stats.innerDistance + maxDataDistance + 1;
-					float realMaxHeight = realMaxDistance*std::sinf(PIF / 180.0f * sweepInfo[sweepId].elevation) + 1;
+					float realMaxHeight = realMaxDistance*std::sin(PIF / 180.0f * sweepInfo[sweepId].elevation) + 1;
 					stats.boundRadius = std::max(stats.boundRadius, realMaxDistance);
 					stats.boundUpper = std::max(stats.boundUpper, realMaxHeight);
 					stats.boundLower = std::min(stats.boundLower, realMaxHeight);
