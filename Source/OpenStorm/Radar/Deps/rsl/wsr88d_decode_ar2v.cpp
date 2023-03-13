@@ -10,6 +10,7 @@
 	#include <io.h>
 #else
 	#include <unistd.h>
+	#include <signal.h>
 #endif
 
 #include "../bzip2/bzlib.h"
@@ -158,7 +159,9 @@ void uncompress_pipe_ar2v_thread(FILE* inFile, FILE* outFile) {
 			//{
 			//	write(STDOUT_FILENO, block, 24);
 			//}
-			fwrite(block, 1, 24, outFile);
+			if(fwrite(block, 1, 24, outFile) != 24){
+				break;
+			}
 			continue;
 		}
 
@@ -237,7 +240,10 @@ void uncompress_pipe_ar2v_thread(FILE* inFile, FILE* outFile) {
 			//	write(fd, oblock, olength);
 			//}
 			double writeStartTime = SystemAPI::CurrentTime();
-			fwrite(oblock, 1, olength, outFile);
+			if(fwrite(oblock, 1, olength, outFile) != olength){
+				fprintf(stderr, "Pipe write failure\n");
+				break;
+			}
 			writeTime += SystemAPI::CurrentTime() - writeStartTime;
 			writeCount++;
 		}
@@ -438,6 +444,11 @@ FILE* uncompress_pipe_ar2v(FILE* inFile)
 		fprintf(stderr, "Could not create pipe\n");
 	}
 	#else
+	// ensure SIGPIPE does not crash process
+	sighandler_t oldHandler = signal(SIGPIPE, SIG_IGN);
+	if(oldHandler != NULL){
+		signal(SIGPIPE, oldHandler);
+	}
 	if (pipe(pipeFDs) != 0) {
 		fprintf(stderr, "Could not create pipe\n");
 	}
@@ -472,6 +483,11 @@ FILE* uncompress_pipe_gzip(FILE* inFile)
 		fprintf(stderr, "Could not create pipe\n");
 	}
 	#else
+	// ensure SIGPIPE does not crash process
+	sighandler_t oldHandler = signal(SIGPIPE, SIG_IGN);
+	if(oldHandler != NULL){
+		signal(SIGPIPE, oldHandler);
+	}
 	if (pipe(pipeFDs) != 0) {
 		fprintf(stderr, "Could not create pipe\n");
 	}

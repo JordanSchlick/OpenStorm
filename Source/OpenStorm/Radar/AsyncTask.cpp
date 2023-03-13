@@ -88,8 +88,6 @@ void AsyncTaskRunner::InternalTask() {
 	if(!canceled){
 		Task();
 	}
-	finished = true;
-	running = false;
 	
 	#ifdef UE_GAME
 	#else
@@ -109,9 +107,15 @@ void AsyncTaskRunner::InternalTask() {
 	//fprintf(stderr, "stillPending after %i\n", (int)pendingFutures.size());
 	#endif
 	
+	
+	
+	
 	if (autoDelete) {
 		clearedForDeletion = true;
 		delete this;
+	}else{
+		finished = true;
+		running = false;
 	}
 }
 

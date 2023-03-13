@@ -169,6 +169,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 			stats.boundRadius = 0;
 			stats.beginTime = INFINITY;
 			stats.endTime = -INFINITY;
+			double lastRayDate = 0;
 			
 			// do a pass of the data to find info
 			for (const auto pair : sweeps) {
@@ -203,8 +204,15 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 						time_t timeSinceEpoch = timegm(&t);
 						#endif
 						double rayDate = timeSinceEpoch + fmod(ray->h.sec, 1.0);
-						stats.beginTime = std::min(stats.beginTime, rayDate);
-						stats.endTime = std::max(stats.endTime, rayDate);
+						//fprintf(stdout, "%f\n", rayDate);
+						// exclude very inaccurate times, sometimes they are off by years
+						if(lastRayDate == 0 || std::abs(lastRayDate - rayDate) < 10000){
+							stats.beginTime = std::min(stats.beginTime, rayDate);
+							stats.endTime = std::max(stats.endTime, rayDate);
+							lastRayDate = rayDate;
+						}else if(verbose){
+							fprintf(stdout, "inaccurate date %f, last accepted is %f\n", rayDate, lastRayDate);
+						}
 						int radiusSize = ray->h.nbins;
 						maxRadius = std::max(maxRadius, radiusSize);
 						for (int radius = 0; radius < radiusSize; radius++) {
