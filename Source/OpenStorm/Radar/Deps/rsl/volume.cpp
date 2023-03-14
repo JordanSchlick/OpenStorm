@@ -357,6 +357,7 @@ Range LR_INVF(float x) /* MCTEX */
 /* RH_INVF for 1 or 2 byte data. */
 Range RH_INVF(float x) {
 	if (x == BADVAL) return (Range)0;
+	if (x == RFVAL) return (Range)0;
 	/* return (Range)(x * x * 253.0 + 1.0 + 0.5); */
 	return (Range)(x * 100. + 1. +.5);
 }
