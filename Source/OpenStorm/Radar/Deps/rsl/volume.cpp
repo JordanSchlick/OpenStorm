@@ -374,6 +374,7 @@ Range RH_INVF(float x) {
 *******************************/
 Range PH_INVF(float x) {
 	if (x == BADVAL) return (Range)0;
+	if (x == RFVAL) return (Range)0;
 	return (Range)(x*65534./360. + 1.0 + 0.5);
 }
 
