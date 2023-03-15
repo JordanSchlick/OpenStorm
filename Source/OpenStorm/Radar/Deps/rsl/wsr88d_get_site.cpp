@@ -44,6 +44,8 @@ Wsr88d_site_info *wsr88d_get_site(char *in_sitenm)
 	int in_height;
 	char in_site[5],in_city[16],in_state[4]; /* One extra for \0 */
 	struct radar_site *currsite=NULL;
+	// the file will never exist so just return
+	return currsite;
 	FILE *in_file;
 
 	if((in_file=fopen(WSR88D_SITE_INFO_FILE, "r")) !=NULL)

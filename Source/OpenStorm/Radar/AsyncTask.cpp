@@ -46,6 +46,7 @@ void AsyncTaskRunner::Start(bool autoDeleteTask) {
 	task->StartBackgroundTask();
 }
 #else
+#include <thread>
 #include <future>
 #include <vector>
 #include <chrono>
@@ -59,10 +60,17 @@ void AsyncTaskRunner::Start(bool autoDeleteTask) {
 	}
 	running = true;
 	this->autoDelete = autoDeleteTask;
-	std::future<void> future = std::async(std::launch::async, [this] {
-		InternalTask();
-	});
-	pendingFutures.push_back(std::move(future));
+	if(0){
+		std::future<void> future = std::async(std::launch::async, [this] {
+			InternalTask();
+		});
+		pendingFutures.push_back(std::move(future));
+	}else{
+		std::thread thread = std::thread([this] {
+			InternalTask();
+		});
+		thread.detach();
+	}
 }
 #endif
 
@@ -91,20 +99,22 @@ void AsyncTaskRunner::InternalTask() {
 	
 	#ifdef UE_GAME
 	#else
-	// clean up futures
-	std::vector<std::future<void>> stillPendingFutures;
-	//fprintf(stderr, "stillPending before %i\n", (int)pendingFutures.size());
-	for(auto& future : pendingFutures){
-		if(future.wait_for(std::chrono::seconds(0)) != std::future_status::ready){
-			stillPendingFutures.push_back(std::move(future));
+	if(0){
+		// clean up futures
+		std::vector<std::future<void>> stillPendingFutures;
+		//fprintf(stderr, "stillPending before %i\n", (int)pendingFutures.size());
+		for(auto& future : pendingFutures){
+			if(future.wait_for(std::chrono::seconds(0)) != std::future_status::ready){
+				stillPendingFutures.push_back(std::move(future));
+			}
 		}
+		//fprintf(stderr, "stillPendingFutures %i\n", (int)stillPendingFutures.size());
+		pendingFutures.clear();
+		for(auto& future : stillPendingFutures){
+			pendingFutures.push_back(std::move(future));
+		}
+		//fprintf(stderr, "stillPending after %i\n", (int)pendingFutures.size());
 	}
-	//fprintf(stderr, "stillPendingFutures %i\n", (int)stillPendingFutures.size());
-	pendingFutures.clear();
-	for(auto& future : stillPendingFutures){
-		pendingFutures.push_back(std::move(future));
-	}
-	//fprintf(stderr, "stillPending after %i\n", (int)pendingFutures.size());
 	#endif
 	
 	
