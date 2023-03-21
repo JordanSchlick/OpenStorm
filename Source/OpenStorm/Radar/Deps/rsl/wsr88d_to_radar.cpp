@@ -317,20 +317,22 @@ Radar *RSL_wsr88d_to_radar(char *infile, char *call_or_first_tape_file)
  *       wsr88d_read_tape_header.
  *    3. If no valid site info, abort.
  */
-	if (call_or_first_tape_file == NULL) {
-		//fprintf(stderr, "wsr88d_to_radar: No valid site ID info provided.\n");
-		//return(NULL);
-	} else if (strlen(call_or_first_tape_file) == 4)
-		sitep =  wsr88d_get_site(call_or_first_tape_file);
-	else if (strlen(call_or_first_tape_file) == 0) {
-		//fprintf(stderr, "wsr88d_to_radar: No valid site ID info provided.\n");
-		//return(NULL);
-	}  
+	if (call_or_first_tape_file != NULL) {
+		if (call_or_first_tape_file == NULL) {
+			//fprintf(stderr, "wsr88d_to_radar: No valid site ID info provided.\n");
+			//return(NULL);
+		} else if (strlen(call_or_first_tape_file) == 4)
+			sitep =  wsr88d_get_site(call_or_first_tape_file);
+		else if (strlen(call_or_first_tape_file) == 0) {
+			//fprintf(stderr, "wsr88d_to_radar: No valid site ID info provided.\n");
+			//return(NULL);
+		}  
 
-	if (sitep == NULL){
-		if (wsr88d_read_tape_header(call_or_first_tape_file, &wsr88d_tape_header) > 0) {
-			memcpy(site_id_str, wsr88d_tape_header.site_id, 4);
-			sitep  = wsr88d_get_site(site_id_str);
+		if (sitep == NULL){
+			if (call_or_first_tape_file[0] != 0 && wsr88d_read_tape_header(call_or_first_tape_file, &wsr88d_tape_header) > 0) {
+				memcpy(site_id_str, wsr88d_tape_header.site_id, 4);
+				sitep  = wsr88d_get_site(site_id_str);
+			}
 		}
 	}
 	if (sitep == NULL) {
