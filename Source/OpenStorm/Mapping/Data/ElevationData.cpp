@@ -35,6 +35,10 @@ namespace ElevationData{
 		#endif // _WIN32
 		
 		FILE* file = fopen(dataFilePath.c_str(), "r");
+		if(file == NULL){
+			fprintf(stderr, "No elevation data file at %s\n", dataFilePath.c_str());
+			return;
+		}
 		// rows, columns, data type(0: float, 1: int16)
 		int32_t shape[3];
 		if(fread(shape, sizeof(int32_t), 3, file) != 3){
