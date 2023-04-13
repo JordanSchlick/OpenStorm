@@ -84,6 +84,7 @@ void AsyncTaskRunner::Cancel() {
 }
 
 void AsyncTaskRunner::Delete() {
+	Cancel();
 	if(finished){
 		clearedForDeletion = true;
 		delete this;

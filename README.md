@@ -30,7 +30,7 @@ Discord server invite [https://discord.gg/K3aU2hEYvJ](https://discord.gg/K3aU2hE
 2. Clone the repo `git clone https://github.com/JordanSchlick/OpenStorm.git`
 3. Get submodules `git submodule update --init --recursive`
 4. Open the project in unreal engine
-5. Hit ctrl+alt+f11 to build project
+5. Hit ctrl+alt+f11 to build project.  
 To build a standalone build, select package project within the desired platform under the Platforms dropdown.
 
 To pull the latest changes to an existing copy of the repo use `git pull --recurse-submodules`
