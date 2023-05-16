@@ -235,9 +235,11 @@ void AMapMesh::Tick(float DeltaTime){
 
 void AMapMesh::GenerateMesh(){
 	TArray<FVector> vertices = {};
+	TArray<FVector> normals = {};
 	TArray<int> triangles = {};
 	TArray<FVector2D> uv0 = {};
 	vertices.SetNum((divisions + 1) * (divisions + 1));
+	normals.SetNum((divisions + 1) * (divisions + 1));
 	uv0.SetNum((divisions + 1) * (divisions + 1));
 	triangles.Empty((divisions) * (divisions) * 6);
 	
@@ -269,6 +271,8 @@ void AMapMesh::GenerateMesh(){
 			
 			//fprintf(stderr, "loc %f %f %f\n", vert.x, vert.y, vert.z);
 			vertices[loc] = FVector(vert.x, vert.y, vert.z);
+			vert.Multiply(1.0f / vert.Magnitude());
+			normals[loc] = FVector(vert.x, vert.y, vert.z);
 			
 			//uv0[loc] = FVector2D(x / (float)divisions, y / (float)divisions);
 		}
@@ -301,7 +305,7 @@ void AMapMesh::GenerateMesh(){
 		SetActorHiddenInGame(true);
 	}else{
 		SetActorHiddenInGame(false);
-		proceduralMesh->CreateMeshSection(0, vertices, triangles, TArray<FVector>(), uv0, TArray<FColor>(), TArray<FProcMeshTangent>(), true);
+		proceduralMesh->CreateMeshSection(0, vertices, triangles, normals, uv0, TArray<FColor>(), TArray<FProcMeshTangent>(), true);
 		proceduralMesh->SetMaterial(0, materialInstance);
 	}
 }
