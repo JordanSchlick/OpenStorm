@@ -70,7 +70,7 @@ void ARadarViewPawn::Tick(float deltaTime)
 	
 	
 	if (ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>()){
-		moveSpeed = GS->globalState.moveSpeed;
+		moveSpeed = GS->globalState.moveSpeed * (1 + speedBoost * 3);
 		rotateSpeed = GS->globalState.rotateSpeed;
 		bool shouldEnableTAA = GS->globalState.temporalAntiAliasing;
 		FVector location = GetActorLocation();
@@ -143,6 +143,7 @@ void ARadarViewPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("MoveFB", this, &ARadarViewPawn::MoveFB);
 	PlayerInputComponent->BindAxis("MoveLR", this, &ARadarViewPawn::MoveLR);
 	PlayerInputComponent->BindAxis("MoveUD", this, &ARadarViewPawn::MoveUD);
+	PlayerInputComponent->BindAxis("SpeedBoost", this, &ARadarViewPawn::SpeedBoost);
 	PlayerInputComponent->BindAxis("RotateLR", this, &ARadarViewPawn::RotateLR);
 	PlayerInputComponent->BindAxis("RotateUD", this, &ARadarViewPawn::RotateUD);
 	PlayerInputComponent->BindAxis("RotateMouseLR", this, &ARadarViewPawn::RotateMouseLR);
@@ -176,6 +177,12 @@ void ARadarViewPawn::MoveUD(float value)
 	// SetActorLocation(Location);
 }
 
+
+void ARadarViewPawn::SpeedBoost(float value)
+{
+	speedBoost = value;
+}
+
 void ARadarViewPawn::RotateUD(float value)
 {
 	verticalRotation = value;
@@ -192,6 +199,7 @@ void ARadarViewPawn::RotateLR(float value)
 	// Rotation.Yaw += Value * RotateSpeed;
 	// SetActorRotation(Rotation);
 }
+
 
 void ARadarViewPawn::RotateMouseUD(float value)
 {

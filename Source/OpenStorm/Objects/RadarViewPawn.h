@@ -38,6 +38,7 @@ private:
 	float forwardMovement = 0;
 	float sidewaysMovement = 0;
 	float verticalMovement = 0;
+	float speedBoost = 0;
 	float verticalRotation = 0;
 	float horizontalRotation = 0;
 	float verticalRotationAmount = 0;
@@ -45,13 +46,14 @@ private:
 	
 	bool isTAAEnabled = false;
 
-	void MoveFB(float Value);
-	void MoveLR(float Value);
-	void MoveUD(float Value);
-	void RotateLR(float Value);
-	void RotateUD(float Value);
-	void RotateMouseLR(float Value);
-	void RotateMouseUD(float Value);
+	void MoveFB(float value);
+	void MoveLR(float value);
+	void MoveUD(float value);
+	void SpeedBoost(float value);
+	void RotateLR(float value);
+	void RotateUD(float value);
+	void RotateMouseLR(float value);
+	void RotateMouseUD(float value);
 	void ReleaseMouse();
 	void PressMouse();
 	
