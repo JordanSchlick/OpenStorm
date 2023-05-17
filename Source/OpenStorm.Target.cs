@@ -7,6 +7,7 @@ public class OpenStormTarget : TargetRules
 {
 	public OpenStormTarget( TargetInfo Target) : base(Target)
 	{
+		Name = "OpenStorm";
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		ExtraModuleNames.AddRange( new string[] { "OpenStorm" } );

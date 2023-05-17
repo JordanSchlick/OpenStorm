@@ -22,6 +22,7 @@ public class OpenStormEditorTarget : TargetRules
 	}*/
 	public OpenStormEditorTarget( TargetInfo Target) : base(Target)
 	{
+		Name = "OpenStormEditor";
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		ExtraModuleNames.AddRange( new string[] { "OpenStorm" } );
