@@ -27,4 +27,6 @@ public:
 	UFUNCTION()
 	void DrawMaterial(UCanvas* canvas, int32 width, int32 height);
 	//virtual void ReceiveUpdate(UCanvas* Canvas, int32 Width, int32 Height);
+
+	virtual uint32 CalcTextureMemorySizeEnum(ETextureMipCount Enum) const override;
 };
