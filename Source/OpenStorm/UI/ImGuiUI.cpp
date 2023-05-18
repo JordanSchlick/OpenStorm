@@ -134,6 +134,7 @@ void AImGuiUI::BeginPlay()
 	//FImGuiModule::Get().RebuildFontAtlas();
 	
 	ImGuiStyle &style = ImGui::GetStyle();
+	style.DisplaySafeAreaPadding = ImVec2(0, 0);
 	
 	InitializeConsole();
 	
@@ -159,17 +160,22 @@ void AImGuiUI::Tick(float deltaTime)
 
 	ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>();
 
-	FViewport* veiwport = GetWorld()->GetGameViewport()->Viewport;
-	FIntPoint viewportSize = veiwport->GetSizeXY();
-
+	ImGuiStyle &style = ImGui::GetStyle();
+	style.DisplaySafeAreaPadding = ImVec2(0, 0);
+	
+	// FViewport* veiwport = GetWorld()->GetGameViewport()->Viewport;
+	// FIntPoint viewportSize = veiwport->GetSizeXY();
+	ImGuiIO& io = ImGui::GetIO();
 	SWindow* swindow = GetWorld()->GetGameViewport()->GetWindow().Get();
 	
 	float nativeScale = 1;
-	ImVec2 maxSize = ImVec2(viewportSize.X / 2, viewportSize.Y);
+	// ImVec2 maxSize = ImVec2(viewportSize.X / 2, viewportSize.Y);
+	ImVec2 maxSize = ImVec2(io.DisplaySize.x / 2, io.DisplaySize.y);
 	if (uiWindow != NULL && uiWindow->isOpen) {
-		FVector2D viewportSize2 = uiWindow->window.Get()->GetViewportSize();
-		maxSize = ImVec2(viewportSize2.X, viewportSize2.Y);
+		// FVector2D viewportSize2 = uiWindow->window.Get()->GetViewportSize();
+		// maxSize = ImVec2(viewportSize2.X, viewportSize2.Y);
 		nativeScale = uiWindow->window.Get()->GetDPIScaleFactor();
+		maxSize = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
 	}else{
 		nativeScale = swindow->GetDPIScaleFactor();
 	}
@@ -184,7 +190,7 @@ void AImGuiUI::Tick(float deltaTime)
 	ImGui::SetNextWindowBgAlpha(0.3);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), 0, ImVec2(0.0f, 0.0f));
 	//ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
-	ImGuiIO& io = ImGui::GetIO();
+	
 	io.FontGlobalScale = fontScale;
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, 100.0f), maxSize);
 	if(ImGui::Begin("OpenStorm", NULL, ImGuiWindowFlags_NoMove | /*ImGuiWindowFlags_NoBackground |*/ ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar)){
@@ -339,26 +345,6 @@ void AImGuiUI::Tick(float deltaTime)
 					UpdateEngineSettings();
 				}
 				
-				if (ImGui::Button("External Window")) {
-					if(uiWindow != NULL && !globalState.vrMode){
-						InternalWindow();
-					}else{
-						ExternalWindow();
-					}
-				}
-				ImGui::SameLine();
-				if (ToggleButton("VR " ICON_FA_VR_CARDBOARD, globalState.vrMode)) {
-					globalState.vrMode = !globalState.vrMode;
-					if(globalState.vrMode){
-						GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 1"));
-					}else{
-						GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 0"));
-					}
-					UpdateEngineSettings();
-					//ImGui::SetWindowCollapsed(true);
-					ExternalWindow();
-				}
-				
 				ImGuiComboFlags flags = 0;
 				const char* qualityNames[] =  { "Custom", "GPU Melter", "Very High", "High", "Normal", "Low", "Very Low", "Potato" };
 				const float qualityValues[] = { 10,       3,            2,           1,      0,        -1,    -2,         -10      };
@@ -398,7 +384,27 @@ void AImGuiUI::Tick(float deltaTime)
 				}
 				
 				ImGui::Checkbox("Enable TAA", &globalState.temporalAntiAliasing);
-						
+				
+				if (ImGui::Button("External Settings Window")) {
+					if(uiWindow != NULL && !globalState.vrMode){
+						InternalWindow();
+					}else{
+						ExternalWindow();
+					}
+				}
+				ImGui::SameLine();
+				if (ToggleButton("VR " ICON_FA_VR_CARDBOARD, globalState.vrMode)) {
+					globalState.vrMode = !globalState.vrMode;
+					if(globalState.vrMode){
+						GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 1"));
+					}else{
+						GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 0"));
+					}
+					UpdateEngineSettings();
+					//ImGui::SetWindowCollapsed(true);
+					ExternalWindow();
+				}
+				
 				ImGui::TreePop();
 			}
 			if (ImGui::TreeNodeEx("Joke", ImGuiTreeNodeFlags_SpanAvailWidth)) {	
