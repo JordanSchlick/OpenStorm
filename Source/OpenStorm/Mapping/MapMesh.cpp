@@ -78,8 +78,7 @@ public:
 		{
 			return nullptr;
 		}
-
-		// Most important difference with UTexture2D::CreateTransient: we provide the new texture with a name and an owner
+		
 		FName TextureName = MakeUniqueObjectName(GetTransientPackage(), UTexture2D::StaticClass(), BaseName);
 		UTexture2D* NewTexture = NewObject<UTexture2D>(GetTransientPackage(), TextureName, RF_Transient);
 
@@ -132,10 +131,12 @@ public:
 
 		delete tile;
 
-
-		//UTexture2D* texture = UTexture2D::CreateTransient(imageWrapper->GetWidth(), imageWrapper->GetHeight(), EPixelFormat::PF_B8G8R8A8, TEXT("TileTexture"));
-		UTexture2D* texture = CreateTexture(mapMesh, rawData, imageWrapper->GetWidth(), imageWrapper->GetHeight(), EPixelFormat::PF_B8G8R8A8, TEXT("TileTexture"));
-
+		//FName TextureName = MakeUniqueObjectName(GetTransientPackage(), UTexture2D::StaticClass(),  TEXT("TileTexture"));
+		//UTexture2D* texture = UTexture2D::CreateTransient(imageWrapper->GetWidth(), imageWrapper->GetHeight(), EPixelFormat::PF_B8G8R8A8, TextureName);
+		//texture->UpdateResource();
+		UTexture2D* texture = CreateTexture(mapMesh, rawData, imageWrapper->GetWidth(), imageWrapper->GetHeight(), EPixelFormat::PF_B8G8R8A8,TEXT("TileTexture"));
+		// texture->ConditionalBeginDestroy();
+		
 		if (canceled) {
 			return;
 		}
@@ -224,6 +225,12 @@ void AMapMesh::EndPlay(const EEndPlayReason::Type endPlayReason) {
 	}
 	if(texture != NULL){
 		texture->ConditionalBeginDestroy();
+		// This mostly fixes a major memory leak in created textures
+		//delete texture->GetPlatformData();
+		//texture->SetPlatformData(NULL);
+		//texture->GetPlatformData()->Mips.RemoveAt(0);
+		// Ideally the entire platform data would be freed but that can occasionally cause crashes so we instead settle for freeing the largest part that won't crash
+		texture->GetPlatformData()->Mips[0].BulkData.RemoveBulkData();
 		texture = NULL;
 	}
 }

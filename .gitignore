@@ -12,8 +12,10 @@ Intermediate
 /Content/Data/Map/*
 !/Content/Data/Map/download.js
 /Content/Data/elevation.bin
+/Content/Data/elevation.bin.gz
 /Content/testing
 /Content/Testing
 !.gitkeep
 tmp
 /.vsconfig
+/enc_temp_folder

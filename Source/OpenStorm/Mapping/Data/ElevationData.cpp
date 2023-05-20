@@ -6,6 +6,8 @@
 #include <fcntl.h>
 #include <cstdlib>
 
+# include "../../Radar/Deps/zlib/zlib.h"
+
 // modulo that always returns positive
 inline int modulo(int i, int n) {
 	return (i % n + n) % n;
@@ -34,16 +36,17 @@ namespace ElevationData{
 			_set_fmode(_O_BINARY);
 		#endif // _WIN32
 		
-		FILE* file = fopen(dataFilePath.c_str(), "r");
+		// FILE* file = fopen(dataFilePath.c_str(), "r");
+		gzFile file = gzopen(dataFilePath.c_str(), "r");
 		if(file == NULL){
 			fprintf(stderr, "No elevation data file at %s\n", dataFilePath.c_str());
 			return;
 		}
 		// rows, columns, data type(0: float, 1: int16)
 		int32_t shape[3];
-		if(fread(shape, sizeof(int32_t), 3, file) != 3){
+		if(gzfread(shape, sizeof(int32_t), 3, file) != 3){
 			fprintf(stderr, "Failed to read size of elevation data\n");
-			fclose(file);
+			gzclose(file);
 			return;
 		}
 		int dataSize = shape[0] * shape[1];
@@ -53,15 +56,16 @@ namespace ElevationData{
 			elevationData = new float[dataSize];
 		}
 		
-		if(elevationData == NULL || fread(elevationData, (shape[2] == 1) ? sizeof(int16_t) : sizeof(float), dataSize, file) != dataSize){
+		if(elevationData == NULL || gzfread(elevationData, (shape[2] == 1) ? sizeof(int16_t) : sizeof(float), dataSize, file) != dataSize){
 			fprintf(stderr, "Failed to read elevation data into buffer of size %i\n", dataSize);
-			fclose(file);
+			gzclose(file);
 			if(elevationData != NULL){
 				delete[] elevationData;
 				elevationData = NULL;
 			}
 			return;
 		}
+		gzclose(file);
 		elevationDataHeight = shape[0];
 		elevationDataWidth = shape[1];
 		elevationDataType = shape[2];
