@@ -1,6 +1,6 @@
 #include "uiwindow.h"
 
-
+#include "RHIDefinitions.h" // including this prevents some wierd compilation errors when pre compiles headers are disabled
 #include "Engine/GameViewportClient.h"
 //#include "Runtime/Engine/Public/Slate/SceneViewport.h"
 #include "Framework/Application/SlateApplication.h"
