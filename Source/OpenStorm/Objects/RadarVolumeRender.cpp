@@ -258,7 +258,7 @@ void ARadarVolumeRender::BeginPlay()
 		}else if(globalState->quality <= -1){
 			stepSize = 10;
 		}
-		fprintf(stderr,"stepSize: %f",stepSize);
+		// fprintf(stderr,"stepSize: %f",stepSize);
 		radarMaterialInstance->SetScalarParameterValue(TEXT("StepSize"), stepSize);
 		radarMaterialInstance->SetScalarParameterValue(TEXT("Fuzz"), globalState->enableFuzz ? 1 : 0);
 	}));
@@ -366,6 +366,7 @@ void ARadarVolumeRender::InitializeTextures() {
 	// immediately begin destroying to free up gpu memory
 	if (volumeTexture2 != NULL) {
 		volumeTexture2->ConditionalBeginDestroy();
+		volumeTexture2->GetPlatformData()->Mips[0].BulkData.RemoveBulkData();
 	}
 	if (volumeMaterialRenderTarget != NULL) {
 		volumeMaterialRenderTarget->ConditionalBeginDestroy();
@@ -375,6 +376,7 @@ void ARadarVolumeRender::InitializeTextures() {
 	if (volumeTexture == NULL || textureWidth != volumeTexture->GetSizeX() || textureHeight != volumeTexture->GetSizeY()) {
 		if (volumeTexture != NULL) {
 			volumeTexture->ConditionalBeginDestroy();
+			volumeTexture->GetPlatformData()->Mips[0].BulkData.RemoveBulkData();
 		}
 		// the volume texture contains an array that is interperted as a three dimensional volume of values
 		// it corresponds to the real values of the radar

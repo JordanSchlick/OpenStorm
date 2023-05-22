@@ -460,6 +460,23 @@ void AImGuiUI::Tick(float deltaTime)
 			if (ImGui::Button("Cache State")) {
 				globalState.devShowCacheState = !globalState.devShowCacheState;
 			}
+			if (ImGui::TreeNodeEx("Bad", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+				static int leakRunCount = 1;
+				static bool leakImmediateFree = true;
+				ImGui::InputInt("Leak Run Count", &leakRunCount);
+				ImGui::Checkbox("Immediately Free Textures", &leakImmediateFree);
+				if (ImGui::Button("Run Transient Leak")) {
+					for(int i = 0; i < leakRunCount; i++){
+						FName TextureName = MakeUniqueObjectName(GetTransientPackage(), UTexture2D::StaticClass(), TEXT("LeakTest"));
+						UE_LOG(LogTemp, Display, TEXT("Created texture /Engine/Transient.%s"), *(TextureName.ToString()));
+						UTexture2D* texture = UTexture2D::CreateTransient(4096, 4096, EPixelFormat::PF_B8G8R8A8, TextureName);
+						if(leakImmediateFree){
+							texture->ConditionalBeginDestroy();
+						}
+					}
+				}
+				ImGui::TreePop();
+			}
 			
 			#if WITH_EDITOR
 			static std::string assetName = "/Engine/Transient.VolumeTexture1";
