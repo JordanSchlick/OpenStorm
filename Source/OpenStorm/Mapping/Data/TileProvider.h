@@ -3,6 +3,7 @@
 #include "HTTPRequest.h"
 
 class TileProvider;
+class Tar;
 
 class Tile{
 public:
@@ -30,6 +31,7 @@ public:
 	std::string imageType;
 	// use set cache
 	std::string staticCache;
+	Tar* staticCacheTar = NULL;
 	// use set cache
 	std::string dynamicCache;
 	int maxZoom;
@@ -39,7 +41,10 @@ public:
 	// the static cache is meant for pre-downloaded data and the dynamicCacheFolder will have any tiles written to it
 	// empty strings will disable the caches
 	void SetCache(std::string staticCacheFolder, std::string dynamicCacheFolder);
+	// set location of tar file to pull files from
+	void SetTarCache(std::string staticCacheTar);
 	// get a tile for a given location, it needs to be manually deleted
 	Tile* GetTile(int zoom, int y, int x);
 	void EventLoop();
+	~TileProvider();
 };

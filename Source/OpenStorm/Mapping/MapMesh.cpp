@@ -279,6 +279,9 @@ void AMapMesh::GenerateMesh(){
 			
 			//fprintf(stderr, "loc %f %f %f\n", vert.x, vert.y, vert.z);
 			vertices[loc] = FVector(vert.x, vert.y, vert.z);
+			
+			// does not take into account elevation changes
+			// could be refactored to generate true normals
 			vert.Multiply(1.0f / vert.Magnitude());
 			normals[loc] = FVector(vert.x, vert.y, vert.z);
 			
@@ -414,7 +417,7 @@ void AMapMesh::Update(){
 		SimpleVector3<> position = centerPosition;
 		position.Subtract(manager->cameraLocation);
 		float distance = position.Magnitude();
-		if(distance < subdivideDistance){
+		if(distance < subdivideDistance || layer < manager->minLayer){
 			//fprintf(stderr, "Yes %f/%f\n", distance, subdivideDistance);
 			if(childCount < 4){
 				MakeChildren();

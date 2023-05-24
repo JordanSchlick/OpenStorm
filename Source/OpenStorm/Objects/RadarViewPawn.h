@@ -33,8 +33,7 @@ public:
 	
 	template <class T>
 	T* FindActor();
-
-private:
+	
 	float forwardMovement = 0;
 	float sidewaysMovement = 0;
 	float verticalMovement = 0;
@@ -57,7 +56,7 @@ private:
 	void ReleaseMouse();
 	void PressMouse();
 	
-private:
+	
 	UPROPERTY(EditAnywhere)
 		float moveSpeed = 300.0f;
 	UPROPERTY(EditAnywhere)

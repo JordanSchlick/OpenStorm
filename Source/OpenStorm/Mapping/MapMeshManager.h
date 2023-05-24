@@ -18,6 +18,8 @@ class AMapMeshManager : public AActor{
 	GENERATED_BODY()
 	
 public:
+	// always load in up to this layer
+	int minLayer = 2;
 	// max layers of zoom
 	int maxLayer = 15;
 	// location of camera/pawn

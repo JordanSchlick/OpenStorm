@@ -1,5 +1,6 @@
 #include "TileProvider.h"
 #include "../../Radar/SystemAPI.h"
+#include "Tar.h"
 #include <cmath>
 #include <stdio.h>
 
@@ -44,6 +45,18 @@ Tile *TileProvider::GetTile(int zoom, int y, int x){
 		extension = ".png";
 	}
 	tile->fileName = "z" + nameZ + "y" + nameY + "x" + nameX + extension;
+	if(staticCacheTar != NULL && staticCacheTar->valid){
+		Tar::TarFile* tarFile = staticCacheTar->GetFile(tile->fileName);
+		if(tarFile != NULL){
+			tile->data = tarFile->data;
+			tile->dataSize = tarFile->size;
+			// moved to tile
+			tarFile->data = NULL;
+			delete tarFile;
+			tile->isReady = true;
+			return tile;
+		}
+	}
 	if(staticCache != ""){
 		std::string path = staticCache + tile->fileName;
 		//fprintf(stderr, "%s", path.c_str());
@@ -99,5 +112,21 @@ void TileProvider::SetCache(std::string staticCacheFolder, std::string dynamicCa
 	
 }
 
+void TileProvider::SetTarCache(std::string staticCacheTarFile) {
+	Tar* tar = new Tar(staticCacheTarFile);
+	if(staticCacheTar != NULL){
+		delete staticCacheTar;
+		staticCacheTar = NULL;
+	}
+	staticCacheTar = tar;
+}
+
 void TileProvider::EventLoop(){
+}
+
+TileProvider::~TileProvider(){
+	if(staticCacheTar != NULL){
+		delete staticCacheTar;
+		staticCacheTar = NULL;
+	}
 }

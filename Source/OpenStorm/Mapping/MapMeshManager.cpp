@@ -11,6 +11,7 @@
 #include "Data/ElevationData.h"
 #include "Data/TileProvider.h"
 #include "../Objects/RadarGameStateBase.h"
+#include "../Objects/RadarViewPawn.h"
 #include "../Application/GlobalState.h"
 #include "../Radar/Globe.h"
 
@@ -55,6 +56,10 @@ void AMapMeshManager::Tick(float DeltaTime){
 		APawn* pawn = GetWorld()->GetFirstPlayerController()->GetPawn();
 		if(pawn != NULL){
 			FVector actorLocTmp = pawn->GetActorLocation();
+			ARadarViewPawn* radarPawn = dynamic_cast<ARadarViewPawn*>(pawn);
+			if(radarPawn){
+				actorLocTmp = radarPawn->camera->GetComponentLocation();
+			}
 			cameraLocation = SimpleVector3<double>(actorLocTmp.X, actorLocTmp.Y, actorLocTmp.Z);
 			//fprintf(stderr, "loc %f %f %f\n", cameraLocation.x, cameraLocation.y, cameraLocation.z);
 		}
@@ -95,12 +100,14 @@ void AMapMeshManager::EnableMap(){
 	ElevationData::LoadData(std::string(fullElevationFilePathCstr));
 	
 	
-	std::string staticCacheLocation = GetRelativePath(TEXT("Content/Data/Map/USGSImageryOnly/"));
+	std::string staticCacheLocation = GetRelativePath(TEXT("Content/Data/Map/ImageryOnly/"));
+	std::string staticCacheTarLocation = GetRelativePath(TEXT("Content/Data/Map/ImageryOnly.tar"));
 	std::string dynamicCacheLocation = GetUserPath(TEXT("Map/USGSImageryOnly/"));
 	fprintf(stderr, "path %s\n", staticCacheLocation.c_str());
 	fprintf(stderr, "path %s\n", dynamicCacheLocation.c_str());
 	tileProvider = new TileProvider("USGSImageryOnly", "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}", "image/jpeg", 10);
 	tileProvider->SetCache(staticCacheLocation, dynamicCacheLocation);
+	tileProvider->SetTarCache(staticCacheTarLocation);
 	
 	rootMapMesh = GetWorld()->SpawnActor<AMapMesh>(AMapMesh::StaticClass());
 	rootMapMesh->SetBounds(
@@ -111,6 +118,7 @@ void AMapMeshManager::EnableMap(){
 	);
 	rootMapMesh->manager = this;
 	rootMapMesh->globe = globe;
+	rootMapMesh->LoadTile();
 	
 	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
 	if(gameMode != NULL){
