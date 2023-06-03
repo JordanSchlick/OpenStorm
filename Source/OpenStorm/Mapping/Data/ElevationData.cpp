@@ -29,7 +29,7 @@ namespace ElevationData{
 	void LoadData(std::string dataFilePath) {
 		if(elevationData != NULL){
 			//return;
-			delete[] elevationData;
+			delete[] (float*)elevationData;
 			elevationData = NULL;
 		}
 		#ifdef _WIN32
@@ -60,7 +60,7 @@ namespace ElevationData{
 			fprintf(stderr, "Failed to read elevation data into buffer of size %i\n", dataSize);
 			gzclose(file);
 			if(elevationData != NULL){
-				delete[] elevationData;
+				delete[] (float*)elevationData;
 				elevationData = NULL;
 			}
 			return;
@@ -74,7 +74,7 @@ namespace ElevationData{
 	
 	void UnloadData(){
 		if(elevationData != NULL){
-			delete[] elevationData;
+			delete[] (float*)elevationData;
 			elevationData = NULL;
 		}
 		elevationDataHeight = 0;
