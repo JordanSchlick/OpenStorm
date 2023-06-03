@@ -1,6 +1,6 @@
-#include "font.h"
-#include "imgui.h"
-#include "ImGuiModule.h"
+
+
+
 
 // File: 'fa6-solid-900.ttf' (389948 bytes)
 // Exported using binary_to_compressed_c.cpp
@@ -3183,28 +3183,3 @@ static const char Roboto_compressed_data_base85[144680+1] =
     "ko[V6-Wpf13&mc2E=bY5_uxL,tXRS%S2`c)P5@D*TMw%+T/DG)P;^X%Kn-s-c6N>GgN/vGkgfVH]Ni>$cX=;.J`L;H@0wV%VvY@9(^Ow93FWwB_h[wBhe5^#VI`u&<<(@'`'(,))5###"
     "JNlQW#kJe$00k-$)kpw'BlUf:';YY#tV_lJfu72h#JGxI+L>gLx.VB#E*r*5?ke%#bV?(#g/:/#$q)`#;&<`#?2N`#=JwA-Vlw8=qUR$95qBT.K^''#`.tT#'=0U#+IBU#/UTU#3bgU#"
     "EkJa#QoSa#UuxA$V>dD-%EWm.Xqn%#1vtg0lbub#r?D0$7J9Y$>o8B;W####";
-
-
-
-
-
-
-void LoadFonts(){
-    //static const ImWchar OpenFontIcons_ranges[] = { 0xe000, 0xe0fe, 0 }; // Will not be copied by AddFont* so keep in scope.
-    static const ImWchar FontAwesome_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 }; // Will not be copied by AddFont* so keep in scope.
-	ImGuiIO& io = ImGui::GetIO();
-	io.Fonts->Clear();
-	ImFontConfig config = {};
-	//ImFont* font = io.Fonts->AddFontDefault();
-	//ImFont* fontRoboto = io.Fonts->AddFontFromMemoryCompressedTTF(Roboto_compressed_data, Roboto_compressed_size, 32, &config);
-	ImFont* fontRoboto = io.Fonts->AddFontFromMemoryCompressedBase85TTF(Roboto_compressed_data_base85, 32, &config);
-    fontRoboto->Scale = 0.4;
-    config.MergeMode = true;
-	//config.SizePixels = 0.1;
-	config.GlyphOffset = ImVec2(-2, 1.5);
-	//ImFont* fontOpenFontIcons = io.Fonts->AddFontFromMemoryCompressedTTF(OpenFontIcons_compressed_data, OpenFontIcons_compressed_size, 32, &config, OpenFontIcons_ranges);
-	ImFont* fontIcons = io.Fonts->AddFontFromMemoryCompressedBase85TTF(FontAwesome_compressed_data_base85, 32, &config, FontAwesome_ranges);
-    fontIcons->Scale = 0.4;
-	//io.Fonts->Build();
-    FImGuiModule::Get().RebuildFontAtlas();
-}

@@ -16,9 +16,9 @@ GS->globalState.maxFPS
 */
 
 #include "ImGuiUI.h"
-#include "font.h"
-#include "native.h"
-#include "uiwindow.h"
+#include "Font.h"
+#include "Native.h"
+#include "UiWindow.h"
 #include "../Radar/SystemAPI.h"
 #include "../Radar/Products/RadarProduct.h"
 #include "../Radar/Globe.h"

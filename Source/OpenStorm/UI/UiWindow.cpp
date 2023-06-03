@@ -1,4 +1,4 @@
-#include "uiwindow.h"
+#include "UiWindow.h"
 
 #include "RHIDefinitions.h" // including this prevents some wierd compilation errors when pre compiles headers are disabled
 #include "Engine/GameViewportClient.h"
