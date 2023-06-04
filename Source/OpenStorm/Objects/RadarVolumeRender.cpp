@@ -4,7 +4,7 @@
 
 
 #include "RadarVolumeRender.h"
-#include "../UI/native.h"
+#include "../UI/Native.h"
 #include "RadarGameStateBase.h"
 #include "../EngineHelpers/MaterialRenderTarget.h"
 
