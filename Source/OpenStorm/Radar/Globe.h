@@ -8,6 +8,7 @@ public:
 	
 
 	// scale between real life and in game units
+	// multiplying real life units by this will return game units
 	double scale = 1.0 / 10000.0 * 100.0;
 	
 	// radius of the surface of the globe

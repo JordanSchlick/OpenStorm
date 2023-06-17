@@ -116,13 +116,14 @@ public:
 	// update and check for changes, is run every tick
 	void Update();
 	
+	// pull updated data from AMapMeshManager
+	void UpdateParameters();
+	
 	// set center and rotation of globe
 	void UpdatePosition(SimpleVector3<> position, SimpleVector3<> rotation);
 	
+	// propagate loaded texture
 	void UpdateTexture(UTexture* texture, bool fromParent);
-	
-	// pull updated data from AMapMeshManager
-	void UpdateParameters();
 	
 	void ProjectionOntoGlobeTest();
 };

@@ -23,6 +23,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type endPlayReason) override;
 
 public:	
 	// Called every frame
@@ -44,6 +45,8 @@ public:
 	float horizontalRotationAmount = 0;
 	
 	bool isTAAEnabled = false;
+	
+	std::vector<uint64_t> callbackIds = {};
 
 	void MoveFB(float value);
 	void MoveLR(float value);

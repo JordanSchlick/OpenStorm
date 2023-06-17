@@ -157,6 +157,8 @@ void AImGuiUI::Tick(float deltaTime)
 		return;
 	}
 	globalState.devShowImGui = true;
+	
+	double now = SystemAPI::CurrentTime();
 
 	ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>();
 
@@ -301,35 +303,72 @@ void AImGuiUI::Tick(float deltaTime)
 				ImGui::TreePop();
 			}
 			ImGui::Separator();
-			if (ImGui::TreeNodeEx("Waypoints", ImGuiTreeNodeFlags_SpanAvailWidth)) {
-				int id = 0;
-				char idChr[3] = {};
-				bool markersChanged = false;
-				for(auto &marker : globalState.locationMarkers){
-					ImGui::Separator();
-					idChr[0] = (id % 255) + 1;
-					idChr[1] = id / 255 + 1;
-					ImGui::PushID(idChr);
-					markersChanged |= ImGui::InputText("Name", &marker.name);
-					markersChanged |= ImGui::InputDouble("Latitude", &marker.latitude);
-					markersChanged |= ImGui::InputDouble("Longitude", &marker.longitude);
-					markersChanged |= ImGui::InputDouble("Altitude", &marker.altitude);
-					ImGui::PopID();
-					id++;
-				}
-				ImGui::Separator();
-				if (ImGui::Button("New")) {
-					GlobalState::Waypoint newWaypoint = {};
-					newWaypoint.name = "New";
-					newWaypoint.latitude = globalState.globe->GetTopLatitudeDegrees();
-					newWaypoint.longitude = globalState.globe->GetTopLongitudeDegrees();
-					globalState.locationMarkers.push_back(newWaypoint);
-					markersChanged = true;
-				}
-				if(markersChanged){
-					globalState.EmitEvent("LocationMarkersUpdate");
-				}
+			if (ImGui::TreeNodeEx("Map", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				ImGui::Checkbox("Show Map", &globalState.enableMap);
+				CustomFloatInput("Map Brightness", 0.01, 1.0, &globalState.mapBrightness, &globalState.defaults->mapBrightness);
+				if (ImGui::TreeNodeEx("Waypoints", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+					char idChr[3] = {};
+					bool markersChanged = false;
+					ImGui::PushItemWidth(10 * ImGui::GetFontSize());
+					for(int id = 0; id < globalState.locationMarkers.size(); id++){
+						GlobalState::Waypoint &marker = globalState.locationMarkers[id];
+						ImGui::Separator();
+						// only allows for about 60000 markers in the ui
+						idChr[0] = (id % 255) + 1;
+						idChr[1] = id / 255 + 1;
+						ImGui::PushID(idChr);
+						markersChanged |= ImGui::InputText("Name", &marker.name);
+						markersChanged |= ImGui::InputDouble("Latitude", &marker.latitude);
+						markersChanged |= ImGui::InputDouble("Longitude", &marker.longitude);
+						markersChanged |= ImGui::InputDouble("Altitude", &marker.altitude);
+						if (ImGui::Button("Teleport")) {
+							SimpleVector3 location = globalState.globe->GetPointScaledDegrees(marker.latitude, marker.longitude, marker.altitude);
+							globalState.EmitEvent("Teleport","", &location);
+						}
+						ImGui::SameLine();
+						// handle deletion where the button must be clicked twice
+						static int deleteId = -1;
+						static double deleteTime = -1;
+						if(now - deleteTime > 10){
+							deleteId = -1;
+						}
+						bool isSelectedForDeletion = deleteId == id;
+						if(isSelectedForDeletion){
+							ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+							ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+						}
+						if(ImGui::Button("Delete")) {
+							if(isSelectedForDeletion){
+								globalState.locationMarkers.erase(globalState.locationMarkers.begin()+id);
+								deleteId = -1;
+							}else{
+								deleteId = id;
+								deleteTime = now;
+							}
+						}
+						if(isSelectedForDeletion){
+							ImGui::PopStyleColor(3);
+						}
+						
+						ImGui::PopID();
+					}
+					ImGui::PopItemWidth();
+					ImGui::Separator();
+					if (ImGui::Button("New Waypoint")) {
+						GlobalState::Waypoint newWaypoint = {};
+						newWaypoint.name = "New";
+						newWaypoint.latitude = globalState.globe->GetTopLatitudeDegrees();
+						newWaypoint.longitude = globalState.globe->GetTopLongitudeDegrees();
+						newWaypoint.altitude = globalState.globe->GetLocationScaled(SimpleVector3<>(0, 0, 0)).radius();
+						globalState.locationMarkers.push_back(newWaypoint);
+						markersChanged = true;
+					}
+					if(markersChanged){
+						globalState.EmitEvent("LocationMarkersUpdate");
+					}
+					ImGui::TreePop();
+				}
 				ImGui::TreePop();
 			}
 			//ImGui::Separator();

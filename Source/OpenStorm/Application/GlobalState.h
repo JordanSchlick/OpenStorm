@@ -55,8 +55,9 @@ public:
 	float qualityCustomStepSize = 5.0f; // if quality is set to 10 this value is used
 	float verticalScale = 1.0f; // multiply vertical scale
 	float audioControlMultiplier = 5.0f;
+	float mapBrightness = 0.2f; // brightness of map texture
 	
-	int volumeType = 1; // type of radar product, defaults to 1 which is reflectivity
+	int volumeType = 1; // type of radar product RadarData::VolumeType, defaults to 1 which is reflectivity
 	
 	std::vector<Waypoint> locationMarkers = {};
 	

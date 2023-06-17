@@ -2,8 +2,6 @@
 
 #include <vector>
 
-#include "../Application/GlobalState.h"
-
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "GameFramework/Actor.h"

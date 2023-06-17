@@ -51,6 +51,12 @@ void AMapMeshManager::Tick(float DeltaTime){
 		if(!globalState->enableMap && enabled){
 			DisableMap();
 		}
+		if(enabled){
+			if(globalState->mapBrightness != mapBrightness){
+				mapBrightness = globalState->mapBrightness;
+				rootMapMesh->UpdateParameters();
+			}
+		}
 	}
 	if(enabled){
 		APawn* pawn = GetWorld()->GetFirstPlayerController()->GetPawn();
@@ -118,6 +124,7 @@ void AMapMeshManager::EnableMap(){
 	);
 	rootMapMesh->manager = this;
 	rootMapMesh->globe = globe;
+	rootMapMesh->UpdateParameters();
 	rootMapMesh->LoadTile();
 	
 	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();

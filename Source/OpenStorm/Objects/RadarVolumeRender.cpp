@@ -17,6 +17,7 @@
 #include "../Radar/Products/RadarProduct.h"
 #include "../Radar/SystemAPI.h"
 #include "../Radar/Globe.h"
+#include "../Application/GlobalState.h"
 
 
 #include "UObject/Object.h"

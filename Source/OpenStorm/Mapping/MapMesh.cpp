@@ -379,7 +379,7 @@ void AMapMesh::MakeChildren(){
 				);
 				child->UpdatePosition(FVectorToSimpleVector3(GetActorLocation()), appliedRotation);
 				child->UpdateTexture(materialInstance->K2_GetTextureParameterValue(TEXT("Texture")), true);
-				
+				child->UpdateParameters();
 				child->LoadTile();
 				mapChildren[i] = child;
 				madeChildren = true;
@@ -434,6 +434,17 @@ void AMapMesh::Update(){
 		pendingTexture = false;
 		fullyLoaded = true;
 		UpdateTexture(texture, false);
+	}
+}
+
+void AMapMesh::UpdateParameters(){
+	if(manager != NULL){
+		materialInstance->SetScalarParameterValue(TEXT("Brightness"), manager->mapBrightness);
+	}
+	for(int i = 0; i < 4; i++){
+		if(mapChildren[i] != NULL){
+			mapChildren[i]->UpdateParameters();
+		}
 	}
 }
 

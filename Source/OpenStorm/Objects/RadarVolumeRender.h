@@ -5,7 +5,6 @@
 
 #include "../Radar/RadarCollection.h"
 #include "../Radar/RadarColorIndex.h"
-#include "../Application/GlobalState.h"
 
 #include <vector>
 

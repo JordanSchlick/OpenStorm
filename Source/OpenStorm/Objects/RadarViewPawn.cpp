@@ -8,7 +8,7 @@
 #include "Engine/StaticMesh.h" 
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
-
+#include "../Radar/SimpleVector3.h"
 
 
 
@@ -53,6 +53,22 @@ void ARadarViewPawn::BeginPlay()
 	//hud = NewObject<class ASlateUI>(this);
 	//hud = GetWorld()->SpawnActor<ASlateUI>(ASlateUI::StaticClass());;
 	//hud->AddToViewport(GetWorld()->GetGameViewport());
+	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
+
+		GlobalState* globalState = &gameState->globalState;
+		callbackIds.push_back(globalState->RegisterEvent("Teleport", [this](std::string stringData, void* extraData) {
+			SimpleVector3<>* vec = (SimpleVector3<>*)extraData;
+			SetActorLocation(FVector(vec->x, vec->y, vec->z));
+		}));
+	}
+}
+
+void ARadarViewPawn::EndPlay(const EEndPlayReason::Type endPlayReason) {
+	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+	// unregister all events
+	for(auto id : callbackIds){
+		globalState->UnregisterEvent(id);
+	}
 }
 
 // Called every frame

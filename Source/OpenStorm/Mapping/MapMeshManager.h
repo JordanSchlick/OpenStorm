@@ -28,6 +28,8 @@ public:
 	Globe* globe;
 	// if the map is enabled
 	bool enabled = false;
+	// the brightness of the map texture
+	float mapBrightness = 0.2;
 	// callback ids for global state
 	std::vector<uint64_t> callbackIds = {};
 	// root of map mesh tree
