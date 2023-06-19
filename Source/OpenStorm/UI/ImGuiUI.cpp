@@ -1,20 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-/*
-UI TODO
-
-Variables to implement
-GS->globalState.moveSpeed
-GS->globalState.rotateSpeed
-GS->globalState.fadeSpeed
-GS->globalState.fade
-GS->globalState.animate
-GS->globalState.animateSpeed
-GS->globalState.interpolation
-GS->globalState.maxFPS
-
-*/
-
 #include "ImGuiUI.h"
 #include "Font.h"
 #include "Native.h"
@@ -567,7 +550,7 @@ void AImGuiUI::Tick(float deltaTime)
 			
 			ImGui::Checkbox("Scalability Test", &scalabilityTest);
 			if (ImGui::Button("Test")) {
-				ligma(GS->globalState.inputToggle);
+				ligma(GS->globalState.testBool);
 			}
 		}
 		

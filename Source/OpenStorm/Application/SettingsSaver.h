@@ -26,14 +26,20 @@ public:
 	// save JSON to disk
 	bool SaveJson(FString filename, TSharedPtr<FJsonObject> jsonObject);
 	
+	// load settings from disk into global state
+	void LoadSettings();
+	
+	// save non-default settings from global state onto disk
+	void SaveSettings();
+	
 	// load location markers from disk into global state
 	void LoadLocationMarkers();
 	
 	// save location markers from global state onto disk
 	void SaveLocationMarkers();
 	
-	FString locationMarkersFile;
 	FString settingsFile;
+	FString locationMarkersFile;
 	double saveLocationMarkersCountdown = -1;
 	std::vector<uint64_t> callbackIds = {};
 };

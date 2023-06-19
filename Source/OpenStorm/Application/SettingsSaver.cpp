@@ -8,7 +8,7 @@
 #include "HAL/FileManager.h"
 #include "../Objects/RadarGameStateBase.h"
 #include "../Radar/Globe.h"
-
+#include <algorithm>
 
 ASettingsSaver::ASettingsSaver() {
 	PrimaryActorTick.bCanEverTick = true;
@@ -26,6 +26,7 @@ void ASettingsSaver::BeginPlay(){
 		callbackIds.push_back(globalState->RegisterEvent("LocationMarkersUpdate", [this](std::string stringData, void* extraData) {
 			saveLocationMarkersCountdown = 5;
 		}));
+		LoadSettings();
 		LoadLocationMarkers();
 	}
 }
@@ -37,6 +38,7 @@ void ASettingsSaver::EndPlay(const EEndPlayReason::Type endPlayReason) {
 		for(auto id : callbackIds){
 			globalState->UnregisterEvent(id);
 		}
+		SaveSettings();
 		SaveLocationMarkers();
 	}
 	Super::EndPlay(endPlayReason);
@@ -79,27 +81,126 @@ bool ASettingsSaver::SaveJson(FString filename, TSharedPtr<FJsonObject> jsonObje
 	FString dataString;
 	success = FJsonSerializer::Serialize(jsonObject.ToSharedRef(), TJsonWriterFactory<>::Create(&dataString, 0));
 	if(success){
-		//IFileManager::Get().Move(*(filename + TEXT(".old")), *filename, true);
+		IFileManager::Get().Move(*(filename + TEXT(".old")), *filename, true);
 		success = FFileHelper::SaveStringToFile(dataString, *filename);
 		return success;
 	}
-	// success = FFileHelper::LoadFileToString(dataString, *filename);
-	// if(success){
-	// 	success = FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(dataString), jsonObject);
-	// 	return jsonObject;
-	// }
 	return false;
+}
+
+
+#define QUOTE(seq) ""#seq""
+
+#define LOAD_MACRO_FLOAT(NAME) if(jsonObject->TryGetNumberField(TEXT(QUOTE(NAME)), tmpFloat)){ \
+	globalState->NAME = tmpFloat; \
+}
+
+#define LOAD_MACRO_BOOL(NAME) if(jsonObject->TryGetBoolField(TEXT(QUOTE(NAME)), tmpBool)){ \
+	globalState->NAME = tmpBool; \
+}
+
+void ASettingsSaver::LoadSettings() {
+	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
+		GlobalState* globalState = &gameState->globalState;
+		// fprintf(stderr, "Loading waypoints\n");
+		TSharedPtr<FJsonObject> jsonObject = LoadJson(settingsFile);
+		float tmpFloat;
+		bool tmpBool;
+		// Main
+		// --Radar--
+		if (jsonObject->TryGetNumberField(TEXT(""), tmpFloat)) {
+			globalState->animateSpeed = tmpFloat;
+		}
+		LOAD_MACRO_FLOAT(cutoff);
+		LOAD_MACRO_FLOAT(opacityMultiplier);
+		LOAD_MACRO_FLOAT(verticalScale);
+		LOAD_MACRO_BOOL(spatialInterpolation);
+		LOAD_MACRO_BOOL(temporalInterpolation);
+		// --Movement--
+		LOAD_MACRO_FLOAT(moveSpeed);
+		LOAD_MACRO_FLOAT(rotateSpeed);
+		// --Animation--
+		LOAD_MACRO_FLOAT(animateSpeed);
+		LOAD_MACRO_FLOAT(animateCutoffSpeed);
+		// --Data--
+		LOAD_MACRO_BOOL(pollData);
+		// --Map--
+		LOAD_MACRO_BOOL(enableMap);
+		LOAD_MACRO_FLOAT(mapBrightness);
+		// Settings
+		LOAD_MACRO_FLOAT(maxFPS);
+		LOAD_MACRO_BOOL(vsync);
+		LOAD_MACRO_FLOAT(quality);
+		LOAD_MACRO_FLOAT(qualityCustomStepSize);
+		LOAD_MACRO_BOOL(enableFuzz);
+		LOAD_MACRO_BOOL(temporalAntiAliasing);
+		
+		globalState->EmitEvent("UpdateVolumeParameters");
+	}
+}
+
+#define SAVE_MACRO_FLOAT(NAME) if(globalState->NAME != globalState->defaults->NAME){ \
+	jsonObject->SetNumberField(TEXT(QUOTE(NAME)), globalState->NAME); \
+} else { \
+	jsonObject->RemoveField(TEXT(QUOTE(NAME))); \
+}
+
+#define SAVE_MACRO_BOOL(NAME) if(globalState->NAME != globalState->defaults->NAME){ \
+	jsonObject->SetBoolField(TEXT(QUOTE(NAME)), globalState->NAME); \
+} else { \
+	jsonObject->RemoveField(TEXT(QUOTE(NAME))); \
+}
+
+void ASettingsSaver::SaveSettings() {
+	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
+		GlobalState* globalState = &gameState->globalState;
+		TSharedPtr<FJsonObject> jsonObject = LoadJson(settingsFile);
+		// Main
+		// --Radar--
+		if(globalState->cutoff != globalState->defaults->cutoff){
+			// prevent users from accidentally hiding everything across restarts
+			jsonObject->SetNumberField(TEXT("cutoff"), std::min(globalState->cutoff, 0.5f));
+		} else {
+			jsonObject->RemoveField(TEXT("cutoff"));
+		}
+		SAVE_MACRO_FLOAT(opacityMultiplier);
+		SAVE_MACRO_FLOAT(verticalScale);
+		SAVE_MACRO_BOOL(spatialInterpolation);
+		SAVE_MACRO_BOOL(temporalInterpolation);
+		// --Movement--
+		SAVE_MACRO_FLOAT(moveSpeed);
+		SAVE_MACRO_FLOAT(rotateSpeed);
+		// --Animation--
+		SAVE_MACRO_FLOAT(animateSpeed);
+		SAVE_MACRO_FLOAT(animateCutoffSpeed);
+		// --Data--
+		SAVE_MACRO_BOOL(pollData);
+		// --Map--
+		SAVE_MACRO_BOOL(enableMap);
+		SAVE_MACRO_FLOAT(mapBrightness);
+		// Settings
+		SAVE_MACRO_FLOAT(maxFPS);
+		SAVE_MACRO_BOOL(vsync);
+		SAVE_MACRO_FLOAT(quality);
+		SAVE_MACRO_FLOAT(qualityCustomStepSize);
+		SAVE_MACRO_BOOL(enableFuzz);
+		SAVE_MACRO_BOOL(temporalAntiAliasing);
+
+
+
+		SaveJson(settingsFile, jsonObject);
+	}
 }
 
 void ASettingsSaver::LoadLocationMarkers() {
 	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
 		GlobalState* globalState = &gameState->globalState;
-		fprintf(stderr, "Loading waypoints\n");
+		// fprintf(stderr, "Loading waypoints\n");
 		TSharedPtr<FJsonObject> jsonObject = LoadJson(locationMarkersFile);
 		// get existing markers
 		const TArray<TSharedPtr<FJsonValue>>* markersOldPtr;
 		if (jsonObject->TryGetArrayField(TEXT("markers"), markersOldPtr)) {
-			fprintf(stderr, "Loading waypoints %i\n", markersOldPtr->Num());
+			//fprintf(stderr, "Loading waypoints %i\n", markersOldPtr->Num());
 			for (int id = 0; id < markersOldPtr->Num(); id++) {
 				const TSharedPtr<FJsonObject>* markerObjectPtr;
 				(*markersOldPtr)[id]->TryGetObject(markerObjectPtr);
@@ -128,7 +229,7 @@ void ASettingsSaver::LoadLocationMarkers() {
 void ASettingsSaver::SaveLocationMarkers() {
 	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
 		GlobalState* globalState = &gameState->globalState;
-		fprintf(stderr, "Saving waypoints\n");
+		// fprintf(stderr, "Saving waypoints\n");
 		TSharedPtr<FJsonObject> jsonObject = LoadJson(locationMarkersFile);
 		TArray<TSharedPtr<FJsonValue>> markers;
 		// get existing markers to avoid accidently clearing everything

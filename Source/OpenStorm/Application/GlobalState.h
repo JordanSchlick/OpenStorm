@@ -22,10 +22,9 @@ public:
 		bool enabled = true;
 	};
 	
-	bool inputToggle = false; // toggle mouse input
-	bool fade = false; // animate fade
+
 	bool animate = false; // animate the scene
-	bool animateCutoff = false; // animate the cotoff
+	bool animateCutoff = false; // animate the cutoff
 	bool temporalInterpolation = true; // interpolate data over time when animating
 	bool spatialInterpolation = true; // interpolate data over time when animating
 	bool isMouseCaptured = false; // true if mouse is currently captured
@@ -40,7 +39,7 @@ public:
 	bool audioControlledHeight = false;
 	bool audioControlledOpacity = false;
 	bool audioControlledCutoff = false;
-	bool enableMap = false; // if the globe should be rendered
+	bool enableMap = true; // if the globe should be rendered
 	
 	float maxFPS = 60.0f; // maximum frames per second
 	float animateSpeed = 3.0f; // speed of animation
