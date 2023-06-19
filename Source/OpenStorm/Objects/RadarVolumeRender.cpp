@@ -347,6 +347,7 @@ void ARadarVolumeRender::EndPlay(const EEndPlayReason::Type endPlayReason) {
 	}
 	
 	globalState->refRadarCollection = NULL;
+	Super::EndPlay(endPlayReason);
 }
 
 //Initialize all textures or reinitialize ones that need it
@@ -499,7 +500,7 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 		radarColorResult = radarColor->GenerateColorIndex(colorParams, &radarColorResult);
 		float cutoff = globalState->cutoff;
 		if (globalState->animateCutoff) {
-			cutoff = (sin(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * PI2F) + 1) / 2 * cutoff;
+			cutoff = (sin(fmod(now, 1 / globalState->animateCutoffSpeed) * globalState->animateCutoffSpeed * PI2F) + 1) / 2 * cutoff;
 			//cutoff = abs(fmod(now, globalState->animateCutoffTime) / globalState->animateCutoffTime * -2 + 1) * cutoff;
 		}
 		radarColor->ModifyOpacity(globalState->opacityMultiplier, cutoff, &radarColorResult);

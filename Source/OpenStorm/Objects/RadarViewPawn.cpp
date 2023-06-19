@@ -9,6 +9,8 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "../Radar/SimpleVector3.h"
+#include "../UI/ImGuiUI.h"
+#include "../UI/Slate/SlateUI.h"
 
 
 
@@ -69,6 +71,7 @@ void ARadarViewPawn::EndPlay(const EEndPlayReason::Type endPlayReason) {
 	for(auto id : callbackIds){
 		globalState->UnregisterEvent(id);
 	}
+	Super::EndPlay(endPlayReason);
 }
 
 // Called every frame

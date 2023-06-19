@@ -2,13 +2,14 @@
 
 #pragma once
 #include "RadarVolumeRender.h"
-#include "../UI/ImGuiUI.h"
-#include "../UI/Slate/SlateUI.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
 #include "RadarViewPawn.generated.h"
+
+class ASlateUI;
+class AImGuiUI;
 
 UCLASS()
 class OPENSTORM_API ARadarViewPawn : public APawn

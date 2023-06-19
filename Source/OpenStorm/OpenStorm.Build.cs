@@ -10,7 +10,7 @@ public class OpenStorm : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "RenderCore", "Engine",  "Slate", "SlateCore"});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "InputCore", "ImGui", "AudioCaptureCore", "ProceduralMeshComponent", "ImageWrapper", "RHI"});
+		PrivateDependencyModuleNames.AddRange(new string[] { "InputCore", "ImGui", "AudioCaptureCore", "ProceduralMeshComponent", "ImageWrapper", "RHI", "Json"});
 		
 		if (Target.bBuildEditor)
 		{

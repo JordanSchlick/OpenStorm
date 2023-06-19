@@ -10,6 +10,7 @@ ALocationMarkerManager::ALocationMarkerManager() {
 }
 
 void ALocationMarkerManager::BeginPlay() {
+	Super::BeginPlay();
 	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	
 	callbackIds.push_back(globalState->RegisterEvent("GlobeUpdate",[this](std::string stringData, void* extraData){
@@ -28,6 +29,7 @@ void ALocationMarkerManager::EndPlay(const EEndPlayReason::Type endPlayReason) {
 	for(auto id : callbackIds){
 		globalState->UnregisterEvent(id);
 	}
+	Super::EndPlay(endPlayReason);
 }
 
 void ALocationMarkerManager::UpdateLocationMarkers() {

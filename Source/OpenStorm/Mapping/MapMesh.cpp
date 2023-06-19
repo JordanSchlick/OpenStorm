@@ -234,6 +234,7 @@ void AMapMesh::EndPlay(const EEndPlayReason::Type endPlayReason) {
 		texture->GetPlatformData()->Mips[0].BulkData.RemoveBulkData();
 		texture = NULL;
 	}
+	Super::EndPlay(endPlayReason);
 }
 
 void AMapMesh::Tick(float DeltaTime){
