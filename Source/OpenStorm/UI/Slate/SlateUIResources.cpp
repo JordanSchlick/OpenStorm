@@ -7,7 +7,9 @@ USlateUIResources::USlateUIResources(){
 }
 
 USlateUIResources::~USlateUIResources(){
-	Instance = NULL;
+	if(Instance == this){
+		Instance = NULL;
+	}
 }
 
 USlateUIResources* USlateUIResources::Instance = NULL;
