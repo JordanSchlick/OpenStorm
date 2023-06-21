@@ -26,7 +26,7 @@ Discord server invite [https://discord.gg/K3aU2hEYvJ](https://discord.gg/K3aU2hE
 
 
 ## Building
-1. Install Unreal Engine 5 and its dependencies (currently unreal engine 5.2 although other versions will work)
+1. Install Unreal Engine 5.2 and its dependencies
 2. Clone the repo `git clone https://github.com/JordanSchlick/OpenStorm.git`
 3. Get submodules `git submodule update --init --recursive`
 4. Open the project in unreal engine
