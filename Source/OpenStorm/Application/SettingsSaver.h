@@ -1,6 +1,9 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "UObject/Object.h"
+#include "GameFramework/Actor.h"
 #include "Dom/JsonObject.h"
+#include <vector>
 #include "SettingsSaver.generated.h"
 
 UCLASS()

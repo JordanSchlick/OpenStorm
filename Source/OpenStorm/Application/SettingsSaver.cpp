@@ -6,6 +6,7 @@
 #include "GenericPlatform/GenericPlatformProcess.h"
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"
+#include "Engine/World.h"
 #include "../Objects/RadarGameStateBase.h"
 #include "../Radar/Globe.h"
 #include <algorithm>
