@@ -85,7 +85,19 @@ bool ASettingsSaver::SaveJson(FString filename, TSharedPtr<FJsonObject> jsonObje
 	FString dataString;
 	success = FJsonSerializer::Serialize(jsonObject.ToSharedRef(), TJsonWriterFactory<>::Create(&dataString, 0));
 	if(success){
-		IFileManager::Get().Move(*(filename + TEXT(".old")), *filename, true);
+		// test if existing json file is valid
+		bool readSuccess = false;
+		FString oldDataString;
+		readSuccess = FFileHelper::LoadFileToString(oldDataString, *filename);
+		TSharedPtr<FJsonObject> jsonObjectOld;
+		if(readSuccess){
+			readSuccess = FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(oldDataString), jsonObjectOld);
+		}
+		if(readSuccess && jsonObjectOld->Values.Num() > 0){
+			// move existing valid json file
+			IFileManager::Get().Move(*(filename + TEXT(".old")), *filename, true);
+		}
+		
 		success = FFileHelper::SaveStringToFile(dataString, *filename);
 		return success;
 	}
