@@ -35,6 +35,9 @@ public:
 	// save non-default settings from global state onto disk
 	void SaveSettings();
 	
+	// reset all simple settings that do not require much setup
+	void ResetBasicSettings();
+	
 	// load location markers from disk into global state
 	void LoadLocationMarkers();
 	

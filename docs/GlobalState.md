@@ -9,7 +9,9 @@ Events are named. They can also have some data associated with them. Extra data 
 * `UpdateVolumeParameters` - Used after changing settings involving the volume shader that may require expensive operations on the shader to apply
 * `ChangeProduct(unused, RadarData::VolumeType*)` - Change the type of product being displayed
 * `LocationMarkersUpdate` - Update location markers from global state
-* `GlobeUpdate` - Update orientation of the globe
+* `GlobeUpdate` - Updated orientation of the globe
 * `LoadDirectory(directory to load,Null)` - Load a directory of radar files
-* `DevReloadFile` - reload the current file
-* `Teleport(unused, SimpleVector3*)` - teleport the camera to the game location specified by SimpleVector3
+* `DevReloadFile` - Reload the current file
+* `Teleport(unused, SimpleVector3*)` - Teleport the camera to the game location specified by SimpleVector3
+* `ResetBasicSettings` - Reset all simple settings that do not require much setup
+* `UpdateEngineSettings` - Update engine settings from global state

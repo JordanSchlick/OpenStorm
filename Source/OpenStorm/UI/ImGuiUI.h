@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include <vector>
 #include "ImGuiUI.generated.h"
-
 
 class UIWindow;
 namespace pfd{
@@ -26,6 +26,7 @@ public:
 	int unsafeFrames = 0;
 	UIWindow* uiWindow = NULL;
 	pfd::public_open_file* fileChooser = NULL;
+	std::vector<uint64_t> callbackIds = {};
 	
 	void LockMouse();
 	void UnlockMouse();
@@ -42,6 +43,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type endPlayReason) override;
 
 public:
 	// Called every frame

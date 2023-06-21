@@ -119,11 +119,29 @@ void AImGuiUI::BeginPlay()
 	ImGuiStyle &style = ImGui::GetStyle();
 	style.DisplaySafeAreaPadding = ImVec2(0, 0);
 	
+	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
+		GlobalState* globalState = &gameState->globalState;
+		callbackIds.push_back(globalState->RegisterEvent("UpdateEngineSettings", [this](std::string stringData, void* extraData) {
+			UpdateEngineSettings();
+		}));
+	}
+	
 	InitializeConsole();
 	
 	UpdateEngineSettings();
 	
 	UnlockMouse();
+}
+
+void AImGuiUI::EndPlay(const EEndPlayReason::Type endPlayReason) {
+	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
+		GlobalState* globalState = &gameState->globalState;
+		// unregister all events
+		for(auto id : callbackIds){
+			globalState->UnregisterEvent(id);
+		}
+	}
+	Super::EndPlay(endPlayReason);
 }
 
 //const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
@@ -314,7 +332,7 @@ void AImGuiUI::Tick(float deltaTime)
 						// handle deletion where the button must be clicked twice
 						static int deleteId = -1;
 						static double deleteTime = -1;
-						if(now - deleteTime > 10){
+						if(now - deleteTime > 5){
 							deleteId = -1;
 						}
 						bool isSelectedForDeletion = deleteId == id;
@@ -428,7 +446,32 @@ void AImGuiUI::Tick(float deltaTime)
 					//ImGui::SetWindowCollapsed(true);
 					ExternalWindow();
 				}
-				
+				{
+					// button must be clicked twice
+					static bool selectedForDeletion = false;
+					static double deleteTime = false;
+					if(now - deleteTime > 5){
+						selectedForDeletion = false;
+					}
+					bool applyRedStyle = selectedForDeletion;
+					if(applyRedStyle){
+						ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+					}
+					if(ImGui::Button("Reset Basic Settings")) {
+						if(selectedForDeletion){
+							globalState.EmitEvent("ResetBasicSettings");
+							selectedForDeletion = false;
+						}else{
+							selectedForDeletion = true;
+							deleteTime = now;
+						}
+					}
+					if(applyRedStyle){
+						ImGui::PopStyleColor(3);
+					}
+				}
 				ImGui::TreePop();
 			}
 			if (ImGui::TreeNodeEx("Joke", ImGuiTreeNodeFlags_SpanAvailWidth)) {	

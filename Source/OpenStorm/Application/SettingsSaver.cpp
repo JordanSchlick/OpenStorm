@@ -27,6 +27,9 @@ void ASettingsSaver::BeginPlay(){
 		callbackIds.push_back(globalState->RegisterEvent("LocationMarkersUpdate", [this](std::string stringData, void* extraData) {
 			saveLocationMarkersCountdown = 5;
 		}));
+		callbackIds.push_back(globalState->RegisterEvent("ResetBasicSettings", [this](std::string stringData, void* extraData) {
+			ResetBasicSettings();
+		}));
 		LoadSettings();
 		LoadLocationMarkers();
 	}
@@ -190,6 +193,59 @@ void ASettingsSaver::SaveSettings() {
 
 
 		SaveJson(settingsFile, jsonObject);
+	}
+}
+
+#define RESET_MACRO(NAME) globalState->NAME = globalState->defaults->NAME;
+
+void ASettingsSaver::ResetBasicSettings() {
+	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
+		GlobalState* globalState = &gameState->globalState;
+		TSharedPtr<FJsonObject> jsonObject = LoadJson(settingsFile);
+		// Main
+		// --Radar--
+		RESET_MACRO(volumeType);
+		RESET_MACRO(cutoff);
+		RESET_MACRO(opacityMultiplier);
+		RESET_MACRO(verticalScale);
+		RESET_MACRO(spatialInterpolation);
+		RESET_MACRO(temporalInterpolation);
+		// --Movement--
+		if(globalState->moveSpeed <= 10){
+			RESET_MACRO(moveSpeed);
+		}
+		if(globalState->rotateSpeed <= 10){
+			RESET_MACRO(rotateSpeed);
+		}
+		// --Animation--
+		RESET_MACRO(animate);
+		RESET_MACRO(animateCutoff);
+		RESET_MACRO(animateSpeed);
+		RESET_MACRO(animateSpeed);
+		RESET_MACRO(animateCutoffSpeed);
+		// --Data--
+		RESET_MACRO(pollData);
+		// --Map--
+		RESET_MACRO(enableMap);
+		RESET_MACRO(mapBrightness);
+		// Settings
+		RESET_MACRO(maxFPS);
+		RESET_MACRO(vsync);
+		RESET_MACRO(quality);
+		RESET_MACRO(qualityCustomStepSize);
+		RESET_MACRO(enableFuzz);
+		RESET_MACRO(temporalAntiAliasing);
+		// --Joke--
+		RESET_MACRO(audioControlledCutoff);
+		RESET_MACRO(audioControlledHeight);
+		RESET_MACRO(audioControlledOpacity);
+		RESET_MACRO(audioControlMultiplier);
+
+
+
+		globalState->EmitEvent("UpdateVolumeParameters");
+		globalState->EmitEvent("UpdateEngineSettings");
+		globalState->EmitEvent("ChangeProduct", "", &globalState->volumeType);
 	}
 }
 
