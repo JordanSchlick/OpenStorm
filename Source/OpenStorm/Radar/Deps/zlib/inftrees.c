@@ -3,6 +3,9 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+
 #include "zutil.h"
 #include "inftrees.h"
 
@@ -302,3 +305,5 @@ unsigned short FAR *work;
     *bits = root;
     return 0;
 }
+
+#pragma clang diagnostic pop

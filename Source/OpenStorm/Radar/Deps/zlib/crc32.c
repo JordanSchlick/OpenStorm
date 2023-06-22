@@ -20,6 +20,10 @@
   produced, so that this one source file can be compiled to an executable.
  */
 
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+
 #ifdef MAKECRCH
 #  include <stdio.h>
 #  ifndef DYNAMIC_CRC_TABLE
@@ -1123,3 +1127,5 @@ uLong ZEXPORT crc32_combine_op(crc1, crc2, op)
 {
     return multmodp(op, crc1) ^ (crc2 & 0xffffffff);
 }
+
+#pragma clang diagnostic pop

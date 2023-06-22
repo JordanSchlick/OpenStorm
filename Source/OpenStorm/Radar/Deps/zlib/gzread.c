@@ -3,6 +3,9 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+
 #include "gzguts.h"
 
 /* Local functions */
@@ -648,3 +651,5 @@ int ZEXPORT gzclose_r(file)
     free(state);
     return ret ? Z_ERRNO : err;
 }
+
+#pragma clang diagnostic pop

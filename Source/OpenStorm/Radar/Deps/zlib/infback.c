@@ -10,6 +10,9 @@
    inflate_fast() can be used with either inflate.c or infback.c.
  */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+
 #include "zutil.h"
 #include "inftrees.h"
 #include "inflate.h"
@@ -642,3 +645,5 @@ z_streamp strm;
     Tracev((stderr, "inflate: end\n"));
     return Z_OK;
 }
+
+#pragma clang diagnostic pop

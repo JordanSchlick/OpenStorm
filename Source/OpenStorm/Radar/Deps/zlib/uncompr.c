@@ -5,6 +5,10 @@
 
 /* @(#) $Id$ */
 
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+
 #define ZLIB_INTERNAL
 #include "zlib.h"
 
@@ -91,3 +95,5 @@ int ZEXPORT uncompress(dest, destLen, source, sourceLen)
 {
     return uncompress2(dest, destLen, source, &sourceLen);
 }
+
+#pragma clang diagnostic pop

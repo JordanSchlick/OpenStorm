@@ -49,6 +49,9 @@
 
 /* @(#) $Id$ */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+
 #include "deflate.h"
 
 const char deflate_copyright[] =
@@ -2215,3 +2218,5 @@ local block_state deflate_huff(s, flush)
         FLUSH_BLOCK(s, 0);
     return block_done;
 }
+
+#pragma clang diagnostic pop

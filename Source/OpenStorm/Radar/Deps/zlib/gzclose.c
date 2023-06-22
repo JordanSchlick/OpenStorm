@@ -3,6 +3,9 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+
 #include "gzguts.h"
 
 /* gzclose() is in a separate file so that it is linked in only if it is used.
@@ -23,3 +26,5 @@ int ZEXPORT gzclose(file)
     return gzclose_r(file);
 #endif
 }
+
+#pragma clang diagnostic pop

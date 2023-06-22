@@ -3,6 +3,9 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+
 #include "zutil.h"
 #include "inftrees.h"
 #include "inflate.h"
@@ -321,3 +324,5 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
  */
 
 #endif /* !ASMINF */
+
+#pragma clang diagnostic pop

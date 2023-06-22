@@ -34,6 +34,9 @@
 
 /* #define GEN_TREES_H */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
+
 #include "deflate.h"
 
 #ifdef ZLIB_DEBUG
@@ -1179,3 +1182,5 @@ local void bi_windup(s)
     s->bits_sent = (s->bits_sent + 7) & ~7;
 #endif
 }
+
+#pragma clang diagnostic pop
