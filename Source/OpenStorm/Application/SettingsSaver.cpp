@@ -9,6 +9,7 @@
 #include "Engine/World.h"
 #include "../Objects/RadarGameStateBase.h"
 #include "../Radar/Globe.h"
+#include "../EngineHelpers/StringUtils.h"
 #include <algorithm>
 
 ASettingsSaver::ASettingsSaver() {
@@ -277,7 +278,7 @@ void ASettingsSaver::LoadLocationMarkers() {
 				GlobalState::Waypoint waypoint = {};
 				FString name;
 				if (markerObject->TryGetStringField(TEXT("name"), name)) {
-					waypoint.name = std::string(StringCast<ANSICHAR>(*name).Get());
+					waypoint.name = StringUtils::FStringToSTDString(name);
 				}
 				markerObject->TryGetNumberField(TEXT("latitude"), waypoint.latitude);
 				markerObject->TryGetNumberField(TEXT("longitude"), waypoint.longitude);
@@ -309,7 +310,7 @@ void ASettingsSaver::SaveLocationMarkers() {
 		for (int id = 0; id < globalState->locationMarkers.size(); id++) {
 			GlobalState::Waypoint& waypoint = globalState->locationMarkers[id];
 			TSharedPtr<FJsonObject> markerObject = MakeShared<FJsonObject>();
-			markerObject->SetStringField(TEXT("name"), FString(waypoint.name.c_str()));
+			markerObject->SetStringField(TEXT("name"), StringUtils::STDStringToFString(waypoint.name.c_str()));
 			markerObject->SetNumberField(TEXT("latitude"), waypoint.latitude);
 			markerObject->SetNumberField(TEXT("longitude"), waypoint.longitude);
 			markerObject->SetNumberField(TEXT("altitude"), waypoint.altitude);
