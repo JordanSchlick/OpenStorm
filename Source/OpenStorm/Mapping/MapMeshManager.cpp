@@ -14,7 +14,7 @@
 #include "../Objects/RadarViewPawn.h"
 #include "../Application/GlobalState.h"
 #include "../Radar/Globe.h"
-
+#include "../EngineHelpers/StringUtils.h"
 
 #include <cmath>
 
@@ -101,9 +101,10 @@ void AMapMeshManager::EnableMap(){
 	FString elevationFile =  FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/elevation.bin.gz"));
 	FString fullElevationFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*elevationFile);
 	UE_LOG(LogTemp, Display, TEXT("Elevation data file should be located at %s"), *fullElevationFilePath);
-	const char* fullElevationFilePathCstr = StringCast<ANSICHAR>(*fullElevationFilePath).Get();
-	fprintf(stderr, "path %s\n", fullElevationFilePathCstr);
-	ElevationData::LoadData(std::string(fullElevationFilePathCstr));
+	// const char* fullElevationFilePathCstr = StringCast<ANSICHAR>(*fullElevationFilePath).Get();
+	// fprintf(stderr, "path %s\n", fullElevationFilePathCstr);
+	std::string fullElevationFilePathCstr = StringUtils::FStringToSTDString(fullElevationFilePath);
+	ElevationData::LoadData(fullElevationFilePathCstr);
 	
 	
 	std::string staticCacheLocation = GetRelativePath(TEXT("Content/Data/Map/ImageryOnly/"));

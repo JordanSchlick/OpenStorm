@@ -742,9 +742,9 @@ void AImGuiUI::ChooseFiles() {
 		globalState->EmitEvent("LoadDirectory", files[0], NULL);
 	}*/
 	if (fileChooser == NULL) {
-		FString radarDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("../files/dir/"));
-		FString fullradarDir = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarDir);
-		const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
+		// FString radarDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("../files/dir/"));
+		// FString fullradarDir = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarDir);
+		// const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
 		fileChooser = new pfd::public_open_file("Open Radar Files", "", { "All Files", "*" }, pfd::opt::multiselect);
 	}
 }

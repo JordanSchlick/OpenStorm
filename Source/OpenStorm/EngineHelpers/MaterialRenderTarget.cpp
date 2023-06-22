@@ -41,15 +41,4 @@ void UMaterialRenderTarget::DrawMaterial(UCanvas* canvas, int32 width, int32 hei
 	canvas->K2_DrawMaterial(renderMaterial, FVector2D(0, 0), FVector2D(width, height), FVector2D(0, 0));
 }
 
-// why the fuck is this not defined properly in engine code?
-inline	uint32 UMaterialRenderTarget::CalcTextureMemorySizeEnum(ETextureMipCount Enum) const {
-	// Calculate size based on format.  All mips are resident on render targets so we always return the same value.
-	EPixelFormat Format = GetFormat();
-	int32 BlockSizeX = GPixelFormats[Format].BlockSizeX;
-	int32 BlockSizeY = GPixelFormats[Format].BlockSizeY;
-	int32 BlockBytes = GPixelFormats[Format].BlockBytes;
-	int32 NumBlocksX = (SizeX + BlockSizeX - 1) / BlockSizeX;
-	int32 NumBlocksY = (SizeY + BlockSizeY - 1) / BlockSizeY;
-	int32 NumBytes = NumBlocksX * NumBlocksY * BlockBytes;
-	return NumBytes;
-}
+

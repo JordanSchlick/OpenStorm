@@ -18,6 +18,7 @@
 #include "../Radar/SystemAPI.h"
 #include "../Radar/Globe.h"
 #include "../Application/GlobalState.h"
+#include "../EngineHelpers/StringUtils.h"
 
 
 #include "UObject/Object.h"
@@ -212,10 +213,11 @@ void ARadarVolumeRender::BeginPlay()
 	}
 	
 	FString fullradarDir = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*radarDir);
-	UE_LOG(LogTemp, Display, TEXT("Default radar file dir is %s"), *fullradarDir);
-	const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
-	fprintf(stderr, "path %s\n", radarDirLocaition);
-	radarCollection->ReadFiles(std::string(radarDirLocaition));
+	// UE_LOG(LogTemp, Display, TEXT("Default radar file dir is %s"), *fullradarDir);
+	// const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
+	// fprintf(stderr, "path %s\n", radarDirLocaition);
+	std::string radarDirLocaition = StringUtils::FStringToSTDString(fullradarDir);
+	radarCollection->ReadFiles(radarDirLocaition);
 	
 	
 	//radarCollection->LoadNewData();
