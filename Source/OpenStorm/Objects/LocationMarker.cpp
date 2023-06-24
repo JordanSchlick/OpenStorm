@@ -10,6 +10,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Camera/CameraComponent.h"
+#include "../EngineHelpers/StringUtils.h"
 
 ALocationMarker::ALocationMarker()
 {
@@ -53,6 +54,6 @@ void ALocationMarker::Tick(float DeltaTime) {
 }
 
 void ALocationMarker::SetText(std::string text) {
-	textComponent->SetText(FText::FromString(text.c_str()));
+	textComponent->SetText(FText::FromString(StringUtils::STDStringToFString(text)));
 }
 
