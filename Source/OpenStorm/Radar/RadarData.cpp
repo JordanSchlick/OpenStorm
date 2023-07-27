@@ -179,7 +179,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				}
 				Sweep* sweep = pair.second;
 				sweepInfo[sweepId].id = sweepId;
-				sweepInfo[sweepId].elevation = sweep->h.elev;
+				sweepInfo[sweepId].elevationAngle = sweep->h.elev;
 				sweepInfo[sweepId].actualRayCount = sweep->h.nrays;
 				stats.innerDistance = (float)sweep->ray[0]->h.range_bin1 / (float)sweep->ray[0]->h.gate_size;
 				stats.pixelSize = (float)sweep->ray[0]->h.gate_size;
@@ -227,7 +227,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 						}
 					}
 					float realMaxDistance = stats.innerDistance + maxDataDistance + 1;
-					float realMaxHeight = realMaxDistance*std::sin(PIF / 180.0f * sweepInfo[sweepId].elevation) + 1;
+					float realMaxHeight = realMaxDistance*std::sin(PIF / 180.0f * sweepInfo[sweepId].elevationAngle) + 1;
 					stats.boundRadius = std::max(stats.boundRadius, realMaxDistance);
 					stats.boundUpper = std::max(stats.boundUpper, realMaxHeight);
 					stats.boundLower = std::min(stats.boundLower, realMaxHeight);
@@ -617,8 +617,8 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 			if(info2.id == -1){
 				break;
 			}
-			int startLocation = info1.elevation * 32768 / 90 + 32768;
-			int endLocation = info2.elevation * 32768 / 90 + 32768;
+			int startLocation = info1.elevationAngle * 32768 / 90 + 32768;
+			int endLocation = info2.elevationAngle * 32768 / 90 + 32768;
 			int delta = endLocation - startLocation;
 			float deltaF = delta;
 			//fprintf(stderr, "delta: %i %f\n", delta, info1.elevation);
@@ -635,8 +635,8 @@ RadarData::TextureBuffer RadarData::CreateAngleIndexBuffer() {
 		if(firstIndex == lastIndex){
 			// display the single sweep with a width of 0.4 degrees
 			RadarData::SweepInfo &info = sweepInfo[firstIndex];
-			int startLocation = (info.elevation - 0.2) * 32768 / 90 + 32768;
-			int endLocation = (info.elevation + 0.2) * 32768 / 90 + 32768;
+			int startLocation = (info.elevationAngle - 0.2) * 32768 / 90 + 32768;
+			int endLocation = (info.elevationAngle + 0.2) * 32768 / 90 + 32768;
 			int delta = endLocation - startLocation;
 			float firstSweepIndex = firstIndex;
 			if (startLocation < 0 || endLocation >= 65536) {

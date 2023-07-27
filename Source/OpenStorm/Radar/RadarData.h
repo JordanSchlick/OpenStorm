@@ -129,7 +129,7 @@ public:
 	class SweepInfo {
 	public:
 		// elevation from flat in degrees
-		float elevation = 0;
+		float elevationAngle = 0;
 		// sweep index of sweep, -1 if no sweep exists
 		int id = -1;
 		// number of not interpolated rays in sweep

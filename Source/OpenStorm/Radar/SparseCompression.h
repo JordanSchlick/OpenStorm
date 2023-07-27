@@ -11,8 +11,10 @@ namespace SparseCompress{
 	Sparse compression format
 	This format drops out blank space in the buffer and stores data contiguously.
 	Seeking is not supported because no index is created. It must be decompressed before use.
-	The first value contained in the compressd buffer is the value that was contained in the blank space.
+	The first value contained in the compressed buffer is the value that was contained in the blank space.
 	Blank space is compressed down into two ints. The format is [uint32 blankSize,uint32 dataSize]
+	blankSize specifies the amount of blank data that was removed at that spot in the array.
+	dataSize specifies how much data follows in the compressed array until the next two ints.
 	The next blank space can be found at the end of the data size specifed.
 	The last blank space info has a size of zero for both values.
 	
