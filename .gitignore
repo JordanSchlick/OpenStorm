@@ -19,3 +19,4 @@ Intermediate
 tmp
 /.vsconfig
 /enc_temp_folder
+/Source/OpenStorm/Radar/Deps/hdf5

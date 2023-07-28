@@ -150,7 +150,7 @@ public:
 		int previousTheta = -1;
 		// relative position of next actual ray in sweep, does not need modulo before using as offset
 		int nextTheta = 1;
-		// angle of the actual ray, not set for interpolated rays
+		// angle of the actual ray in degrees clockwise, not set for interpolated rays
 		float actualAngle = 0;
 		
 		int sweep = 0;
