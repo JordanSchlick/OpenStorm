@@ -152,13 +152,15 @@ public:
 		int nextTheta = 1;
 		// angle of the actual ray in degrees clockwise, not set for interpolated rays
 		float actualAngle = 0;
-		
+		// sweep index of ray
 		int sweep = 0;
+		// theta index of ray not including padding rays
 		int theta = 0;
 	};
 	
 	
-	// array of info about rays
+	// array of info about rays, all rays including padding rays have info
+	// the position of the ray in rayInfo corresponds to its position in the buffer
 	RayInfo* rayInfo = NULL;
 	
 	// parse rsl nexrad data 
