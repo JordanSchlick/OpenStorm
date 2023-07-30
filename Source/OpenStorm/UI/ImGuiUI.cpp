@@ -678,6 +678,9 @@ void AImGuiUI::ligma(bool Value)
 	fprintf(stderr,"Test\n");
 	globalState->EmitEvent("Test");
 	globalState->EmitEvent("TestUnregistered");
+	#ifdef HDF5
+		fprintf(stderr,"HDF5 module enabled\n");
+	#endif
 }
 
 void AImGuiUI::InitializeConsole()

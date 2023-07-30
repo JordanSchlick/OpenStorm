@@ -1,6 +1,9 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
+using System;
+using System.Collections.Generic;
+using System.IO;
 
 public class OpenStorm : ModuleRules
 {
@@ -11,6 +14,14 @@ public class OpenStorm : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "RenderCore", "Engine",  "Slate", "SlateCore"});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "InputCore", "ImGui", "AudioCaptureCore", "ProceduralMeshComponent", "ImageWrapper", "RHI", "Json"});
+		
+		
+		string pluginsLocation = Path.Combine(ModuleDirectory, "../../Plugins");
+		// add UnrealHDF5 only if it exists
+		if(Directory.Exists(Path.Combine(pluginsLocation, "UnrealHDF5"))){
+			PrivateDependencyModuleNames.Add("UnrealHDF5");
+		}
+		
 		
 		if (Target.bBuildEditor)
 		{
