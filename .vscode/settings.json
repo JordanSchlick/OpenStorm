@@ -92,7 +92,9 @@
 		"gzguts.h": "c",
 		"io.h": "c",
 		"inffast.h": "c",
-		"stdlib.h": "c"
+		"stdlib.h": "c",
+		"cinttypes": "cpp",
+		"complex": "cpp"
 	},
 	"editor.insertSpaces": false
 }

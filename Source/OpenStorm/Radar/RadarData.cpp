@@ -32,9 +32,18 @@ inline bool moduloCompare(int smaller, int larger, int n) {
 	return modulo(smaller + offset,n) < modulo(larger + offset,n);
 }
 
-// compares if smaller is closser to zero than larger within a looped space
+// compares if smaller is closer to zero than larger within a looped space
 inline bool moduloSmallerAbs(int smaller, int larger, int n) {
 	return std::min(modulo(smaller,n), modulo(-smaller,n)) < std::min(modulo(larger,n), modulo(-larger,n));
+}
+
+// returns first - second where the result is at most n/2
+inline int moduloSignedSubtract(int first, int second, int n){
+	int result = modulo(first - second, n);
+	if(result > n/2){
+		result -= n;
+	}
+	return result;
 }
 
 bool RadarData::verbose = false;
@@ -306,14 +315,12 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				}else{
 					sweepBuffer = buffer + sweepOffset;
 				}
-				bool* usedThetas = new bool[thetaBufferCount]();
 				// fill in buffer from rays
 				for (int theta = 0; theta < thetaSize; theta++) {
 					Ray* ray = sweep->ray[theta];
 					if (ray) {
 						// get real angle of ray
 						int realTheta = (int)((ray->h.azimuth * ((float)thetaBufferCount / 360.0f)) + thetaBufferCount) % thetaBufferCount;
-						usedThetas[realTheta] = true;
 						int radiusSize = std::min(ray->h.nbins, radiusBufferCount);
 						RayInfo* thisRayInfo = &rayInfo[(thetaBufferCount + 2) * sweepIndex + (realTheta + 1)];
 						thisRayInfo->actualAngle = ray->h.azimuth;
@@ -350,141 +357,6 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 					//break;
 				}
 				
-
-				// for (int theta = 0; theta < thetaBufferCount; theta++) {
-				// 	if (!usedThetas[theta]) {
-				// 		// fill in blank by interpolating surroundings
-				// 		int previousRay = 0;
-				// 		int nextRay = 0;
-				// 		// find 2 nearby populated rays
-				// 		if (usedThetas[modulo(theta - 3, thetaBufferCount)]) {
-				// 			previousRay = -3;
-				// 		}
-				// 		if (usedThetas[modulo(theta - 2, thetaBufferCount)]) {
-				// 			previousRay = -2;
-				// 		}
-				// 		if (usedThetas[modulo(theta - 1, thetaBufferCount)]) {
-				// 			previousRay = -1;
-				// 		}
-				// 		if (usedThetas[modulo(theta + 3, thetaBufferCount)]) {
-				// 			nextRay = 4;
-				// 		}
-				// 		if (usedThetas[modulo(theta + 2, thetaBufferCount)]) {
-				// 			nextRay = 2;
-				// 		}
-				// 		if (usedThetas[modulo(theta + 1, thetaBufferCount)]) {
-				// 			nextRay = 1;
-				// 		}
-				// 		if (previousRay != 0 && nextRay != 0) {
-				// 			int previousRayAbs = modulo(theta + previousRay, thetaBufferCount);
-				// 			int nextRayAbs = modulo(theta + nextRay, thetaBufferCount);
-				// 			for (int radius = 0; radius < radiusBufferCount; radius++) {
-				// 				float previousValue = sweepBuffer[radius + (previousRayAbs + 1) * thetaBufferSize];
-				// 				float nextValue = sweepBuffer[radius + (nextRayAbs + 1) * thetaBufferSize];
-				// 				for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
-				// 					float interLocation = (float)(thetaTo - previousRay) / (float)(nextRay - previousRay);
-				// 					// write interpolated value
-				// 					sweepBuffer[radius + (modulo(theta + thetaTo, thetaBufferCount) + 1) * thetaBufferSize] = previousValue * (1.0 - interLocation) + nextValue * interLocation;
-				// 				}
-				// 			}
-				// 			for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
-				// 				// mark as filled
-				// 				usedThetas[modulo(theta + thetaTo, thetaBufferCount)] = true;
-				// 			}
-				// 		}
-				// 	}
-				// }
-				delete[] usedThetas;
-				
-				
-				// calculate RayInfo
-				{
-					// start of rays for this sweep
-					int rayInfoOffset = (thetaBufferCount + 2) * sweepIndex + 1;
-					int firstRay = -1;
-					int lastRay = -1;
-					RayInfo* lastRayInfo = NULL;
-					for(int theta = 0; theta < thetaBufferCount; theta++){
-						RayInfo* thisRayInfo = &rayInfo[rayInfoOffset + theta];
-						if(!thisRayInfo->interpolated){
-							if(firstRay == -1){
-								firstRay = theta;
-							}else{
-								// fill in interpolated rays
-								for(int i = lastRay + 1; i < theta; i++){
-									RayInfo* interRayInfo = &rayInfo[rayInfoOffset + i];
-									interRayInfo->previousTheta = lastRay - i;
-									interRayInfo->nextTheta = theta - i;
-									interRayInfo->theta = i;
-									interRayInfo->sweep = sweepIndex;
-									// angle of center interpolated of ray
-									float angle = (i + 0.5) * 360.0f / (float)thetaBufferCount;
-									if(thisRayInfo->actualAngle - angle < angle - lastRayInfo->actualAngle){
-										interRayInfo->closestTheta = theta - i;
-									}else{
-										interRayInfo->closestTheta = lastRay - i;
-									}
-								}
-								lastRayInfo->nextTheta = theta - lastRay;
-								thisRayInfo->previousTheta = lastRay - theta;
-								thisRayInfo->sweep = sweepIndex;
-								thisRayInfo->theta = theta;
-							}
-							lastRay = theta;
-							lastRayInfo = thisRayInfo;
-						}
-					}
-					if(firstRay == -1){
-						// no rays were in the sweep
-						rayInfo[rayInfoOffset].previousTheta = thetaBufferCount - 1;
-						rayInfo[rayInfoOffset + thetaBufferCount - 1].previousTheta = 1 - thetaBufferCount;
-					}else{
-						RayInfo* firstRayInfo = &rayInfo[rayInfoOffset + firstRay];
-						// fill in warped around interpolated rays between last and first
-						//fprintf(stderr, "%i %i   ", lastRay + 1, firstRay + thetaBufferCount);
-						for(int i = lastRay + 1; i < firstRay + thetaBufferCount; i++){
-							int iWrapped = i % thetaBufferCount;
-							RayInfo* interRayInfo = &rayInfo[rayInfoOffset + iWrapped];
-							interRayInfo->previousTheta = lastRay - iWrapped;
-							interRayInfo->nextTheta = firstRay - iWrapped;
-							interRayInfo->theta = iWrapped;
-							interRayInfo->sweep = sweepIndex;
-							// angle of center interpolated of ray
-							float angle = (iWrapped + 0.5) * 360.0f / (float)thetaBufferCount;
-							//fprintf(stderr, "%i %i %f %f %f   ", sweepIndex, iWrapped, (firstRayInfo->actualAngle + 360), angle, lastRayInfo->actualAngle);
-							//if((firstRayInfo->actualAngle + 360) - angle < angle - (lastRayInfo->actualAngle)){
-							if(moduloSmallerAbs(firstRayInfo->actualAngle - angle, lastRayInfo->actualAngle - angle, 360.0f)){
-								interRayInfo->closestTheta = firstRay - iWrapped;
-							}else{
-								interRayInfo->closestTheta = lastRay - iWrapped;
-							}
-							//interRayInfo->closestTheta = -100;
-						}
-						// connect first and last ray
-						lastRayInfo->nextTheta = firstRay - lastRay;
-						lastRayInfo->theta = lastRay;
-						lastRayInfo->sweep = sweepIndex;
-						firstRayInfo->previousTheta = lastRay - firstRay;
-						firstRayInfo->theta = firstRay;
-						firstRayInfo->sweep = sweepIndex;
-					}
-					// create RayInfo for padded rays
-					// I think these are broken so don't use them
-					rayInfo[rayInfoOffset - 1] = rayInfo[rayInfoOffset + thetaBufferCount - 1];
-					rayInfo[rayInfoOffset - 1].interpolated = true;
-					rayInfo[rayInfoOffset - 1].closestTheta += thetaBufferCount;
-					rayInfo[rayInfoOffset - 1].nextTheta += thetaBufferCount;
-					rayInfo[rayInfoOffset - 1].previousTheta += thetaBufferCount;
-					rayInfo[rayInfoOffset - 1].theta = -1;
-					rayInfo[rayInfoOffset - 1].sweep = sweepIndex;
-					rayInfo[rayInfoOffset + thetaBufferCount] = rayInfo[rayInfoOffset];
-					rayInfo[rayInfoOffset + thetaBufferCount].interpolated = true;
-					rayInfo[rayInfoOffset + thetaBufferCount].closestTheta -= thetaBufferCount;
-					rayInfo[rayInfoOffset + thetaBufferCount].nextTheta -= thetaBufferCount;
-					rayInfo[rayInfoOffset + thetaBufferCount].previousTheta -= thetaBufferCount;
-					rayInfo[rayInfoOffset + thetaBufferCount].theta = thetaBufferCount;
-					rayInfo[rayInfoOffset + thetaBufferCount].sweep = sweepIndex;
-				}
 				
 				InterpolateSweep(sweepIndex, sweepBuffer);
 				
@@ -711,48 +583,123 @@ void RadarData::Interpolate(){
 }
 
 void RadarData::InterpolateSweep(int sweepIndex, float *sweepBuffer){
+	// calculate RayInfo
+	{
+		// start of rays for this sweep
+		int rayInfoOffset = (thetaBufferCount + 2) * sweepIndex + 1;
+		int firstRay = -1;
+		int lastRay = -1;
+		RayInfo* lastRayInfo = NULL;
+		for(int theta = 0; theta < thetaBufferCount; theta++){
+			RayInfo* thisRayInfo = &rayInfo[rayInfoOffset + theta];
+			if(!thisRayInfo->interpolated){
+				if(firstRay == -1){
+					firstRay = theta;
+				}else{
+					// fill in interpolated rays
+					for(int i = lastRay + 1; i < theta; i++){
+						RayInfo* interRayInfo = &rayInfo[rayInfoOffset + i];
+						interRayInfo->previousTheta = lastRay - i;
+						interRayInfo->nextTheta = theta - i;
+						interRayInfo->theta = i;
+						interRayInfo->sweep = sweepIndex;
+						// angle of center interpolated of ray
+						float angle = (i + 0.5) * 360.0f / (float)thetaBufferCount;
+						if(thisRayInfo->actualAngle - angle < angle - lastRayInfo->actualAngle){
+							interRayInfo->closestTheta = theta - i;
+						}else{
+							interRayInfo->closestTheta = lastRay - i;
+						}
+					}
+					lastRayInfo->nextTheta = theta - lastRay;
+					thisRayInfo->previousTheta = lastRay - theta;
+					thisRayInfo->sweep = sweepIndex;
+					thisRayInfo->theta = theta;
+				}
+				lastRay = theta;
+				lastRayInfo = thisRayInfo;
+			}
+		}
+		if(firstRay == -1){
+			// no rays were in the sweep
+			// rayInfo[rayInfoOffset].previousTheta = thetaBufferCount - 1;
+			// rayInfo[rayInfoOffset + thetaBufferCount - 1].previousTheta = 1 - thetaBufferCount;
+		}else{
+			RayInfo* firstRayInfo = &rayInfo[rayInfoOffset + firstRay];
+			// fill in warped around interpolated rays between last and first
+			//fprintf(stderr, "%i %i   ", lastRay + 1, firstRay + thetaBufferCount);
+			for(int i = lastRay + 1; i < firstRay + thetaBufferCount; i++){
+				int iWrapped = i % thetaBufferCount;
+				RayInfo* interRayInfo = &rayInfo[rayInfoOffset + iWrapped];
+				interRayInfo->previousTheta = lastRay - iWrapped;
+				interRayInfo->nextTheta = firstRay - iWrapped;
+				interRayInfo->theta = iWrapped;
+				interRayInfo->sweep = sweepIndex;
+				// angle of center interpolated of ray
+				float angle = (iWrapped + 0.5) * 360.0f / (float)thetaBufferCount;
+				//fprintf(stderr, "%i %i %f %f %f   ", sweepIndex, iWrapped, (firstRayInfo->actualAngle + 360), angle, lastRayInfo->actualAngle);
+				//if((firstRayInfo->actualAngle + 360) - angle < angle - (lastRayInfo->actualAngle)){
+				if(moduloSmallerAbs(firstRayInfo->actualAngle - angle, lastRayInfo->actualAngle - angle, 360.0f)){
+					interRayInfo->closestTheta = firstRay - iWrapped;
+				}else{
+					interRayInfo->closestTheta = lastRay - iWrapped;
+				}
+				//interRayInfo->closestTheta = -100;
+			}
+			// connect first and last ray
+			lastRayInfo->nextTheta = firstRay - lastRay;
+			lastRayInfo->theta = lastRay;
+			lastRayInfo->sweep = sweepIndex;
+			firstRayInfo->previousTheta = lastRay - firstRay;
+			firstRayInfo->theta = firstRay;
+			firstRayInfo->sweep = sweepIndex;
+		}
+		// create RayInfo for padded rays
+		// I think these are broken so don't use them
+		rayInfo[rayInfoOffset - 1] = rayInfo[rayInfoOffset + thetaBufferCount - 1];
+		rayInfo[rayInfoOffset - 1].interpolated = true;
+		rayInfo[rayInfoOffset - 1].closestTheta += thetaBufferCount;
+		rayInfo[rayInfoOffset - 1].nextTheta += thetaBufferCount;
+		rayInfo[rayInfoOffset - 1].previousTheta += thetaBufferCount;
+		rayInfo[rayInfoOffset - 1].theta = -1;
+		rayInfo[rayInfoOffset - 1].sweep = sweepIndex;
+		rayInfo[rayInfoOffset + thetaBufferCount] = rayInfo[rayInfoOffset];
+		rayInfo[rayInfoOffset + thetaBufferCount].interpolated = true;
+		rayInfo[rayInfoOffset + thetaBufferCount].closestTheta -= thetaBufferCount;
+		rayInfo[rayInfoOffset + thetaBufferCount].nextTheta -= thetaBufferCount;
+		rayInfo[rayInfoOffset + thetaBufferCount].previousTheta -= thetaBufferCount;
+		rayInfo[rayInfoOffset + thetaBufferCount].theta = thetaBufferCount;
+		rayInfo[rayInfoOffset + thetaBufferCount].sweep = sweepIndex;
+	}
+	
+	
+	// interpolate ray data
 	int rayInfoOffset = (thetaBufferCount + 2) * sweepIndex + 1;
-	// this can probably be slightly optimized by fully utilizing rayInfo
 	for (int theta = 0; theta < thetaBufferCount; theta++) {
-		if (rayInfo[rayInfoOffset + theta].interpolated) {
+		RayInfo* info = &rayInfo[rayInfoOffset + theta];
+		if (info->interpolated) {
 			// fill in blank by interpolating surroundings
-			int previousRay = 0;
-			int nextRay = 0;
-			// find 2 nearby populated rays
-			if (!rayInfo[rayInfoOffset + modulo(theta - 3, thetaBufferCount)].interpolated) {
-				previousRay = -3;
+			
+			int gapDistance = info->nextTheta - info->previousTheta;
+			if(gapDistance < 0){
+				gapDistance += thetaBufferCount;
 			}
-			if (!rayInfo[rayInfoOffset + modulo(theta - 2, thetaBufferCount)].interpolated) {
-				previousRay = -2;
-			}
-			if (!rayInfo[rayInfoOffset + modulo(theta - 1, thetaBufferCount)].interpolated) {
-				previousRay = -1;
-			}
-			if (!rayInfo[rayInfoOffset + modulo(theta + 3, thetaBufferCount)].interpolated) {
-				nextRay = 3;
-			}
-			if (!rayInfo[rayInfoOffset + modulo(theta + 2, thetaBufferCount)].interpolated) {
-				nextRay = 2;
-			}
-			if (!rayInfo[rayInfoOffset + modulo(theta + 1, thetaBufferCount)].interpolated) {
-				nextRay = 1;
-			}
-			if (previousRay != 0 && nextRay != 0) {
-				int previousRayAbs = modulo(theta + previousRay, thetaBufferCount);
-				int nextRayAbs = modulo(theta + nextRay, thetaBufferCount);
+			if(gapDistance <= std::max(thetaBufferCount / 50, 2) || true){
+				int previousRayAbs = theta + info->previousTheta;
+				int nextRayAbs = theta + info->nextTheta;
+				if(nextRayAbs > thetaBufferCount || thetaBufferCount < 0 || previousRayAbs < 0 || previousRayAbs > thetaBufferCount){
+					fprintf(stderr, "sgap distance %i %i %i %i %i %i\n", gapDistance, theta, previousRayAbs, nextRayAbs, info->previousTheta, info->nextTheta);
+					continue;
+				}
 				for (int radius = 0; radius < radiusBufferCount; radius++) {
 					float previousValue = sweepBuffer[radius + (previousRayAbs + 1) * thetaBufferSize];
 					float nextValue = sweepBuffer[radius + (nextRayAbs + 1) * thetaBufferSize];
-					for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
-						float interLocation = (float)(thetaTo - previousRay) / (float)(nextRay - previousRay);
+					for (int thetaTo = previousRayAbs + 1; thetaTo <= previousRayAbs + gapDistance - 1; thetaTo++) {
+						float interLocation = (float)(thetaTo - previousRayAbs) / (float)(gapDistance);
 						// write interpolated value
-						sweepBuffer[radius + (modulo(theta + thetaTo, thetaBufferCount) + 1) * thetaBufferSize] = previousValue * (1.0 - interLocation) + nextValue * interLocation;
+						sweepBuffer[radius + (modulo(thetaTo, thetaBufferCount) + 1) * thetaBufferSize] = previousValue * (1.0 - interLocation) + nextValue * interLocation;
 					}
 				}
-				//for (int thetaTo = previousRay + 1; thetaTo <= nextRay - 1; thetaTo++) {
-					// mark as filled
-					//usedThetas[modulo(theta + thetaTo, thetaBufferCount)] = true;
-				//}
 				// advance past filled rays
 				if(nextRayAbs >= theta){
 					theta = nextRayAbs;
