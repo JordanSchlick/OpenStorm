@@ -180,7 +180,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 			stats.endTime = -INFINITY;
 			double lastRayDate = 0;
 			
-			// do a pass of the data to find info
+			// find info about sweeps
 			for (const auto pair : sweeps) {
 				if (sweepId >= sweepBufferCount) {
 					// ignore sweeps that wont fit in buffer
@@ -196,53 +196,6 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 
 				int thetaSize = sweep->h.nrays;
 				maxTheta = std::max(maxTheta, thetaSize);
-				for (int theta = 0; theta < thetaSize; theta++) {
-					Ray* ray = sweep->ray[theta];
-					int maxDataDistance = 0;
-					if (ray) {
-						struct tm t = {0};  // Initalize to all 0's
-						t.tm_year = ray->h.year - 1900; 
-						t.tm_mon = ray->h.month - 1;
-						t.tm_mday = ray->h.day;
-						t.tm_hour = ray->h.hour;
-						t.tm_min = ray->h.minute;
-						t.tm_sec = ray->h.sec;
-						#ifdef _WIN32
-						time_t timeSinceEpoch = _mkgmtime(&t);
-						#else
-						time_t timeSinceEpoch = timegm(&t);
-						#endif
-						double rayDate = timeSinceEpoch + fmod(ray->h.sec, 1.0);
-						//fprintf(stdout, "%f\n", rayDate);
-						// exclude very inaccurate times, sometimes they are off by years
-						if(lastRayDate == 0 || std::abs(lastRayDate - rayDate) < 10000){
-							stats.beginTime = std::min(stats.beginTime, rayDate);
-							stats.endTime = std::max(stats.endTime, rayDate);
-							lastRayDate = rayDate;
-						}else if(verbose){
-							fprintf(stdout, "inaccurate date %f, last accepted is %f\n", rayDate, lastRayDate);
-						}
-						int radiusSize = ray->h.nbins;
-						maxRadius = std::max(maxRadius, radiusSize);
-						for (int radius = 0; radius < radiusSize; radius++) {
-							int value = ray->h.f(ray->range[radius]);
-							//int value = ray->range[radius];
-							if (value <= BADVAL - 10) {
-								stats.minValue = value != 0 ? (value < stats.minValue ? value : stats.minValue) : stats.minValue;
-								//minValue = value < minValue ? value : minValue;
-								stats.maxValue = value > stats.maxValue ? value : stats.maxValue;
-								maxDataDistance = std::max(maxDataDistance,radius);
-							}
-						}
-					}
-					float realMaxDistance = stats.innerDistance + maxDataDistance + 1;
-					float realMaxHeight = realMaxDistance*std::sin(PIF / 180.0f * sweepInfo[sweepId].elevationAngle) + 1;
-					stats.boundRadius = std::max(stats.boundRadius, realMaxDistance);
-					stats.boundUpper = std::max(stats.boundUpper, realMaxHeight);
-					stats.boundLower = std::min(stats.boundLower, realMaxHeight);
-				}
-				
-				
 
 				sweepId++;
 			}
@@ -315,10 +268,36 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 				}else{
 					sweepBuffer = buffer + sweepOffset;
 				}
+				
 				// fill in buffer from rays
 				for (int theta = 0; theta < thetaSize; theta++) {
 					Ray* ray = sweep->ray[theta];
+					int maxDataDistance = 0;
 					if (ray) {
+						struct tm t = {0};  // Initalize to all 0's
+						t.tm_year = ray->h.year - 1900; 
+						t.tm_mon = ray->h.month - 1;
+						t.tm_mday = ray->h.day;
+						t.tm_hour = ray->h.hour;
+						t.tm_min = ray->h.minute;
+						t.tm_sec = ray->h.sec;
+						#ifdef _WIN32
+						time_t timeSinceEpoch = _mkgmtime(&t);
+						#else
+						time_t timeSinceEpoch = timegm(&t);
+						#endif
+						double rayDate = timeSinceEpoch + fmod(ray->h.sec, 1.0);
+						//fprintf(stdout, "%f\n", rayDate);
+						// exclude very inaccurate times, sometimes they are off by years
+						if(lastRayDate == 0 || std::abs(lastRayDate - rayDate) < 10000){
+							stats.beginTime = std::min(stats.beginTime, rayDate);
+							stats.endTime = std::max(stats.endTime, rayDate);
+							lastRayDate = rayDate;
+						}else if(verbose){
+							fprintf(stdout, "inaccurate date %f, last accepted is %f\n", rayDate, lastRayDate);
+						}
+						
+						
 						// get real angle of ray
 						int realTheta = (int)((ray->h.azimuth * ((float)thetaBufferCount / 360.0f)) + thetaBufferCount) % thetaBufferCount;
 						int radiusSize = std::min(ray->h.nbins, radiusBufferCount);
@@ -339,6 +318,11 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 							}
 							if(value >= BADVAL - 10){
 								value = noDataValue;
+							}else{
+								stats.minValue = value != 0 ? (value < stats.minValue ? value : stats.minValue) : stats.minValue;
+								//minValue = value < minValue ? value : minValue;
+								stats.maxValue = value > stats.maxValue ? value : stats.maxValue;
+								maxDataDistance = std::max(maxDataDistance,radius);
 							}
 							if(value == RFVAL){
 								//value = stats.invalidValue;
@@ -354,6 +338,11 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 							//setBytes++;
 						}
 					}
+					float realMaxDistance = stats.innerDistance + maxDataDistance + 1;
+					float realMaxHeight = realMaxDistance*std::sin(PIF / 180.0f * sweepInfo[sweepIndex].elevationAngle) + 1;
+					stats.boundRadius = std::max(stats.boundRadius, realMaxDistance);
+					stats.boundUpper = std::max(stats.boundUpper, realMaxHeight);
+					stats.boundLower = std::min(stats.boundLower, realMaxHeight);
 					//break;
 				}
 				
@@ -621,9 +610,9 @@ void RadarData::InterpolateSweep(int sweepIndex, float *sweepBuffer){
 			}
 		}
 		if(firstRay == -1){
-			// no rays were in the sweep
-			// rayInfo[rayInfoOffset].previousTheta = thetaBufferCount - 1;
-			// rayInfo[rayInfoOffset + thetaBufferCount - 1].previousTheta = 1 - thetaBufferCount;
+			// no rays were in the sweep, just link first and last ray
+			rayInfo[rayInfoOffset].previousTheta = thetaBufferCount - 1;
+			rayInfo[rayInfoOffset + thetaBufferCount - 1].nextTheta = 1 - thetaBufferCount;
 		}else{
 			RayInfo* firstRayInfo = &rayInfo[rayInfoOffset + firstRay];
 			// fill in warped around interpolated rays between last and first
@@ -656,6 +645,7 @@ void RadarData::InterpolateSweep(int sweepIndex, float *sweepBuffer){
 		}
 		// create RayInfo for padded rays
 		// I think these are broken so don't use them
+		// They may actually work now but I haven't tested
 		rayInfo[rayInfoOffset - 1] = rayInfo[rayInfoOffset + thetaBufferCount - 1];
 		rayInfo[rayInfoOffset - 1].interpolated = true;
 		rayInfo[rayInfoOffset - 1].closestTheta += thetaBufferCount;
