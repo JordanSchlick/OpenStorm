@@ -196,7 +196,37 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 
 				int thetaSize = sweep->h.nrays;
 				maxTheta = std::max(maxTheta, thetaSize);
-
+				
+				for (int theta = 0; theta < thetaSize; theta++) {
+					Ray* ray = sweep->ray[theta];
+					if(ray){
+						struct tm t = {0};  // Initalize to all 0's
+						t.tm_year = ray->h.year - 1900; 
+						t.tm_mon = ray->h.month - 1;
+						t.tm_mday = ray->h.day;
+						t.tm_hour = ray->h.hour;
+						t.tm_min = ray->h.minute;
+						t.tm_sec = ray->h.sec;
+						#ifdef _WIN32
+						time_t timeSinceEpoch = _mkgmtime(&t);
+						#else
+						time_t timeSinceEpoch = timegm(&t);
+						#endif
+						double rayDate = timeSinceEpoch + fmod(ray->h.sec, 1.0);
+						//fprintf(stdout, "%f\n", rayDate);
+						// exclude very inaccurate times, sometimes they are off by years
+						if(lastRayDate == 0 || std::abs(lastRayDate - rayDate) < 10000){
+							stats.beginTime = std::min(stats.beginTime, rayDate);
+							stats.endTime = std::max(stats.endTime, rayDate);
+							lastRayDate = rayDate;
+						}else if(verbose){
+							fprintf(stdout, "inaccurate date %f, last accepted is %f\n", rayDate, lastRayDate);
+						}
+						
+						maxRadius = std::max(maxRadius, ray->h.nbins);
+					}
+				}
+				
 				sweepId++;
 			}
 			
@@ -274,29 +304,6 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 					Ray* ray = sweep->ray[theta];
 					int maxDataDistance = 0;
 					if (ray) {
-						struct tm t = {0};  // Initalize to all 0's
-						t.tm_year = ray->h.year - 1900; 
-						t.tm_mon = ray->h.month - 1;
-						t.tm_mday = ray->h.day;
-						t.tm_hour = ray->h.hour;
-						t.tm_min = ray->h.minute;
-						t.tm_sec = ray->h.sec;
-						#ifdef _WIN32
-						time_t timeSinceEpoch = _mkgmtime(&t);
-						#else
-						time_t timeSinceEpoch = timegm(&t);
-						#endif
-						double rayDate = timeSinceEpoch + fmod(ray->h.sec, 1.0);
-						//fprintf(stdout, "%f\n", rayDate);
-						// exclude very inaccurate times, sometimes they are off by years
-						if(lastRayDate == 0 || std::abs(lastRayDate - rayDate) < 10000){
-							stats.beginTime = std::min(stats.beginTime, rayDate);
-							stats.endTime = std::max(stats.endTime, rayDate);
-							lastRayDate = rayDate;
-						}else if(verbose){
-							fprintf(stdout, "inaccurate date %f, last accepted is %f\n", rayDate, lastRayDate);
-						}
-						
 						
 						// get real angle of ray
 						int realTheta = (int)((ray->h.azimuth * ((float)thetaBufferCount / 360.0f)) + thetaBufferCount) % thetaBufferCount;
