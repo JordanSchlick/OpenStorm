@@ -4,6 +4,7 @@
 #include "NexradSites/NexradSites.h"
 #include "./Deps/rsl/rsl.h"
 
+#include "Nexrad.h"
 
 
 //#include "CoreMinimal.h"
@@ -17,7 +18,6 @@
 #include <map>
 #include <algorithm>
 #include <cmath>
-#include <ctime>
 
 #define PIF 3.14159265358979323846f
 
@@ -49,354 +49,23 @@ inline int moduloSignedSubtract(int first, int second, int n){
 bool RadarData::verbose = false;
 
 void* RadarData::ReadNexradData(const char* filename) {
-	//RSL_wsr88d_keep_sails();
-	//Radar* radar = RSL_wsr88d_to_radar("C:/Users/Admin/Desktop/stuff/projects/openstorm/files/KMKX_20220723_235820", "KMKX");
-	//Radar* radar = RSL_wsr88d_to_radar("C:/Users/Admin/Desktop/stuff/projects/openstorm/files/KMKX_20220723_233154", "KMKX");
-	RSL_wsr88d_keep_sails();
-	Radar* radar = RSL_wsr88d_to_radar((char*)filename, (char*)"");
-
-	//UE_LOG(LogTemp, Display, TEXT("================ %i"), radar);
-	
-	if(verbose && radar){
-		for(int i = 0; i <= 46; i++){
-			Volume* volume = radar->v[i];
-			if(volume){
-				fprintf(stderr, "Volume %i %s\n", i, volume->h.type_str);
-			}
-		}
-	}
-	
-	return radar;
+	NexradRadarReader* reader = new NexradRadarReader();
+	reader->LoadFile(std::string(filename));
+	return reader;
 }
 
 void RadarData::FreeNexradData(void* nexradData) {
 	if (nexradData) {
-		RSL_free_radar((Radar*)nexradData);
+		delete (NexradRadarReader*)nexradData;
 	}
 }
 
 bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
-	Radar* radar = (Radar*)nexradData;
-	if (radar) {
-		int nexradType = DZ_INDEX;
-		switch (volumeType){
-			case VOLUME_REFLECTIVITY:
-				nexradType = DZ_INDEX;
-				break;
-			case VOLUME_VELOCITY:
-				nexradType = VR_INDEX;
-				stats.noDataValue = 0;
-				break;
-			case VOLUME_SPECTRUM_WIDTH:
-				nexradType = SW_INDEX;
-				break;
-			case VOLUME_CORELATION_COEFFICIENT:
-				nexradType = RH_INDEX;
-				break;
-			case VOLUME_DIFFERENTIAL_REFLECTIVITY:
-				nexradType = DR_INDEX;
-				break;
-			case VOLUME_DIFFERENTIAL_PHASE_SHIFT:
-				nexradType = PH_INDEX;
-				break;
-			default:
-				return false;
-				break;
-		}
-		Volume* volume = radar->v[nexradType];
-		if(verbose){
-			fprintf(stderr, "site name %s\n", radar->h.name);
-		}
-		NexradSites::Site* site = NexradSites::GetSite(radar->h.name);
-		if(site != NULL){
-			stats.latitude = site->latitude;
-			stats.longitude = site->longitude;
-			stats.altitude = site->altitude;
-		}
-		if (volume) {
-			stats.volumeType = volumeType;
-			std::map<float, Sweep*> sweeps = {};
-			if(verbose){
-				fprintf(stderr, "volume type_str %s\n", volume->h.type_str);
-				fprintf(stderr, "volume nsweeps %i\n", volume->h.nsweeps);
-			}
-			for (int sweepIndex = 0; sweepIndex < volume->h.nsweeps; sweepIndex++) {
-				Sweep* sweep = volume->sweep[sweepIndex];
-				if (sweep) {
-					if (!sweep->ray[0]) {
-						// should not happen
-						fprintf(stderr, "Ray is missing!\n");
-						continue;
-					}
-					/*fprintf(stderr, "======== %i\n", sweepIndex);
-					fprintf(stderr, "sweep elev %f\n", sweep->h.elev);
-					fprintf(stderr, "sweep sweep_num %i\n", sweep->h.sweep_num);
-					fprintf(stderr, "sweep nrays %i\n", sweep->h.nrays);
-					if (sweep->ray[0]) {
-						fprintf(stderr, "sweep nbins %i\n", sweep->ray[0]->h.nbins);
-					}
-					fprintf(stderr, "sweep azimuth %f\n", sweep->h.azimuth);
-					fprintf(stderr, "sweep beam_width %f\n", sweep->h.beam_width);
-					fprintf(stderr, "sweep horz_half_bw %f\n", sweep->h.horz_half_bw);
-					fprintf(stderr, "sweep vert_half_bw %f\n", sweep->h.vert_half_bw);
-					if (sweep->ray[0]) {
-						fprintf(stderr, "sweep bin 0 data %i\n", sweep->ray[0]->range[0]);
-						fprintf(stderr, "sweep ray pixel length %i meters\n", sweep->ray[0]->h.gate_size);
-						fprintf(stderr, "sweep ray estimated length %i meters\n", sweep->ray[0]->h.gate_size * sweep->ray[0]->h.nbins + sweep->ray[0]->h.range_bin1);
-						fprintf(stderr, "sweep ray unam_rng %f meters\n", sweep->ray[0]->h.unam_rng);
-						fprintf(stderr, "sweep ray lat %f lon %f\n", sweep->ray[1]->h.lat, sweep->ray[1]->h.lon);
-					}
-					fprintf(stderr, "%i-%i-%i %i:%i:%f\n", sweep->ray[0]->h.year, sweep->ray[0]->h.month, sweep->ray[0]->h.day, sweep->ray[0]->h.hour, sweep->ray[0]->h.minute, sweep->ray[0]->h.sec);
-					*/
-					
-					
-					// add sweeps but skip duplicates
-					float roundedElevation = std::round(sweep->h.elev * 100.0f) / 100.0f;
-					if (sweeps.find(roundedElevation) == sweeps.end()) {
-						sweeps[roundedElevation] = sweep;
-					}
-				}
-			}
-
-
-
-			
-			if (sweepBufferCount == 0) {
-				sweepBufferCount = sweeps.size();
-			}
-			if (sweepInfo != NULL) {
-				delete[] sweepInfo;
-			}
-			sweepInfo = new SweepInfo[sweepBufferCount]{};
-			int sweepId = 0;
-			int maxTheta = 0;
-			int maxRadius = 0;
-			stats.minValue = INFINITY;
-			stats.maxValue = -INFINITY;
-			stats.boundUpper = 0;
-			stats.boundLower = 1e-10;
-			stats.boundRadius = 0;
-			stats.beginTime = INFINITY;
-			stats.endTime = -INFINITY;
-			double lastRayDate = 0;
-			
-			// find info about sweeps
-			for (const auto pair : sweeps) {
-				if (sweepId >= sweepBufferCount) {
-					// ignore sweeps that wont fit in buffer
-					break;
-				}
-				Sweep* sweep = pair.second;
-				sweepInfo[sweepId].id = sweepId;
-				sweepInfo[sweepId].elevationAngle = sweep->h.elev;
-				sweepInfo[sweepId].actualRayCount = sweep->h.nrays;
-				stats.innerDistance = (float)sweep->ray[0]->h.range_bin1 / (float)sweep->ray[0]->h.gate_size;
-				stats.pixelSize = (float)sweep->ray[0]->h.gate_size;
-				//fprintf(stderr, "innerDistance: %f\n", innerDistance);
-
-				int thetaSize = sweep->h.nrays;
-				maxTheta = std::max(maxTheta, thetaSize);
-				
-				for (int theta = 0; theta < thetaSize; theta++) {
-					Ray* ray = sweep->ray[theta];
-					if(ray){
-						struct tm t = {0};  // Initalize to all 0's
-						t.tm_year = ray->h.year - 1900; 
-						t.tm_mon = ray->h.month - 1;
-						t.tm_mday = ray->h.day;
-						t.tm_hour = ray->h.hour;
-						t.tm_min = ray->h.minute;
-						t.tm_sec = ray->h.sec;
-						#ifdef _WIN32
-						time_t timeSinceEpoch = _mkgmtime(&t);
-						#else
-						time_t timeSinceEpoch = timegm(&t);
-						#endif
-						double rayDate = timeSinceEpoch + fmod(ray->h.sec, 1.0);
-						//fprintf(stdout, "%f\n", rayDate);
-						// exclude very inaccurate times, sometimes they are off by years
-						if(lastRayDate == 0 || std::abs(lastRayDate - rayDate) < 10000){
-							stats.beginTime = std::min(stats.beginTime, rayDate);
-							stats.endTime = std::max(stats.endTime, rayDate);
-							lastRayDate = rayDate;
-						}else if(verbose){
-							fprintf(stdout, "inaccurate date %f, last accepted is %f\n", rayDate, lastRayDate);
-						}
-						
-						maxRadius = std::max(maxRadius, ray->h.nbins);
-					}
-				}
-				
-				sweepId++;
-			}
-			
-			//fprintf(stderr, "bounds %f %f %f\n",stats.boundRadius,stats.boundUpper,stats.boundLower);
-			
-			if (stats.minValue == INFINITY) {
-				stats.minValue = 0;
-				stats.maxValue = 1;
-			}
-			if (stats.beginTime == INFINITY) {
-				stats.beginTime = 0;
-				stats.endTime = 0;
-			}
-			if (radiusBufferCount == 0) {
-				radiusBufferCount = maxRadius;
-			}
-			if (thetaBufferCount == 0) {
-				thetaBufferCount = maxTheta;
-			}
-
-			if(verbose){
-				fprintf(stderr, "min: %f   max: %f\n", stats.minValue, stats.maxValue);
-			}
-			
-			// sizes of sections of the buffer
-			thetaBufferSize = radiusBufferCount;
-			sweepBufferSize = (thetaBufferCount + 2) * thetaBufferSize;
-			fullBufferSize = sweepBufferCount * sweepBufferSize;
-			
-			if (rayInfo != NULL) {
-				delete[] rayInfo;
-			}
-			rayInfo = new RayInfo[sweepBufferCount * (thetaBufferCount + 2)]{};
-			
-			float noDataValue = stats.noDataValue;
-			
-			SparseCompress::CompressorState compressorState = {};
-			
-			// pointer to beginning of a sweep buffer to write to
-			float* sweepBuffer = NULL;
-			
-			if(doCompress){
-				// store in compressed form
-				compressorState.preCompressedSize = fullBufferSize / 10;
-				compressorState.emptyValue = stats.noDataValue;
-				SparseCompress::compressStart(&compressorState);
-				sweepBuffer = new float[sweepBufferSize];
-			}else{
-				// store in continuous buffer
-				if (buffer == NULL) {
-					buffer = new float[fullBufferSize];
-					std::fill(buffer, buffer + fullBufferSize, noDataValue);
-				}else if(usedBufferSize > 0){
-					std::fill(buffer, buffer + usedBufferSize, noDataValue);
-				}
-			}
-			
-			int sweepIndex = 0;
-			for (const auto pair : sweeps) {
-				if (sweepIndex >= sweepBufferCount) {
-					// ignore sweeps that wont fit in buffer
-					break;
-				}
-				Sweep* sweep = pair.second;
-				int thetaSize = sweep->h.nrays;
-				int sweepOffset = sweepIndex * sweepBufferSize;
-				if(doCompress){
-					std::fill(sweepBuffer, sweepBuffer + sweepBufferSize, noDataValue);
-				}else{
-					sweepBuffer = buffer + sweepOffset;
-				}
-				
-				// fill in buffer from rays
-				for (int theta = 0; theta < thetaSize; theta++) {
-					Ray* ray = sweep->ray[theta];
-					int maxDataDistance = 0;
-					if (ray) {
-						
-						// get real angle of ray
-						int realTheta = (int)((ray->h.azimuth * ((float)thetaBufferCount / 360.0f)) + thetaBufferCount) % thetaBufferCount;
-						int radiusSize = std::min(ray->h.nbins, radiusBufferCount);
-						RayInfo* thisRayInfo = &rayInfo[(thetaBufferCount + 2) * sweepIndex + (realTheta + 1)];
-						thisRayInfo->actualAngle = ray->h.azimuth;
-						thisRayInfo->interpolated = false;
-						thisRayInfo->closestTheta = 0;
-						for (int radius = 0; radius < radiusSize; radius++) {
-							//int value = (ray->range[radius] - minValue) / divider;
-							float value = ray->h.f(ray->range[radius]);
-							//float value = ray->range[radius];
-							// if (value == 131072) {
-							// 	// value for no data
-							// 	value = noDataValue;
-							// }
-							if (value == noDataValue){
-								value = noDataValue + 0.000001;
-							}
-							if(value >= BADVAL - 10){
-								value = noDataValue;
-							}else{
-								stats.minValue = value != 0 ? (value < stats.minValue ? value : stats.minValue) : stats.minValue;
-								//minValue = value < minValue ? value : minValue;
-								stats.maxValue = value > stats.maxValue ? value : stats.maxValue;
-								maxDataDistance = std::max(maxDataDistance,radius);
-							}
-							if(value == RFVAL){
-								//value = stats.invalidValue;
-								value = noDataValue;
-							}
-							sweepBuffer[radius + ((realTheta + 1) * thetaBufferSize)] = value;
-
-							//if (theta == 0) {
-							//	value = 255;
-							//}
-							//RawImageData[3 + radius * 4 + realTheta * radiusBufferSize + sweepIndex * thetaRadiusBufferSize] = std::max(0, value);
-							//RawImageData[3 + radius * 4 + theta * radiusSize * 4] = 0;
-							//setBytes++;
-						}
-					}
-					float realMaxDistance = stats.innerDistance + maxDataDistance + 1;
-					float realMaxHeight = realMaxDistance*std::sin(PIF / 180.0f * sweepInfo[sweepIndex].elevationAngle) + 1;
-					stats.boundRadius = std::max(stats.boundRadius, realMaxDistance);
-					stats.boundUpper = std::max(stats.boundUpper, realMaxHeight);
-					stats.boundLower = std::min(stats.boundLower, realMaxHeight);
-					//break;
-				}
-				
-				
-				InterpolateSweep(sweepIndex, sweepBuffer);
-				
-				
-				if(doCompress){
-					SparseCompress::compressValues(&compressorState, sweepBuffer, sweepBufferSize);
-				}
-				
-				sweepIndex++;
-			}
-			
-			usedBufferSize = sweepIndex * sweepBufferSize;
-			
-			if(doCompress){
-				delete sweepBuffer;
-				if(bufferCompressed){
-					// remove old buffer
-					delete[] bufferCompressed;
-				}
-				bufferCompressed = SparseCompress::compressEnd(&compressorState);
-				compressedBufferSize = compressorState.sizeAllocated;
-				if(verbose){
-					fprintf(stderr, "Compressed size bytes:   %i\n", compressedBufferSize * 4);
-					fprintf(stderr, "Uncompressed size bytes: %i\n", fullBufferSize * 4);
-				}
-			}
-			
-
-			/*
-			fprintf(stderr,"ray values:");
-			for(int radius = 0; radius < thetaBufferSize; radius++){
-				fprintf(stderr," %.10f",buffer[radius + sweepBufferSize * 2]);
-			}
-			fprintf(stderr,"\n");
-			//*/
-
-			
-		}else{
-			return false;
-		}
+	if (nexradData) {
+		return ((NexradRadarReader*)nexradData)->LoadVolume(this, volumeType);
 	}else{
 		return false;
 	}
-	return true;
 }
 
 void RadarData::CopyFrom(RadarData* data) {
