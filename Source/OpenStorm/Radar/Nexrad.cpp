@@ -11,6 +11,7 @@
 #include <map>
 #include <algorithm>
 #include <ctime>
+#include <cmath>
 
 #define PIF 3.14159265358979323846f
 
@@ -73,6 +74,7 @@ int Nexrad::RecompressArchive(std::string inFileName, std::string outFileName){
 	return 0;
 }
 bool NexradRadarReader::LoadFile(std::string filename) {
+	UnloadFile();
 	RSL_wsr88d_keep_sails();
 	Radar* radar = RSL_wsr88d_to_radar((char*)filename.c_str(), (char*)"");
 
@@ -96,6 +98,7 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 	if (radar == NULL) {
 		return false;
 	}
+	radarData->stats = RadarData::Stats();
 	int nexradType = DZ_INDEX;
 	switch (volumeType){
 		case RadarData::VOLUME_REFLECTIVITY:
@@ -301,6 +304,8 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		}
 	}
 	
+	float minValue = INFINITY;
+	float maxValue = -INFINITY;
 	int sweepIndex = 0;
 	for (const auto pair : sweeps) {
 		if (sweepIndex >= radarData->sweepBufferCount) {
@@ -316,8 +321,7 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 			sweepBuffer = radarData->buffer + sweepOffset;
 		}
 		
-		float minValue = INFINITY;
-		float maxValue = -INFINITY;
+		
 		
 		// fill in buffer from rays
 		for (int theta = 0; theta < thetaSize; theta++) {
@@ -374,12 +378,6 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 			//break;
 		}
 		
-		if (minValue == INFINITY) {
-			minValue = 0;
-			maxValue = 1;
-		}
-		radarData->stats.minValue = minValue;
-		radarData->stats.maxValue = maxValue;
 		
 		radarData->InterpolateSweep(sweepIndex, sweepBuffer);
 		
@@ -390,6 +388,12 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		
 		sweepIndex++;
 	}
+	if (minValue == INFINITY) {
+		minValue = 0;
+		maxValue = 1;
+	}
+	radarData->stats.minValue = minValue;
+	radarData->stats.maxValue = maxValue;
 	
 	radarData->usedBufferSize = sweepIndex * radarData->sweepBufferSize;
 	
@@ -423,7 +427,10 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 }
 
 void NexradRadarReader::UnloadFile() {
-	RSL_free_radar((Radar*)rslData);
+	if(rslData != NULL){
+		RSL_free_radar((Radar*)rslData);
+		rslData = NULL;
+	}
 }
 
 NexradRadarReader::~NexradRadarReader(){

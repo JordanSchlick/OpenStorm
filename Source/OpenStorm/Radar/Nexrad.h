@@ -1,4 +1,5 @@
-#include <string>
+#pragma once
+
 #include "RadarReader.h"
 
 namespace Nexrad{

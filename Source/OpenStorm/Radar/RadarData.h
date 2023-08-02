@@ -163,11 +163,14 @@ public:
 	// the position of the ray in rayInfo corresponds to its position in the buffer
 	RayInfo* rayInfo = NULL;
 	
-	// parse rsl nexrad data 
+	// parse rsl nexrad data
+	// DEPRECATED
 	static void* ReadNexradData(const char* filename);
 	// free rsl nexrad data
+	// DEPRECATED
 	static void FreeNexradData(void* nexradData);
 	// load rsl nexrad volume into this radar data
+	// DEPRECATED
 	bool LoadNexradVolume(void* nexradData, VolumeType volumeType);
 	
 	// copies data from another and decompresses it if needed

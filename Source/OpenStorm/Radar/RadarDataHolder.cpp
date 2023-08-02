@@ -2,6 +2,7 @@
 
 #include "RadarDataHolder.h"
 #include "RadarCollection.h"
+#include "RadarReader.h"
 #include "Products/RadarProduct.h"
 
 #include <algorithm>
@@ -37,8 +38,13 @@ public:
 		}
 		if(baseProductToLoadCount > 0){
 			// read in radar file
-			void* nexradData = RadarData::ReadNexradData(path.c_str());
-			if(!canceled){
+			// void* nexradData = RadarData::ReadNexradData(path.c_str());
+			RadarReader* radarFile = RadarReader::GetLoaderForFile(path);
+			bool success = radarFile->LoadFile(path);
+			if(!success){
+				fprintf(stderr, "RadarDataHolder.cpp(RadarLoader::Task) Failed to load file %s\n", path.c_str());
+			}
+			if(!canceled && success){
 				// load base products
 				for(RadarDataHolder::ProductHolder* productHolder : radarHolder->products){
 					if(productHolder->product->productType == RadarProduct::PRODUCT_BASE && productHolder->isLoaded == false && !canceled){
@@ -47,7 +53,8 @@ public:
 						radarData->radiusBufferCount = radarSettings.radiusBufferCount;
 						radarData->thetaBufferCount = radarSettings.thetaBufferCount;
 						radarData->sweepBufferCount = radarSettings.sweepBufferCount;
-						bool success = radarData->LoadNexradVolume(nexradData, productHolder->product->volumeType);
+						// bool success = radarData->LoadNexradVolume(nexradData, productHolder->product->volumeType);
+						success = radarFile->LoadVolume(radarData, productHolder->product->volumeType);
 						if(!success){
 							fprintf(stderr, "RadarDataHolder.cpp(RadarLoader::Task) VolumeType %i %s is missing from file\n", productHolder->volumeType, productHolder->product->name.c_str());
 						}
@@ -64,7 +71,9 @@ public:
 					}
 				}
 			}
-			RadarData::FreeNexradData(nexradData);
+			// RadarData::FreeNexradData(nexradData);
+			radarFile->UnloadFile();
+			delete radarFile;
 		}
 		if(!canceled && initialUid == radarHolder->uid){
 			// calculate derived products

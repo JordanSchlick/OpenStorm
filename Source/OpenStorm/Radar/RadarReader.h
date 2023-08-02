@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 #include "RadarData.h"
 
@@ -15,6 +17,10 @@ public:
 	// unload file and free memory
 	virtual void UnloadFile() = 0;
 	
-	// run UnloadFile
-	virtual ~RadarReader() = 0;
+	// get a RadarReader object for a given file
+	// the type of file will be automatically determined
+	// delete the object when finished
+	static RadarReader* GetLoaderForFile(std::string filename);
+	
+	virtual ~RadarReader();
 };
