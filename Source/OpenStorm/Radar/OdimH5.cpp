@@ -46,6 +46,7 @@ public:
 	float offset = 0;
 	float sourceNoDataValue = -INFINITY;
 	float sourceNoDetectValue = -INFINITY;
+	bool discard = false;
 	std::vector<float> rayAngles = {};
 };
 
@@ -150,7 +151,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		int maxRadius = 0;
 		int maxTheta = 0;
 		float minPixelSize = INFINITY;
-		std::map<float, SweepData> sweeps;
+		std::vector<SweepData> sweeps;
 		
 		{
 			// hdf5 is not thread safe so use a mutex
@@ -165,7 +166,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					radarData->stats.altitude = whereGroup.getAttribute("height").read<double>();
 				}
 			}
-			
+			std::map<float, SweepData> sweepsMap;
 			for(std::string key : internal->h5File->listObjectNames(HighFive::IndexType::NAME)){
 				if(key.substr(0,7) != "dataset" || internal->h5File->getObjectType(key) != HighFive::ObjectType::Group){
 					continue;
@@ -220,8 +221,8 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					}
 					// begin extracting data
 					float elevationAngle = getDoubleAttribute(sweepWhere, "elangle");
-					sweeps[elevationAngle] = SweepData();
-					SweepData* sweepData = &sweeps[elevationAngle];
+					sweepsMap[elevationAngle] = SweepData();
+					SweepData* sweepData = &sweepsMap[elevationAngle];
 					HighFive::DataSet dataset = dataGroup.getDataSet("data");
 					sweepData->dataset = dataset;
 					sweepData->datasetSize = dataset.getElementCount();
@@ -250,6 +251,29 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					}
 					minPixelSize = std::min(minPixelSize, sweepData->pixelSize);
 					radarData->stats.innerDistance = sweepData->innerDistance;
+				}
+			}
+			// convert to vector
+			std::vector<SweepData> sweepsTmp;
+			for(auto &pair : sweepsMap){
+				sweepsTmp.push_back(pair.second);
+			}
+			for(int i = 1; i < sweepsTmp.size() - 1; i++){
+				SweepData* sweepBefore = &sweepsTmp[i - 1];
+				SweepData* sweep = &sweepsTmp[i];
+				SweepData* sweepAfter = &sweepsTmp[i + 1];
+				float minSurroundingSweepRadius = std::min(sweepBefore->binCount * sweepBefore->pixelSize, sweepAfter->binCount * sweepAfter->pixelSize);
+				float sweepRadius = sweep->binCount * sweep->pixelSize;
+				if(sweepRadius < minSurroundingSweepRadius * 0.75){
+					// remove sweeps that are less than 3/4 the size of the sweeps around it
+					// some radars do a low level sweep with significantly lower range than the rest
+					sweep->discard = true;
+				}
+			}
+			for(auto &sweep : sweepsTmp){
+				if(!sweep.discard){
+					// add to final sweep array
+					sweeps.push_back(sweep);
 				}
 			}
 		}
@@ -311,13 +335,15 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		float maxValue = -INFINITY;
 		int sweepIndex = 0;
 		// for (const auto &pair : sweeps) {
-		std::map<float, SweepData>::iterator iterator;
-		for(iterator = sweeps.begin(); iterator != sweeps.end(); ++iterator){
+		// std::map<float, SweepData>::iterator iterator;
+		// for(iterator = sweeps.begin(); iterator != sweeps.end(); ++iterator){
+		for(int index = 0; index < sweeps.size(); index++){
 			if (sweepIndex >= radarData->sweepBufferCount) {
 				// ignore sweeps that wont fit in buffer
 				break;
 			}
-			const SweepData* sweep = &iterator->second;
+			// const SweepData* sweep = &iterator->second;
+			const SweepData* sweep = &sweeps[index];
 			radarData->sweepInfo[sweepIndex].actualRayCount = sweep->rayCount;
 			radarData->sweepInfo[sweepIndex].elevationAngle = sweep->elevation;
 			radarData->sweepInfo[sweepIndex].id = sweepIndex;
