@@ -5,6 +5,7 @@
 #ifdef HDF5
 
 #include <map>
+#include <mutex>
 #include "SparseCompression.h"
 #include "SystemAPI.h"
 
@@ -26,6 +27,7 @@ public:
 	~OdimH5Internal(){
 		if(h5File != NULL){
 			delete h5File;
+			h5File = NULL;
 		}
 	}
 };
@@ -33,6 +35,8 @@ public:
 class SweepData{
 public:
 	HighFive::DataSet dataset;
+	int datasetSize = 0;
+	HighFive::DataTypeClass datasetTypeClass;
 	double elevation = 0;
 	int rayCount = 0;
 	int binCount = 0;
@@ -64,6 +68,9 @@ double getDoubleAttribute(HighFive::Group object, std::string attributeName){
 int64_t getIntAttribute(HighFive::Group object, std::string attributeName){
 	return object.getAttribute(attributeName).read<int64_t>();
 }
+
+std::mutex hdf5Lock = {};
+
 #else
 class OdimH5RadarReader::OdimH5Internal{
 
@@ -74,15 +81,27 @@ class OdimH5RadarReader::OdimH5Internal{
 bool OdimH5RadarReader::LoadFile(std::string filename){
 	#ifdef HDF5
 	
+	
 	internal = new OdimH5Internal();
+	
 	try{
-		internal->h5File = new HighFive::File(filename, HighFive::File::ReadOnly);
-		
-		if(!internal->h5File->exist("/dataset1/data1/data")){
-			fprintf(stderr, "File has no data\n");
+		bool failed = false;
+		{
+			std::lock_guard<std::mutex> lock(hdf5Lock);
+			// fprintf(stderr,"begin load ");
+			internal->h5File = new HighFive::File(filename, HighFive::File::ReadOnly);
+			
+			if(!internal->h5File->exist("/dataset1/data1/data")){
+				fprintf(stderr, "File has no data\n");
+				failed = true;
+			}
+			// fprintf(stderr,"end load ");
+		}
+		if(failed){
 			UnloadFile();
 			return false;
 		}
+		
 	}catch(std::exception e){
 		fprintf(stderr, "Exception while loading h5 file: %s\n", e.what());
 		UnloadFile();
@@ -128,103 +147,110 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 	}
 	
 	try{
-		if(internal->h5File->exist("where")){
-			HighFive::Group whereGroup = internal->h5File->getGroup("where");
-			if(whereGroup.hasAttribute("lat") && whereGroup.hasAttribute("lon")){
-				radarData->stats.latitude = whereGroup.getAttribute("lat").read<double>();
-				radarData->stats.longitude = whereGroup.getAttribute("lon").read<double>();
-			}
-			if(whereGroup.hasAttribute("height")){
-				radarData->stats.altitude = whereGroup.getAttribute("height").read<double>();
-			}
-		}
-		
 		int maxRadius = 0;
 		int maxTheta = 0;
 		float minPixelSize = INFINITY;
 		std::map<float, SweepData> sweeps;
-		for(std::string key : internal->h5File->listObjectNames(HighFive::IndexType::NAME)){
-			if(key.substr(0,7) != "dataset" || internal->h5File->getObjectType(key) != HighFive::ObjectType::Group){
-				continue;
+		
+		{
+			// hdf5 is not thread safe so use a mutex
+			std::lock_guard<std::mutex> lock(hdf5Lock);
+			if(internal->h5File->exist("where")){
+				HighFive::Group whereGroup = internal->h5File->getGroup("where");
+				if(whereGroup.hasAttribute("lat") && whereGroup.hasAttribute("lon")){
+					radarData->stats.latitude = whereGroup.getAttribute("lat").read<double>();
+					radarData->stats.longitude = whereGroup.getAttribute("lon").read<double>();
+				}
+				if(whereGroup.hasAttribute("height")){
+					radarData->stats.altitude = whereGroup.getAttribute("height").read<double>();
+				}
 			}
-			HighFive::Group sweepGroup = internal->h5File->getGroup(key);
-			if(!sweepGroup.exist("what") || sweepGroup.getObjectType("what") != HighFive::ObjectType::Group){
-				fprintf(stderr, "Warning: sweep is missing what group\n");
-				continue;
-			}
-			if(!sweepGroup.exist("how") || sweepGroup.getObjectType("how") != HighFive::ObjectType::Group){
-				fprintf(stderr, "Warning: sweep is missing how group\n");
-				continue;
-			}
-			if(!sweepGroup.exist("where") || sweepGroup.getObjectType("where") != HighFive::ObjectType::Group){
-				fprintf(stderr, "Warning: sweep is missing how group\n");
-				continue;
-			}
-			HighFive::Group sweepWhat = sweepGroup.getGroup("what");
-			HighFive::Group sweepWhere = sweepGroup.getGroup("where");
-			HighFive::Group sweepHow = sweepGroup.getGroup("how");
-			bool sweepHasAttributes = true;
-			// sweepHasAttributes &= sweepWhat.hasAttribute("startdate");
-			// sweepHasAttributes &= sweepWhat.hasAttribute("starttime");
-			sweepHasAttributes &= sweepWhere.hasAttribute("nbins");
-			sweepHasAttributes &= sweepWhere.hasAttribute("nrays");
-			sweepHasAttributes &= sweepWhere.hasAttribute("rscale");
-			sweepHasAttributes &= sweepWhere.hasAttribute("rstart");
-			sweepHasAttributes &= sweepWhere.hasAttribute("elangle");
-			sweepHasAttributes &= sweepHow.hasAttribute("startazA");
-			sweepHasAttributes &= sweepHow.hasAttribute("stopazA");
-			if(!sweepHasAttributes){
-				fprintf(stderr, "Warning: sweep is missing attributes\n");
-				continue;
-			}
-			for(std::string key2 : sweepGroup.listObjectNames(HighFive::IndexType::NAME)){
-				if(key2.substr(0,4) != "data" || sweepGroup.getObjectType(key2) != HighFive::ObjectType::Group){
-					// fprintf(stderr, "%s\n", key2.c_str());
+			
+			for(std::string key : internal->h5File->listObjectNames(HighFive::IndexType::NAME)){
+				if(key.substr(0,7) != "dataset" || internal->h5File->getObjectType(key) != HighFive::ObjectType::Group){
 					continue;
 				}
-				HighFive::Group dataGroup = sweepGroup.getGroup(key2);
-				if(!dataGroup.exist("what") || !dataGroup.exist("data") || dataGroup.getObjectType("what") != HighFive::ObjectType::Group || dataGroup.getObjectType("data") != HighFive::ObjectType::Dataset ){
-					fprintf(stderr, "Warning: data section is missing groups\n");
+				HighFive::Group sweepGroup = internal->h5File->getGroup(key);
+				if(!sweepGroup.exist("what") || sweepGroup.getObjectType("what") != HighFive::ObjectType::Group){
+					fprintf(stderr, "Warning: sweep is missing what group\n");
 					continue;
 				}
-				HighFive::Group what = dataGroup.getGroup("what");
-				if(!what.hasAttribute("gain") || !what.hasAttribute("offset") || !what.hasAttribute("quantity")){
-					fprintf(stderr, "Warning: data section is missing what attributes\n");
-				}
-				// check if quantity is the volume type
-				if(getStringAttribute(what, "quantity") != dataType){
+				if(!sweepGroup.exist("how") || sweepGroup.getObjectType("how") != HighFive::ObjectType::Group){
+					fprintf(stderr, "Warning: sweep is missing how group\n");
 					continue;
 				}
-				// begin extracting data
-				float elevationAngle = getDoubleAttribute(sweepWhere, "elangle");
-				sweeps[elevationAngle] = SweepData();
-				SweepData* sweepData = &sweeps[elevationAngle];
-				sweepData->dataset = dataGroup.getDataSet("data");
-				sweepData->binCount = getIntAttribute(sweepWhere, "nbins");
-				sweepData->rayCount = getIntAttribute(sweepWhere, "nrays");
-				maxRadius = std::max(maxRadius, sweepData->binCount);
-				maxTheta = std::max(maxTheta, sweepData->rayCount);
-				// TODO: Use these values properly, pixelSize can vary from sweep to sweep
-				sweepData->pixelSize = getDoubleAttribute(sweepWhere, "rscale");
-				sweepData->innerDistance = getDoubleAttribute(sweepWhere, "rstart");
-				sweepData->elevation = elevationAngle;
-				sweepData->multiplier = getDoubleAttribute(what, "gain");
-				sweepData->offset = getDoubleAttribute(what, "offset");
-				std::vector<double> startAngles;
-				std::vector<double> stopAngles;
-				sweepHow.getAttribute("startazA").read(startAngles);
-				sweepHow.getAttribute("stopazA").read(stopAngles);
-				for(size_t i = 0; i < startAngles.size(); i++){
-					sweepData->rayAngles.push_back((startAngles[i] + stopAngles[i]) / 2.0);
+				if(!sweepGroup.exist("where") || sweepGroup.getObjectType("where") != HighFive::ObjectType::Group){
+					fprintf(stderr, "Warning: sweep is missing how group\n");
+					continue;
 				}
-				if(what.hasAttribute("nodata")){
-					sweepData->sourceNoDataValue = getDoubleAttribute(what, "nodata");
+				HighFive::Group sweepWhat = sweepGroup.getGroup("what");
+				HighFive::Group sweepWhere = sweepGroup.getGroup("where");
+				HighFive::Group sweepHow = sweepGroup.getGroup("how");
+				bool sweepHasAttributes = true;
+				// sweepHasAttributes &= sweepWhat.hasAttribute("startdate");
+				// sweepHasAttributes &= sweepWhat.hasAttribute("starttime");
+				sweepHasAttributes &= sweepWhere.hasAttribute("nbins");
+				sweepHasAttributes &= sweepWhere.hasAttribute("nrays");
+				sweepHasAttributes &= sweepWhere.hasAttribute("rscale");
+				sweepHasAttributes &= sweepWhere.hasAttribute("rstart");
+				sweepHasAttributes &= sweepWhere.hasAttribute("elangle");
+				sweepHasAttributes &= sweepHow.hasAttribute("startazA");
+				sweepHasAttributes &= sweepHow.hasAttribute("stopazA");
+				if(!sweepHasAttributes){
+					fprintf(stderr, "Warning: sweep is missing attributes\n");
+					continue;
 				}
-				if(what.hasAttribute("undetect")){
-					sweepData->sourceNoDetectValue = getDoubleAttribute(what, "undetect");
+				for(std::string key2 : sweepGroup.listObjectNames(HighFive::IndexType::NAME)){
+					if(key2.substr(0,4) != "data" || sweepGroup.getObjectType(key2) != HighFive::ObjectType::Group){
+						// fprintf(stderr, "%s\n", key2.c_str());
+						continue;
+					}
+					HighFive::Group dataGroup = sweepGroup.getGroup(key2);
+					if(!dataGroup.exist("what") || !dataGroup.exist("data") || dataGroup.getObjectType("what") != HighFive::ObjectType::Group || dataGroup.getObjectType("data") != HighFive::ObjectType::Dataset ){
+						fprintf(stderr, "Warning: data section is missing groups\n");
+						continue;
+					}
+					HighFive::Group what = dataGroup.getGroup("what");
+					if(!what.hasAttribute("gain") || !what.hasAttribute("offset") || !what.hasAttribute("quantity")){
+						fprintf(stderr, "Warning: data section is missing what attributes\n");
+					}
+					// check if quantity is the volume type
+					if(getStringAttribute(what, "quantity") != dataType){
+						continue;
+					}
+					// begin extracting data
+					float elevationAngle = getDoubleAttribute(sweepWhere, "elangle");
+					sweeps[elevationAngle] = SweepData();
+					SweepData* sweepData = &sweeps[elevationAngle];
+					HighFive::DataSet dataset = dataGroup.getDataSet("data");
+					sweepData->dataset = dataset;
+					sweepData->datasetSize = dataset.getElementCount();
+					sweepData->datasetTypeClass = dataset.getDataType().getClass();
+					sweepData->binCount = getIntAttribute(sweepWhere, "nbins");
+					sweepData->rayCount = getIntAttribute(sweepWhere, "nrays");
+					maxRadius = std::max(maxRadius, sweepData->binCount);
+					maxTheta = std::max(maxTheta, sweepData->rayCount);
+					sweepData->pixelSize = getDoubleAttribute(sweepWhere, "rscale");
+					sweepData->innerDistance = getDoubleAttribute(sweepWhere, "rstart");
+					sweepData->elevation = elevationAngle;
+					sweepData->multiplier = getDoubleAttribute(what, "gain");
+					sweepData->offset = getDoubleAttribute(what, "offset");
+					std::vector<double> startAngles;
+					std::vector<double> stopAngles;
+					sweepHow.getAttribute("startazA").read(startAngles);
+					sweepHow.getAttribute("stopazA").read(stopAngles);
+					for(size_t i = 0; i < startAngles.size(); i++){
+						sweepData->rayAngles.push_back((startAngles[i] + stopAngles[i]) / 2.0);
+					}
+					if(what.hasAttribute("nodata")){
+						sweepData->sourceNoDataValue = getDoubleAttribute(what, "nodata");
+					}
+					if(what.hasAttribute("undetect")){
+						sweepData->sourceNoDetectValue = getDoubleAttribute(what, "undetect");
+					}
+					minPixelSize = std::min(minPixelSize, sweepData->pixelSize);
+					radarData->stats.innerDistance = sweepData->innerDistance;
 				}
-				minPixelSize = std::min(minPixelSize, sweepData->pixelSize);
-				radarData->stats.innerDistance = sweepData->innerDistance;
 			}
 		}
 		
@@ -284,16 +310,18 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		float minValue = INFINITY;
 		float maxValue = -INFINITY;
 		int sweepIndex = 0;
-		for (const auto pair : sweeps) {
+		// for (const auto &pair : sweeps) {
+		std::map<float, SweepData>::iterator iterator;
+		for(iterator = sweeps.begin(); iterator != sweeps.end(); ++iterator){
 			if (sweepIndex >= radarData->sweepBufferCount) {
 				// ignore sweeps that wont fit in buffer
 				break;
 			}
-			const SweepData* sweep = &pair.second;
+			const SweepData* sweep = &iterator->second;
 			radarData->sweepInfo[sweepIndex].actualRayCount = sweep->rayCount;
 			radarData->sweepInfo[sweepIndex].elevationAngle = sweep->elevation;
 			radarData->sweepInfo[sweepIndex].id = sweepIndex;
-			fprintf(stderr, "%f %i %i %f %f\n", radarData->sweepInfo[sweepIndex].elevationAngle, sweep->rayCount, sweep->binCount, sweep->multiplier, sweep->offset);
+			// fprintf(stderr, "%f %i %i %f %f\n", radarData->sweepInfo[sweepIndex].elevationAngle, sweep->rayCount, sweep->binCount, sweep->multiplier, sweep->offset);
 			int thetaSize = sweep->rayCount;
 			int sweepOffset = sweepIndex * radarData->sweepBufferSize;
 			if(radarData->doCompress){
@@ -303,25 +331,27 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 			}
 			
 			
-			int datasetSize = sweep->dataset.getElementCount();
-			if(datasetSize != inputDataSize){
+			if(sweep->datasetSize != inputDataSize){
 				if(inputData != NULL){
 					delete[] inputData;
 				}
-				inputDataSize = datasetSize;
+				inputDataSize = sweep->datasetSize;
 				inputData = new float[inputDataSize];
 			}
-			auto dataTypeClass = sweep->dataset.getDataType().getClass();
-			if(dataTypeClass == HighFive::DataTypeClass::Float){
+			if( sweep->datasetTypeClass == HighFive::DataTypeClass::Float){
+				std::lock_guard<std::mutex> lock(hdf5Lock);
 				sweep->dataset.read(inputData);
 			}else{
-				sweep->dataset.read((int32_t*)inputData);
+				{
+					std::lock_guard<std::mutex> lock(hdf5Lock);
+					sweep->dataset.read((int32_t*)inputData);
+					// fprintf(stderr, "extracting %s\n", sweep->dataset.getPath().c_str());
+				}
 				for(int i = 0; i < inputDataSize; i++){
 					// convert ints to floats
 					inputData[i] = ((int32_t*)inputData)[i];
 				}
 			}
-			fprintf(stderr, "extracting %s\n", sweep->dataset.getPath().c_str());
 			
 			
 			
@@ -413,6 +443,11 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 			fprintf(stderr, "volume loading code took %fs\n", benchTime);
 		}
 		
+		{
+			std::lock_guard<std::mutex> lock(hdf5Lock);
+			sweeps.clear();
+		}
+		
 		return true;
 	}catch(std::exception e){
 		fprintf(stderr, "Exception while loading odim volume: %s\n", e.what());
@@ -422,6 +457,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 
 void OdimH5RadarReader::UnloadFile(){
 	if(internal != NULL){
+		std::lock_guard<std::mutex> lock(hdf5Lock);
 		delete internal;
 		internal = NULL;
 	}
