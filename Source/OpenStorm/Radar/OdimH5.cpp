@@ -41,6 +41,7 @@ public:
 	float multiplier = 0;
 	float offset = 0;
 	float sourceNoDataValue = -INFINITY;
+	float sourceNoDetectValue = -INFINITY;
 	std::vector<float> rayAngles = {};
 };
 
@@ -140,6 +141,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		
 		int maxRadius = 0;
 		int maxTheta = 0;
+		float minPixelSize = INFINITY;
 		std::map<float, SweepData> sweeps;
 		for(std::string key : internal->h5File->listObjectNames(HighFive::IndexType::NAME)){
 			if(key.substr(0,7) != "dataset" || internal->h5File->getObjectType(key) != HighFive::ObjectType::Group){
@@ -218,6 +220,11 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 				if(what.hasAttribute("nodata")){
 					sweepData->sourceNoDataValue = getDoubleAttribute(what, "nodata");
 				}
+				if(what.hasAttribute("undetect")){
+					sweepData->sourceNoDetectValue = getDoubleAttribute(what, "undetect");
+				}
+				minPixelSize = std::min(minPixelSize, sweepData->pixelSize);
+				radarData->stats.innerDistance = sweepData->innerDistance;
 			}
 		}
 		
@@ -230,6 +237,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		// begin filling in RadarData
 		
 		radarData->stats.volumeType = volumeType;
+		radarData->stats.pixelSize = minPixelSize;
 		if (radarData->sweepBufferCount == 0) {
 			radarData->sweepBufferCount = sweeps.size();
 		}
@@ -323,21 +331,26 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					
 				// get real angle of ray
 				int realTheta = (int)((sweep->rayAngles[theta] * ((float)radarData->thetaBufferCount / 360.0f)) + radarData->thetaBufferCount) % radarData->thetaBufferCount;
-				int radiusSize = std::min(sweep->binCount, radarData->radiusBufferCount);
+				
 				RadarData::RayInfo* thisRayInfo = &radarData->rayInfo[(radarData->thetaBufferCount + 2) * sweepIndex + (realTheta + 1)];
 				thisRayInfo->actualAngle = sweep->rayAngles[theta];
 				thisRayInfo->interpolated = false;
 				thisRayInfo->closestTheta = 0;
 				float sourceNoDataValue = sweep->sourceNoDataValue;
+				float sourceNoDetectValue = sweep->sourceNoDetectValue;
 				int thetaIndex = (realTheta + 1) * radarData->thetaBufferSize;
 				float multiplier = sweep->multiplier;
 				float offset = sweep->offset;
 				float* rayBuffer = inputData + (sweep->binCount * theta);
+				float scale = minPixelSize / sweep->pixelSize;
+				int radiusSize = std::min((int)(sweep->binCount / scale), radarData->radiusBufferCount);
 				// fprintf(stderr, "%i %i \n",thetaSize, radiusSize);
 				for (int radius = 0; radius < radiusSize; radius++) {
 					//int value = (ray->range[radius] - minValue) / divider;
-					float value = rayBuffer[radius];
+					float value = rayBuffer[(int)(radius * scale)];
 					if(value == sourceNoDataValue){
+						value = noDataValue;
+					}else if(value == sourceNoDetectValue){
 						value = noDataValue;
 					}else{
 						value = value * multiplier + offset;
