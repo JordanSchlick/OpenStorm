@@ -249,8 +249,6 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					if(what.hasAttribute("undetect")){
 						sweepData->sourceNoDetectValue = getDoubleAttribute(what, "undetect");
 					}
-					minPixelSize = std::min(minPixelSize, sweepData->pixelSize);
-					radarData->stats.innerDistance = sweepData->innerDistance;
 				}
 			}
 			// convert to vector
@@ -274,6 +272,8 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 				if(!sweep.discard){
 					// add to final sweep array
 					sweeps.push_back(sweep);
+					minPixelSize = std::min(minPixelSize, sweep.pixelSize);
+					radarData->stats.innerDistance = sweep.innerDistance;
 				}
 			}
 		}
