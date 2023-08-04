@@ -23,20 +23,26 @@ Discord server invite [https://discord.gg/K3aU2hEYvJ](https://discord.gg/K3aU2hE
 * Display derived products  (De-aliased Velocity, Storm Relative Velocity, Rotation)
 * Interpolation in space and time
 * Linux and Windows support
-
+* NEXRAD and ODIM H5 radar data support
 
 ## Building
 1. Install Unreal Engine 5.2 and its dependencies
 2. Clone the repo `git clone https://github.com/JordanSchlick/OpenStorm.git`
 3. Get submodules `git submodule update --init --recursive`
-4. Open the project in unreal engine
-5. Hit ctrl+alt+f11 to build project.  
+4. Right click on the uproject file and generate visual studio project files
+5. Open the visual studio solution file
+6. Build the project in visual studio by hitting ctrl+shift+b
+7. Open the project in unreal engine
+
 To build a standalone build, select package project within the desired platform under the Platforms dropdown.
 
-To pull the latest changes to an existing copy of the repo use `git pull --recurse-submodules`
+To pull the latest changes to an existing copy of the repo use `git pull --recurse-submodules`  
+
+The source code for reading HDF5 files and by extension european ODIM radar data is stored in a separate repository. It can be optionally installed by cloning `https://github.com/JordanSchlick/hdf5` into `OpenStorm/Source/OpenStorm/Radar/Deps` with `cd Source/OpenStorm/Radar/Deps` and then `git clone https://github.com/JordanSchlick/hdf5.git`  
+It has around 375 c files that will increase compile time. Due to the significant increase in compile time and the chances for incompatibilities, it is completely optional.
 
 ## Getting data
-Currently only NEXRAD data is supported  
+NEXRAD and European ODIM H5 radar data are currently supported.  
 You can get NEXRAD data from
 * https://github.com/JordanSchlick/radar-data to download data in real time.
 * https://s3.amazonaws.com/noaa-nexrad-level2/index.html for historical data.

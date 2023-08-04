@@ -119,6 +119,7 @@ bool OdimH5RadarReader::LoadFile(std::string filename){
 
 
 bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType volumeType){
+	#ifdef HDF5
 	double benchTime = SystemAPI::CurrentTime();
 	radarData->stats = RadarData::Stats();
 	std::string dataType = "";
@@ -479,14 +480,19 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		fprintf(stderr, "Exception while loading odim volume: %s\n", e.what());
 		return false;
 	}
+	#else
+	return false;
+	#endif
 }
 
 void OdimH5RadarReader::UnloadFile(){
+	#ifdef HDF5
 	if(internal != NULL){
 		std::lock_guard<std::mutex> lock(hdf5Lock);
 		delete internal;
 		internal = NULL;
 	}
+	#endif
 }
 
 OdimH5RadarReader::~OdimH5RadarReader(){
