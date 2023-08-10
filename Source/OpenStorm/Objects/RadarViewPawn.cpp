@@ -130,6 +130,15 @@ void ARadarViewPawn::Tick(float deltaTime)
 			isTAAEnabled = false;
 			GEngine->Exec(GetWorld(), TEXT("r.AntiAliasingMethod 0"));
 		}
+		
+		if(isRadarVolumeViewActive && GS->globalState.viewMode != GlobalState::VIEW_MODE_VOLUMETRIC){
+			isRadarVolumeViewActive = false;
+			meshComponent->SetHiddenInGame(true);
+		}
+		if(!isRadarVolumeViewActive && GS->globalState.viewMode == GlobalState::VIEW_MODE_VOLUMETRIC){
+			isRadarVolumeViewActive = true;
+			meshComponent->SetHiddenInGame(false);
+		}
 	}
 	meshComponent->SetRelativeLocation(camera->GetRelativeLocation());
 	meshComponent->SetRelativeRotation(camera->GetRelativeRotation());

@@ -272,6 +272,38 @@ void AImGuiUI::Tick(float deltaTime)
 				
 				ImGui::Checkbox("Temporal Interpolation", &GS->globalState.temporalInterpolation);
 				
+				ImGui::PushItemWidth(10 * fontSize);
+				if (ImGui::BeginCombo("View Mode", globalState.viewMode == GlobalState::VIEW_MODE_VOLUMETRIC ? "3D Volume" : "2D Slice", 0)){
+					bool isSelected = globalState.viewMode == GlobalState::VIEW_MODE_VOLUMETRIC;
+					if (ImGui::Selectable("3D Volume", isSelected)) {
+						globalState.viewMode = GlobalState::VIEW_MODE_VOLUMETRIC;
+					}
+					if (isSelected) {
+						ImGui::SetItemDefaultFocus();
+					}
+					isSelected = globalState.viewMode == GlobalState::VIEW_MODE_SLICE;
+					if (ImGui::Selectable("2D Slice", isSelected)) {
+						globalState.viewMode = GlobalState::VIEW_MODE_SLICE;
+					}
+					if (isSelected) {
+						ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+				ImGui::PopItemWidth();
+				
+				
+				if(globalState.viewMode == GlobalState::VIEW_MODE_SLICE){
+					ImGui::SliderInt("Slice mode", (int*)&globalState.sliceMode, 0, 1);
+					if(globalState.sliceMode == GlobalState::SLICE_MODE_CONSTANT_ALTITUDE){
+						CustomFloatInput("Slice Altitude", 0, 25000, &globalState.sliceAltitude, &globalState.defaults->sliceAltitude);
+					}
+					if(globalState.sliceMode == GlobalState::SLICE_MODE_SWEEP_ANGLE){
+						CustomFloatInput("Slice Angle", 0.5, 19.5, &globalState.sliceAngle, &globalState.defaults->sliceAngle);
+					}
+					
+				}
+				
 				ImGui::TreePop();
 			}
 			ImGui::Separator();

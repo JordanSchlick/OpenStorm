@@ -36,7 +36,7 @@ public:
 	}
 	void RectangularToSpherical(){
 		T radius = sqrt(x * x + y * y + z * z);
-		T theta = atan2(-y, -x);
+		T theta = atan2(y, x);
 		T phi = acos(z / radius);
 		x = radius;
 		y = theta;

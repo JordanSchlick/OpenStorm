@@ -94,7 +94,8 @@
 		"inffast.h": "c",
 		"stdlib.h": "c",
 		"cinttypes": "cpp",
-		"complex": "cpp"
+		"complex": "cpp",
+		"xxatomic": "cpp"
 	},
 	"editor.insertSpaces": false
 }

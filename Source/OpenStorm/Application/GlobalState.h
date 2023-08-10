@@ -22,6 +22,15 @@ public:
 		bool enabled = true;
 	};
 	
+	enum ViewMode {
+		VIEW_MODE_VOLUMETRIC = 0,
+		VIEW_MODE_SLICE = 1,
+	};
+	
+	enum SliceMode {
+		SLICE_MODE_CONSTANT_ALTITUDE = 0,
+		SLICE_MODE_SWEEP_ANGLE = 1,
+	};
 
 	bool animate = false; // animate the scene
 	bool animateCutoff = false; // animate the cutoff
@@ -33,7 +42,7 @@ public:
 	bool devShowCacheState = false; // if the state of the cache buffer should be displayed on screen
 	bool devShowImGui = false; // if it is safe to show ImGui debuging windows
 	bool developmentMode = false; // show development features
-	bool vsync = true; // show development features
+	bool vsync = true; // enable vsync
 	bool enableFuzz = true; // add noise to shader to achieve a dithering effect
 	bool temporalAntiAliasing = false; // temporal anti aliasing can smooth out fuzz, it is used in the pawn
 	bool audioControlledHeight = false;
@@ -57,6 +66,11 @@ public:
 	float mapBrightness = 0.2f; // brightness of map texture
 	
 	int volumeType = 1; // type of radar product RadarData::VolumeType, defaults to 1 which is reflectivity
+	
+	ViewMode viewMode = VIEW_MODE_VOLUMETRIC; // what mode should be used to display the radar data in space
+	SliceMode sliceMode = SLICE_MODE_CONSTANT_ALTITUDE; // type of slice to do
+	float sliceAltitude = 5000; // height above sea level to slice
+	float sliceAngle = 1; // angle of slice in degrees to slice
 	
 	std::vector<Waypoint> locationMarkers = {};
 	

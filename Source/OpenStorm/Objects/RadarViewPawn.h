@@ -47,6 +47,8 @@ public:
 	
 	bool isTAAEnabled = false;
 	
+	bool isRadarVolumeViewActive = true;
+	
 	std::vector<uint64_t> callbackIds = {};
 
 	void MoveFB(float value);
