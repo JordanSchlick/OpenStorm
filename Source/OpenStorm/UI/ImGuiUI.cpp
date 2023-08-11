@@ -272,34 +272,42 @@ void AImGuiUI::Tick(float deltaTime)
 				
 				ImGui::Checkbox("Temporal Interpolation", &GS->globalState.temporalInterpolation);
 				
-				ImGui::PushItemWidth(10 * fontSize);
-				if (ImGui::BeginCombo("View Mode", globalState.viewMode == GlobalState::VIEW_MODE_VOLUMETRIC ? "3D Volume" : "2D Slice", 0)){
-					bool isSelected = globalState.viewMode == GlobalState::VIEW_MODE_VOLUMETRIC;
-					if (ImGui::Selectable("3D Volume", isSelected)) {
-						globalState.viewMode = GlobalState::VIEW_MODE_VOLUMETRIC;
-					}
-					if (isSelected) {
-						ImGui::SetItemDefaultFocus();
-					}
-					isSelected = globalState.viewMode == GlobalState::VIEW_MODE_SLICE;
-					if (ImGui::Selectable("2D Slice", isSelected)) {
-						globalState.viewMode = GlobalState::VIEW_MODE_SLICE;
-					}
-					if (isSelected) {
-						ImGui::SetItemDefaultFocus();
-					}
-					ImGui::EndCombo();
-				}
+				// ImGui::PushItemWidth(10 * fontSize);
+				// if (ImGui::BeginCombo("View Mode", globalState.viewMode == GlobalState::VIEW_MODE_VOLUMETRIC ? "3D Volume" : "2D Slice", 0)){
+				// 	bool isSelected = globalState.viewMode == GlobalState::VIEW_MODE_VOLUMETRIC;
+				// 	if (ImGui::Selectable("3D Volume", isSelected)) {
+				// 		globalState.viewMode = GlobalState::VIEW_MODE_VOLUMETRIC;
+				// 	}
+				// 	if (isSelected) {
+				// 		ImGui::SetItemDefaultFocus();
+				// 	}
+				// 	isSelected = globalState.viewMode == GlobalState::VIEW_MODE_SLICE;
+				// 	if (ImGui::Selectable("2D Slice", isSelected)) {
+				// 		globalState.viewMode = GlobalState::VIEW_MODE_SLICE;
+				// 	}
+				// 	if (isSelected) {
+				// 		ImGui::SetItemDefaultFocus();
+				// 	}
+				// 	ImGui::EndCombo();
+				// }
+				// ImGui::PopItemWidth();
+				
+				
+				const char* viewModes[] = {"Invalid", "3D Volume", "2D Slice", "Invalid"};
+				ImGui::PushItemWidth(15 * fontSize);
+				ImGui::SliderInt("View Mode", (int*)&globalState.viewMode, 0, 1, viewModes[std::clamp(globalState.viewMode + 1, 0, 3)]);
 				ImGui::PopItemWidth();
 				
-				
 				if(globalState.viewMode == GlobalState::VIEW_MODE_SLICE){
-					ImGui::SliderInt("Slice mode", (int*)&globalState.sliceMode, 0, 1);
+					const char* sliceModes[] = {"Invalid", "Constant Altitude", "Sweep Angle", "Invalid"};
+					ImGui::PushItemWidth(15 * fontSize);
+					ImGui::SliderInt("Slice Mode", (int*)&globalState.sliceMode, 0, 1, sliceModes[std::clamp(globalState.sliceMode + 1, 0, 3)]);
+					ImGui::PopItemWidth();
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_CONSTANT_ALTITUDE){
-						CustomFloatInput("Slice Altitude", 0, 25000, &globalState.sliceAltitude, &globalState.defaults->sliceAltitude);
+						CustomFloatInput("Slice Altitude (meters)", 0, 25000, &globalState.sliceAltitude, &globalState.defaults->sliceAltitude);
 					}
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_SWEEP_ANGLE){
-						CustomFloatInput("Slice Angle", 0.5, 19.5, &globalState.sliceAngle, &globalState.defaults->sliceAngle);
+						CustomFloatInput("Slice Angle (degrees)", 0.5, 19.5, &globalState.sliceAngle, &globalState.defaults->sliceAngle);
 					}
 					
 				}
