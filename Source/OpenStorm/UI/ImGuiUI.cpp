@@ -299,7 +299,7 @@ void AImGuiUI::Tick(float deltaTime)
 				ImGui::PopItemWidth();
 				
 				if(globalState.viewMode == GlobalState::VIEW_MODE_SLICE){
-					const char* sliceModes[] = {"Invalid", "Constant Altitude", "Sweep Angle", "Invalid"};
+					const char* sliceModes[] = {"Invalid", "Sweep Angle", "Constant Altitude", "Invalid"};
 					ImGui::PushItemWidth(15 * fontSize);
 					ImGui::SliderInt("Slice Mode", (int*)&globalState.sliceMode, 0, 1, sliceModes[std::clamp(globalState.sliceMode + 1, 0, 3)]);
 					ImGui::PopItemWidth();
