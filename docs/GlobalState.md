@@ -10,6 +10,7 @@ Events are named. They can also have some data associated with them. Extra data 
 * `ChangeProduct(unused, RadarData::VolumeType*)` - Change the type of product being displayed
 * `LocationMarkersUpdate` - Update location markers from global state
 * `GlobeUpdate` - Updated orientation of the globe
+* `VolumeUpdate(unused, RadarData*)` - A new radar volume was displayed
 * `LoadDirectory(directory to load,Null)` - Load a directory of radar files
 * `DevReloadFile` - Reload the current file
 * `Teleport(unused, SimpleVector3*)` - Teleport the camera to the game location specified by SimpleVector3

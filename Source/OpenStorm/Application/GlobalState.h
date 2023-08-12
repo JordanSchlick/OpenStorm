@@ -71,6 +71,7 @@ public:
 	SliceMode sliceMode = SLICE_MODE_SWEEP_ANGLE; // type of slice to do
 	float sliceAltitude = 5000; // height above sea level to slice
 	float sliceAngle = 2; // angle of slice in degrees to slice
+	bool sliceVolumetric = false; // if the slice should be volumetric instead of flat
 	
 	std::vector<Waypoint> locationMarkers = {};
 	

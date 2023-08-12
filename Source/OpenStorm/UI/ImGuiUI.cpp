@@ -262,7 +262,7 @@ void AImGuiUI::Tick(float deltaTime)
 				
 				CustomFloatInput("Cutoff", 0, 1, &globalState.cutoff, &globalState.defaults->cutoff, CustomFloatInput_SliderOnly);
 				CustomFloatInput("Opacity", 0.2, 4, &globalState.opacityMultiplier, &globalState.defaults->opacityMultiplier);
-				CustomFloatInput("Height", 1, 4, &globalState.verticalScale, &globalState.defaults->verticalScale);
+				CustomFloatInput("Height Exaggeration", 1, 4, &globalState.verticalScale, &globalState.defaults->verticalScale);
 				
 				bool spatialInterpolationOldValue = globalState.spatialInterpolation;
 				ImGui::Checkbox("Spatial Interpolation", &globalState.spatialInterpolation);
@@ -309,7 +309,7 @@ void AImGuiUI::Tick(float deltaTime)
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_SWEEP_ANGLE){
 						CustomFloatInput("Slice Angle (degrees)", 0.5, 19.5, &globalState.sliceAngle, &globalState.defaults->sliceAngle);
 					}
-					
+					ImGui::Checkbox("Volumetric Slice", &globalState.sliceVolumetric);
 				}
 				
 				ImGui::TreePop();

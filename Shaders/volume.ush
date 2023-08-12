@@ -81,7 +81,7 @@ bool wasInsideBounds = false;
 //animationTime = 0.5;
 
 // section that bounds the rays to a region defined by a sphere with a radius of boundingRadius and the top and bottom cut off by cutoffCircles
-if(true){
+if(true && !sliceMode){
 	bool inBounds = /*cutoffCircles.r == cutoffCircles.b ||*/ (cutoffCircles.r >= rayOrigin.z && cutoffCircles.b <= rayOrigin.z);
 	inBounds = inBounds && distance(rayOrigin, 0) <= boundingRadius;
 	if(!inBounds){
@@ -152,7 +152,7 @@ if(true){
 float3 color = 0;
 float alpha = 0;
 
-if(fuzz >= 1){
+if(fuzz >= 1 && !sliceMode){
 	// add random noise to starting position to prevent patterns from appearing
 	//startingDistance += frac(sin(dot(rayOrigin, float3(12.9898, 78.233, 29.4382)) + animationTime) * 43758.5453) * stepSize;
 	
@@ -183,13 +183,18 @@ bool wasEmpty = false;
 
 const int intMode = mode;
 
-const float maxSteps = min(boundingRadius * 2, depth /*- initialCameraDistance * 1.4*/ - startingDistance) / stepSize;
+float maxSteps = min(boundingRadius * 2, depth /*- initialCameraDistance * 1.4*/ - startingDistance) / stepSize;
 const float maxStepDistance = 4000;
 const float PI = 3.14159265f;
 const float PI2 = 3.14159265f * 2;
 const float PIH = 3.14159265f / 2;
 float endingDistance = startingDistance + maxStepDistance;
 float travelDistance = startingDistance;
+
+if(sliceMode){
+	maxSteps = 0;
+	stepSize = 20;
+}
 
 for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	// travelDistance += wasEmpty * stepSize * 10;

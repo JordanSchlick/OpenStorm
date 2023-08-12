@@ -54,11 +54,37 @@ void ARadarSlice::BeginPlay(){
 	PrimaryActorTick.bCanEverTick = true;
 	mainVolumeRender = FindActor<ARadarVolumeRender>();
 	Super::BeginPlay();
-	//GenerateMesh();
+	
+	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
+	if(gameMode == NULL){
+		return;
+	}
+	GlobalState* globalState = &gameMode->globalState;
+	
+	callbackIds.push_back(globalState->RegisterEvent("GlobeUpdate",[this](std::string stringData, void* extraData){
+		GenerateMesh();
+	}));
+	callbackIds.push_back(globalState->RegisterEvent("VolumeUpdate",[this](std::string stringData, void* extraData){
+		RadarData* radarData = (RadarData*)extraData;
+		radius = radarData->stats.boundRadius * radarData->stats.pixelSize / 10000.0f * 100.0f * 1.1f;
+		GenerateMesh();
+	}));
+	
+	GenerateMesh();
 }
 
 void ARadarSlice::EndPlay(const EEndPlayReason::Type endPlayReason) {
 	Super::EndPlay(endPlayReason);
+	
+	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
+	if(gameMode == NULL){
+		return;
+	}
+	GlobalState* globalState = &gameMode->globalState;
+	for(auto id : callbackIds){
+		globalState->UnregisterEvent(id);
+	}
+	callbackIds.clear();
 }
 
 void ARadarSlice::Tick(float DeltaTime){
@@ -82,7 +108,7 @@ void ARadarSlice::Tick(float DeltaTime){
 	
 	
 	if(globalState->viewMode == GlobalState::VIEW_MODE_SLICE){
-		bool regenerateMesh = true;
+		bool regenerateMesh = false;
 		
 		if(globalState->sliceAltitude != sliceAltitude){
 			sliceAltitude = globalState->sliceAltitude;
@@ -114,6 +140,7 @@ void ARadarSlice::GenerateMesh(){
 	TArray<int> triangles = {};
 	TArray<FVector2D> uv0 = {};
 	if(sliceMode == GlobalState::SLICE_MODE_CONSTANT_ALTITUDE){
+		divisions = 30;
 		vertices.SetNum((divisions + 1) * (divisions + 1));
 		normals.SetNum((divisions + 1) * (divisions + 1));
 		uv0.SetNum((divisions + 1) * (divisions + 1));
@@ -128,8 +155,8 @@ void ARadarSlice::GenerateMesh(){
 			for (int y = 0; y <= divisions; y++) {
 				int loc = y * (divisions + 1) + x;
 				SimpleVector3<double> vert = SimpleVector3<double>(
-					(x / (float)divisions - 0.5f) * size * 1.2,
-					(y / (float)divisions - 0.5f) * size * 1.2,
+					(x / (float)divisions - 0.5f) * radius * 2.0f,
+					(y / (float)divisions - 0.5f) * radius * 2.0f,
 					0
 				);
 				
@@ -187,12 +214,12 @@ void ARadarSlice::GenerateMesh(){
 		normals[0] = FVector(0, 0, 1);
 		
 		for (int i = 0; i < sectors; i++) {
-			SimpleVector3<float> vert = SimpleVector3<float>(size, 0, 0);
+			SimpleVector3<float> vert = SimpleVector3<float>(radius, 0, 0);
 			vert.RotateAroundY(-sliceAngle / 180.0f * M_PIF);
 			vert.RotateAroundZ(i / (float)sectors * 2.0f * M_PIF);
 			
 			vertices[i + 1] = FVector(vert.x, vert.y, vert.z);
-			uv0[i + 1] = FVector2D(vert.x / size + 0.5, vert.y / size + 0.5);
+			uv0[i + 1] = FVector2D(vert.x / radius + 0.5, vert.y / radius + 0.5);
 			normals[i + 1] = FVector(0, 0, 1);
 		}
 		for (int i = 0; i < sectors; i++) {

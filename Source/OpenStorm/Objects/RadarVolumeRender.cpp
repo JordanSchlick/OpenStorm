@@ -338,6 +338,7 @@ void ARadarVolumeRender::HandleRadarDataEvent(RadarCollection::RadarUpdateEvent 
 			delete[] buffer;
 		});
 		
+		globalState->EmitEvent("VolumeUpdate", "", radarData);
 	}
 }
 
@@ -347,7 +348,7 @@ void ARadarVolumeRender::EndPlay(const EEndPlayReason::Type endPlayReason) {
 	for(auto id : callbackIds){
 		globalState->UnregisterEvent(id);
 	}
-	
+	callbackIds.clear();
 	globalState->refRadarCollection = NULL;
 	Super::EndPlay(endPlayReason);
 }
@@ -526,6 +527,8 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 		if (doTimeInterpolation) {
 			interpolationMaterialInstance->SetScalarParameterValue(TEXT("Minimum"), radarColorResult.lower);
 		}
+		
+		radarMaterialInstance->SetScalarParameterValue(TEXT("SliceMode"), (globalState->viewMode == GlobalState::VIEW_MODE_SLICE && !globalState->sliceVolumetric) ? 1 : 0);
 		
 		// swap to second buffer to prevent overwiting before the asynchronous texture upload is complete.
 		RadarColorIndex::Result oldRadarColorResultAlternate = radarColorResultAlternate;
