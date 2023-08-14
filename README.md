@@ -24,6 +24,7 @@ Discord server invite [https://discord.gg/K3aU2hEYvJ](https://discord.gg/K3aU2hE
 * Interpolation in space and time
 * Linux and Windows support
 * NEXRAD and ODIM H5 radar data support
+* VR headset viewing
 
 ## Building
 1. Install Unreal Engine 5.2 and its dependencies

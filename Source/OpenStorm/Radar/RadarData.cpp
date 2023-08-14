@@ -350,7 +350,7 @@ void RadarData::InterpolateSweep(int sweepIndex, float *sweepBuffer){
 			if(gapDistance < 0){
 				gapDistance += thetaBufferCount;
 			}
-			if(gapDistance <= std::max(thetaBufferCount / 50, 2) || true){
+			if(gapDistance <= std::max(thetaBufferCount / 50, 2)){
 				int previousRayAbs = theta + info->previousTheta;
 				int nextRayAbs = theta + info->nextTheta;
 				if(nextRayAbs > thetaBufferCount || thetaBufferCount < 0 || previousRayAbs < 0 || previousRayAbs > thetaBufferCount){
