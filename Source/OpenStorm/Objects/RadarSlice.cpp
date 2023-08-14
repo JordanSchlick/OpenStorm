@@ -140,6 +140,8 @@ void ARadarSlice::GenerateMesh(){
 	TArray<int> triangles = {};
 	TArray<FVector2D> uv0 = {};
 	if(sliceMode == GlobalState::SLICE_MODE_CONSTANT_ALTITUDE){
+		// create section of a sphere concentric to earth with a difference in radius equal to sliceAltitude
+		
 		divisions = 30;
 		vertices.SetNum((divisions + 1) * (divisions + 1));
 		normals.SetNum((divisions + 1) * (divisions + 1));
@@ -204,6 +206,8 @@ void ARadarSlice::GenerateMesh(){
 		}
 	}
 	if(sliceMode == GlobalState::SLICE_MODE_SWEEP_ANGLE){
+		// create a cone with its tip located at the radar and an angle from flat of sliceAngle
+		
 		vertices.SetNum(sectors + 1);
 		normals.SetNum(sectors + 1);
 		uv0.SetNum(sectors + 1);
