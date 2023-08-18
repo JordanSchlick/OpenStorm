@@ -39,6 +39,11 @@ To build a standalone build, select package project within the desired platform 
 
 To pull the latest changes to an existing copy of the repo use `git pull --recurse-submodules`  
 
+Some of the larger data files are not included in the repository. They can be retrieved out of the latest release. The files can be found in the OpenStorm folder inside the release builds. The files can then be moved into the following locations in this project.
+Elevation data: `Content/Data/elevation.bin.gz`  
+Satellite imagery: `Content/Data/Map/ImageryOnly.tar`  
+The demo radar files in: `Content/Data/Demo/`  
+
 The source code for reading HDF5 files and by extension european ODIM radar data is stored in a separate repository. It can be optionally installed by cloning `https://github.com/JordanSchlick/hdf5` into `OpenStorm/Source/OpenStorm/Radar/Deps` with `cd Source/OpenStorm/Radar/Deps` and then `git clone https://github.com/JordanSchlick/hdf5.git`  
 It has around 375 c files that will increase compile time. Due to the significant increase in compile time and the chances for incompatibilities, it is completely optional.
 
