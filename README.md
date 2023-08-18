@@ -39,7 +39,7 @@ To build a standalone build, select package project within the desired platform 
 
 To pull the latest changes to an existing copy of the repo use `git pull --recurse-submodules`  
 
-Some of the larger data files are not included in the repository. They can be retrieved out of the latest release. The files can be found in the OpenStorm folder inside the release builds. The files can then be moved into the following locations in this project.
+Some of the larger data files are not included in the repository. They can be retrieved out of the latest release. The files can be found in the OpenStorm folder inside the release builds. The files can then be moved into the following locations in this project.  
 Elevation data: `Content/Data/elevation.bin.gz`  
 Satellite imagery: `Content/Data/Map/ImageryOnly.tar`  
 The demo radar files in: `Content/Data/Demo/`  
