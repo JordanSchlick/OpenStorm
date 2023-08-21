@@ -36,6 +36,9 @@ public:
 	UPROPERTY(EditAnywhere);
 	AMapMesh* rootMapMesh = NULL;
 	
+	// number of ticks to wait after game start to start map
+	int preTicks = 10;
+	
 	TileProvider* tileProvider = NULL;
 	
 	

@@ -3,7 +3,7 @@
 
 - /Source/OpenStorm/UI/IconsFontAwesome6.h
 - /Source/OpenStorm/UI/portable-file-dialogs.cpp
-- /Source/OpenStorm/UI/font.cpp
+- /Source/OpenStorm/UI/FontData.h
 
 + Source
 - /*

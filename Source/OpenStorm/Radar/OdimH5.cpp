@@ -182,13 +182,14 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					continue;
 				}
 				if(!sweepGroup.exist("where") || sweepGroup.getObjectType("where") != HighFive::ObjectType::Group){
-					fprintf(stderr, "Warning: sweep is missing how group\n");
+					fprintf(stderr, "Warning: sweep is missing where group\n");
 					continue;
 				}
 				HighFive::Group sweepWhat = sweepGroup.getGroup("what");
 				HighFive::Group sweepWhere = sweepGroup.getGroup("where");
 				HighFive::Group sweepHow = sweepGroup.getGroup("how");
 				bool sweepHasAttributes = true;
+				bool sweepHasPerRayAngleAttributes = true;
 				// sweepHasAttributes &= sweepWhat.hasAttribute("startdate");
 				// sweepHasAttributes &= sweepWhat.hasAttribute("starttime");
 				sweepHasAttributes &= sweepWhere.hasAttribute("nbins");
@@ -196,8 +197,9 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 				sweepHasAttributes &= sweepWhere.hasAttribute("rscale");
 				sweepHasAttributes &= sweepWhere.hasAttribute("rstart");
 				sweepHasAttributes &= sweepWhere.hasAttribute("elangle");
-				sweepHasAttributes &= sweepHow.hasAttribute("startazA");
-				sweepHasAttributes &= sweepHow.hasAttribute("stopazA");
+				sweepHasAttributes &= sweepHow.hasAttribute("astart");
+				sweepHasPerRayAngleAttributes &= sweepHow.hasAttribute("startazA");
+				sweepHasPerRayAngleAttributes &= sweepHow.hasAttribute("stopazA");
 				if(!sweepHasAttributes){
 					fprintf(stderr, "Warning: sweep is missing attributes\n");
 					continue;
@@ -233,16 +235,23 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					maxRadius = std::max(maxRadius, sweepData->binCount);
 					maxTheta = std::max(maxTheta, sweepData->rayCount);
 					sweepData->pixelSize = getDoubleAttribute(sweepWhere, "rscale");
-					sweepData->innerDistance = getDoubleAttribute(sweepWhere, "rstart");
+					sweepData->innerDistance = getDoubleAttribute(sweepWhere, "rstart") * 1000.0f;
 					sweepData->elevation = elevationAngle;
 					sweepData->multiplier = getDoubleAttribute(what, "gain");
 					sweepData->offset = getDoubleAttribute(what, "offset");
-					std::vector<double> startAngles;
-					std::vector<double> stopAngles;
-					sweepHow.getAttribute("startazA").read(startAngles);
-					sweepHow.getAttribute("stopazA").read(stopAngles);
-					for(size_t i = 0; i < startAngles.size(); i++){
-						sweepData->rayAngles.push_back((startAngles[i] + stopAngles[i]) / 2.0);
+					if(sweepHasPerRayAngleAttributes){
+						std::vector<double> startAngles;
+						std::vector<double> stopAngles;
+						sweepHow.getAttribute("startazA").read(startAngles);
+						sweepHow.getAttribute("stopazA").read(stopAngles);
+						for(size_t i = 0; i < startAngles.size(); i++){
+							sweepData->rayAngles.push_back((startAngles[i] + stopAngles[i]) / 2.0);
+						}
+					}else{
+						float startAngle = getDoubleAttribute(sweepHow, "astart");
+						for(size_t i = 0; i < sweepData->rayCount; i++){
+							sweepData->rayAngles.push_back(startAngle + ((float)i / (float)sweepData->rayCount) * 360.0f);
+						}
 					}
 					if(what.hasAttribute("nodata")){
 						sweepData->sourceNoDataValue = getDoubleAttribute(what, "nodata");
@@ -257,7 +266,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 			for(auto &pair : sweepsMap){
 				sweepsTmp.push_back(pair.second);
 			}
-			for(int i = 1; i < sweepsTmp.size() - 1; i++){
+			for(int i = 1; i < ((int)sweepsTmp.size()) - 1; i++){
 				SweepData* sweepBefore = &sweepsTmp[i - 1];
 				SweepData* sweep = &sweepsTmp[i];
 				SweepData* sweepAfter = &sweepsTmp[i + 1];
@@ -274,7 +283,6 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					// add to final sweep array
 					sweeps.push_back(sweep);
 					minPixelSize = std::min(minPixelSize, sweep.pixelSize);
-					radarData->stats.innerDistance = sweep.innerDistance;
 				}
 			}
 		}
@@ -289,6 +297,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		
 		radarData->stats.volumeType = volumeType;
 		radarData->stats.pixelSize = minPixelSize;
+		radarData->stats.innerDistance = sweeps[0].innerDistance / minPixelSize;
 		if (radarData->sweepBufferCount == 0) {
 			radarData->sweepBufferCount = sweeps.size();
 		}

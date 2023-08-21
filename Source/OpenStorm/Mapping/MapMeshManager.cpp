@@ -42,6 +42,10 @@ void AMapMeshManager::BeginPlay(){
 }
 
 void AMapMeshManager::Tick(float DeltaTime){
+	if(preTicks > 0){
+		preTicks--;
+		return;
+	}
 	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
 	if(gameMode != NULL){
 		GlobalState* globalState = &gameMode->globalState;
