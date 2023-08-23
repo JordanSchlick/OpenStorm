@@ -39,6 +39,11 @@ ARadarSlice::ARadarSlice(){
 	RootComponent = proceduralMesh;
 }
 
+template <class T>
+inline FVector SimpleVectorToFVector(SimpleVector3<T> vec){
+	return FVector(vec.x, vec.y, vec.z);
+}
+
 void ARadarSlice::BeginPlay(){
 	static Globe defaultGlobe = {};
 	//defaultGlobe.scale = 1.0 / 10000.0 * 100.0;
@@ -67,7 +72,20 @@ void ARadarSlice::BeginPlay(){
 	callbackIds.push_back(globalState->RegisterEvent("VolumeUpdate",[this](std::string stringData, void* extraData){
 		RadarData* radarData = (RadarData*)extraData;
 		radius = radarData->stats.boundRadius * radarData->stats.pixelSize / 10000.0f * 100.0f * 1.1f;
+		radiusMax = (radarData->radiusBufferCount + radarData->stats.innerDistance) * radarData->stats.pixelSize / 10000.0f * 100.0f * 1.1f;
+		topHeight = radarData->stats.boundUpper * radarData->stats.pixelSize / 10000.0f * 100.0f + 100;
+		bottomHeight = radarData->stats.boundLower * radarData->stats.pixelSize / 10000.0f * 100.0f - 50;
 		GenerateMesh();
+	}));
+	callbackIds.push_back(globalState->RegisterEvent("CameraMove",[this](std::string stringData, void* extraData){
+		cameraLocation = *(SimpleVector3<float>*)extraData;
+		SimpleVector3<float> cameraSpherical = cameraLocation;
+		cameraSpherical.RectangularToSpherical();
+		float cameraAngle = cameraSpherical.theta();
+		if(sliceMode == GlobalState::SLICE_MODE_SWEEP_ANGLE && std::abs(cameraAngle - lastCameraAngle) > M_PI * 2 / sectors){
+			lastCameraAngle = cameraAngle;
+			GenerateMesh();
+		}
 	}));
 	
 	GenerateMesh();
@@ -120,6 +138,18 @@ void ARadarSlice::Tick(float DeltaTime){
 		}
 		if(globalState->sliceMode != sliceMode){
 			sliceMode = globalState->sliceMode;
+			regenerateMesh = true;
+		}
+		if(globalState->sliceVerticalLocationX != locationX){
+			locationX = globalState->sliceVerticalLocationX;
+			regenerateMesh = true;
+		}
+		if(globalState->sliceVerticalLocationY != locationY){
+			locationY = globalState->sliceVerticalLocationY;
+			regenerateMesh = true;
+		}
+		if(globalState->sliceVerticalRotation != rotation){
+			rotation = globalState->sliceVerticalRotation;
 			regenerateMesh = true;
 		}
 		
@@ -211,7 +241,10 @@ void ARadarSlice::GenerateMesh(){
 		vertices.SetNum(sectors + 1);
 		normals.SetNum(sectors + 1);
 		uv0.SetNum(sectors + 1);
-		triangles.Empty((sectors) * 3 * 2);
+		int triangleCount = (sectors) * 3 * 2;
+		triangles.Empty(triangleCount);
+		TArray<int> trianglesTemp = {};
+		trianglesTemp.Empty(triangleCount);
 		
 		vertices[0] = FVector(0, 0, 0);
 		uv0[0] = FVector2D(0.5f, 0.5f);
@@ -226,24 +259,79 @@ void ARadarSlice::GenerateMesh(){
 			uv0[i + 1] = FVector2D(vert.x / radius + 0.5, vert.y / radius + 0.5);
 			normals[i + 1] = FVector(0, 0, 1);
 		}
-		for (int i = 0; i < sectors; i++) {
+		for (int i = 0; i < sectors - 1; i++) {
 			// front triangle
-			triangles.Add(i + 1);
-			triangles.Add(i + 2);
-			triangles.Add(0);
+			trianglesTemp.Add(i + 1);
+			trianglesTemp.Add(i + 2);
+			trianglesTemp.Add(0);
 			// back triangle
-			triangles.Add(0);
-			triangles.Add(i + 2);
-			triangles.Add(i + 1);
+			trianglesTemp.Add(0);
+			trianglesTemp.Add(i + 2);
+			trianglesTemp.Add(i + 1);
 		}
 		// add last triangle front
-		triangles.Add(sectors + 1);
-		triangles.Add(1);
-		triangles.Add(0);
+		trianglesTemp.Add(sectors + 1);
+		trianglesTemp.Add(1);
+		trianglesTemp.Add(0);
 		// add last triangle back
+		trianglesTemp.Add(0);
+		trianglesTemp.Add(1);
+		trianglesTemp.Add(sectors + 1);
+		
+		// sort triangles so that they overlap properly
+		int startIndex = -lastCameraAngle / 2.0f / M_PIF * sectors + sectors * 2.5;
+		int flipDirection = 1;
+		int startDistance = 0;
+		for(int i = 0; i < sectors; i++){
+			int loc = ((startDistance * flipDirection + startIndex) * 6) % triangleCount;
+			triangles.Add(trianglesTemp[loc + 0]);
+			triangles.Add(trianglesTemp[loc + 1]);
+			triangles.Add(trianglesTemp[loc + 2]);
+			triangles.Add(trianglesTemp[loc + 3]);
+			triangles.Add(trianglesTemp[loc + 4]);
+			triangles.Add(trianglesTemp[loc + 5]);
+			if(i % 2 == 0){
+				startDistance++;
+			}
+			flipDirection = -flipDirection;
+		}
+	}
+	
+	if(sliceMode == GlobalState::SLICE_MODE_VERTICAL){
+		SimpleVector3<float> offset = SimpleVector3<float>(radiusMax * locationX, -radiusMax * locationY, 0);
+		vertices.SetNum(4);
+		normals.SetNum(4);
+		uv0.SetNum(4);
+		triangles.Empty(3);
+		// SimpleVector3<float> sideways =  SimpleVector3<float>(radiusMax * 2 + offset.Magnitude(), 0, 0);
+		// sideways.RotateAroundZ(rotation / 180.0f * M_PIF);
+		// SimpleVector3<float> top = SimpleVector3<float>(0, 0, topHeight);
+		// SimpleVector3<float> bottom = SimpleVector3<float>(0, 0, bottomHeight);
+		SimpleVector3<float> sideways =  SimpleVector3<float>(30000, 0, 0);
+		sideways.RotateAroundZ(rotation / 180.0f * M_PIF);
+		SimpleVector3<float> top = SimpleVector3<float>(0, 0, 10000);
+		SimpleVector3<float> bottom = SimpleVector3<float>(0, 0, -10000);
+		vertices[0] = SimpleVectorToFVector(offset + sideways + bottom);
+		vertices[1] = SimpleVectorToFVector(offset - sideways + bottom);
+		vertices[2] = SimpleVectorToFVector(offset - sideways + top);
+		vertices[3] = SimpleVectorToFVector(offset + sideways + top);
+		
+		// front triangle 1
 		triangles.Add(0);
 		triangles.Add(1);
-		triangles.Add(sectors + 1);
+		triangles.Add(2);
+		// front triangle 2
+		triangles.Add(0);
+		triangles.Add(2);
+		triangles.Add(3);
+		// back triangle 1
+		triangles.Add(2);
+		triangles.Add(1);
+		triangles.Add(0);
+		// vakc triangle 2
+		triangles.Add(3);
+		triangles.Add(2);
+		triangles.Add(0);
 	}
 	proceduralMesh->CreateMeshSection(0, vertices, triangles, normals, uv0, TArray<FColor>(), TArray<FProcMeshTangent>(), false);
 }

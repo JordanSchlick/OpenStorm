@@ -38,6 +38,9 @@ public:
 	// reset all simple settings that do not require much setup
 	void ResetBasicSettings();
 	
+	// reset all settings to defaults
+	void ResetAllSettings();
+	
 	// load location markers from disk into global state
 	void LoadLocationMarkers();
 	

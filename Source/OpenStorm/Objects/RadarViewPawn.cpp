@@ -89,9 +89,10 @@ void ARadarViewPawn::Tick(float deltaTime)
 	
 	
 	if (ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>()){
-		moveSpeed = GS->globalState.moveSpeed * (1 + speedBoost * 3);
-		rotateSpeed = GS->globalState.rotateSpeed;
-		bool shouldEnableTAA = GS->globalState.temporalAntiAliasing;
+		GlobalState* globalState = &GS->globalState;
+		moveSpeed = globalState->moveSpeed * (1 + speedBoost * 3);
+		rotateSpeed = globalState->rotateSpeed;
+		bool shouldEnableTAA = globalState->temporalAntiAliasing;
 		FVector location = GetActorLocation();
 		location += camera->GetForwardVector() * forwardMovement * deltaTime * moveSpeed;
 		location += camera->GetRightVector() * sidewaysMovement * deltaTime * moveSpeed;
@@ -104,7 +105,7 @@ void ARadarViewPawn::Tick(float deltaTime)
 		}
 
 		FRotator rotation = GetActorRotation();
-		if(GS->globalState.vrMode){
+		if(globalState->vrMode){
 			rotation.Pitch = 0;
 			shouldEnableTAA = false;
 		}else{
@@ -120,7 +121,7 @@ void ARadarViewPawn::Tick(float deltaTime)
 		if (hud != NULL) {
 			hud->SetCompassRotation(rotation.Yaw / 360.0f);
 		}
-		GS->globalState.testFloat = deltaTime;
+		globalState->testFloat = deltaTime;
 		
 		if(shouldEnableTAA && !isTAAEnabled){
 			isTAAEnabled = true;
@@ -131,14 +132,22 @@ void ARadarViewPawn::Tick(float deltaTime)
 			GEngine->Exec(GetWorld(), TEXT("r.AntiAliasingMethod 0"));
 		}
 		
-		if(isRadarVolumeViewActive && GS->globalState.viewMode != GlobalState::VIEW_MODE_VOLUMETRIC){
+		if(isRadarVolumeViewActive && globalState->viewMode != GlobalState::VIEW_MODE_VOLUMETRIC){
 			isRadarVolumeViewActive = false;
 			meshComponent->SetHiddenInGame(true);
 		}
-		if(!isRadarVolumeViewActive && GS->globalState.viewMode == GlobalState::VIEW_MODE_VOLUMETRIC){
+		if(!isRadarVolumeViewActive && globalState->viewMode == GlobalState::VIEW_MODE_VOLUMETRIC){
 			isRadarVolumeViewActive = true;
 			meshComponent->SetHiddenInGame(false);
 		}
+		
+		FVector camPos = camera->GetComponentLocation();
+		if(oldCameraPosition != camPos){
+			SimpleVector3<float> cameraLocation = SimpleVector3<float>(camPos.X, camPos.Y, camPos.Z);
+			globalState->EmitEvent("CameraMove", "", (void*)&cameraLocation);
+			oldCameraPosition = camPos;
+		}
+		
 	}
 	meshComponent->SetRelativeLocation(camera->GetRelativeLocation());
 	meshComponent->SetRelativeRotation(camera->GetRelativeRotation());

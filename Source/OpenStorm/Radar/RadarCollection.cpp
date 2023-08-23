@@ -279,7 +279,7 @@ void RadarCollection::PollFiles(std::string defaultFilename) {
 	
 	bool moveToEnd = false;
 	
-	if(radarFiles.size() > 0){
+	if(radarFiles.size() > 0 && firstItemIndex < radarFiles.size() && lastItemIndex < radarFiles.size()){
 		// TODO: implement reloading files by replacing radarFiles and changing firstItemIndex and lastItemIndex to reflect the new vector
 		//fprintf(stderr, "file reloading is not implemented yet\n");
 		//return;

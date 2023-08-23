@@ -11,7 +11,7 @@
 #include "Data/ElevationData.h"
 #include "Data/TileProvider.h"
 #include "../Objects/RadarGameStateBase.h"
-#include "../Objects/RadarViewPawn.h"
+// #include "../Objects/RadarViewPawn.h"
 #include "../Application/GlobalState.h"
 #include "../Radar/Globe.h"
 #include "../EngineHelpers/StringUtils.h"
@@ -63,16 +63,16 @@ void AMapMeshManager::Tick(float DeltaTime){
 		}
 	}
 	if(enabled){
-		APawn* pawn = GetWorld()->GetFirstPlayerController()->GetPawn();
-		if(pawn != NULL){
-			FVector actorLocTmp = pawn->GetActorLocation();
-			ARadarViewPawn* radarPawn = dynamic_cast<ARadarViewPawn*>(pawn);
-			if(radarPawn){
-				actorLocTmp = radarPawn->camera->GetComponentLocation();
-			}
-			cameraLocation = SimpleVector3<double>(actorLocTmp.X, actorLocTmp.Y, actorLocTmp.Z);
-			//fprintf(stderr, "loc %f %f %f\n", cameraLocation.x, cameraLocation.y, cameraLocation.z);
-		}
+		// APawn* pawn = GetWorld()->GetFirstPlayerController()->GetPawn();
+		// if(pawn != NULL){
+		// 	FVector actorLocTmp = pawn->GetActorLocation();
+		// 	ARadarViewPawn* radarPawn = dynamic_cast<ARadarViewPawn*>(pawn);
+		// 	if(radarPawn){
+		// 		actorLocTmp = radarPawn->camera->GetComponentLocation();
+		// 	}
+		// 	cameraLocation = SimpleVector3<double>(actorLocTmp.X, actorLocTmp.Y, actorLocTmp.Z);
+		// 	//fprintf(stderr, "loc %f %f %f\n", cameraLocation.x, cameraLocation.y, cameraLocation.z);
+		// }
 		rootMapMesh->Update();
 	}
 }
@@ -138,6 +138,9 @@ void AMapMeshManager::EnableMap(){
 		globe->scale = globalState->globe->scale;
 		callbackIds.push_back(globalState->RegisterEvent("GlobeUpdate", [this, globalState](std::string stringData, void* extraData){
 			UpdateMapMeshPositionFromGlobe(rootMapMesh, globalState->globe);
+		}));
+		callbackIds.push_back(globalState->RegisterEvent("CameraMove", [this, globalState](std::string stringData, void* extraData){
+			cameraLocation = SimpleVector3<double>(*(SimpleVector3<float>*)extraData);
 		}));
 		UpdateMapMeshPositionFromGlobe(rootMapMesh, globalState->globe);
 	}

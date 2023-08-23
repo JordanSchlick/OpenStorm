@@ -26,6 +26,12 @@ public:
 		y = startingY;
 		z = startingZ;
 	}
+	template <class T2>
+	SimpleVector3(const SimpleVector3<T2> &from){
+		x = from.x;
+		y = from.y;
+		z = from.z;
+	}
 	void SphericalToRectangular(){
 		T recX = x * sin(z) * cos(y);
 		T recY = x * sin(z) * sin(y);
@@ -42,17 +48,17 @@ public:
 		y = theta;
 		z = phi;
 	}
-	void Add(SimpleVector3 &other){
+	void Add(const SimpleVector3 &other){
 		x += other.x;
 		y += other.y;
 		z += other.z;
 	}
-	void Subtract(SimpleVector3 &other){
+	void Subtract(const SimpleVector3 &other){
 		x -= other.x;
 		y -= other.y;
 		z -= other.z;
 	}
-	T Dot(SimpleVector3 &other){
+	T Dot(const SimpleVector3 &other){
 		x * other.x + y * other.y + z * other.z;
 	}
 	void Multiply(T scaler) {
@@ -60,7 +66,7 @@ public:
 		y *= scaler;
 		z *= scaler;
 	}
-	void Multiply(SimpleVector3 &other) {
+	void Multiply(const SimpleVector3 &other) {
 		x *= other.x;
 		y *= other.y;
 		z *= other.z;
@@ -85,6 +91,16 @@ public:
 	}
 	T Magnitude(){
 		return sqrt(x * x + y * y + z * z);
+	}
+	SimpleVector3<T> operator+(const SimpleVector3<T> &other){
+		SimpleVector3<T> newVector = SimpleVector3<T>(*this);
+		newVector.Add(other);
+		return newVector;
+	}
+	SimpleVector3<T> operator-(const SimpleVector3<T> &other){
+		SimpleVector3<T> newVector = SimpleVector3<T>(*this);
+		newVector.Subtract(other);
+		return newVector;
 	}
 };
 

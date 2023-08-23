@@ -30,6 +30,7 @@ public:
 	enum SliceMode {
 		SLICE_MODE_SWEEP_ANGLE = 0,
 		SLICE_MODE_CONSTANT_ALTITUDE = 1,
+		SLICE_MODE_VERTICAL = 2,
 	};
 
 	bool animate = false; // animate the scene
@@ -70,7 +71,10 @@ public:
 	ViewMode viewMode = VIEW_MODE_VOLUMETRIC; // what mode should be used to display the radar data in space
 	SliceMode sliceMode = SLICE_MODE_SWEEP_ANGLE; // type of slice to do
 	float sliceAltitude = 5000; // height above sea level to slice
-	float sliceAngle = 2; // angle of slice in degrees to slice
+	float sliceAngle = 0.5; // angle of slice in degrees to slice
+	float sliceVerticalLocationX = 0; // location of vertical slice
+	float sliceVerticalLocationY = 0; // location of vertical slice
+	float sliceVerticalRotation = 0; // rotation of vertical slice
 	bool sliceVolumetric = false; // if the slice should be volumetric instead of flat
 	
 	std::vector<Waypoint> locationMarkers = {};

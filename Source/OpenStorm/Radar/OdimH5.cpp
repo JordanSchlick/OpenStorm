@@ -1,8 +1,13 @@
 #include "OdimH5.h"
 
-
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #ifdef HDF5
+
+
 
 #include <map>
 #include <mutex>
@@ -197,7 +202,6 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 				sweepHasAttributes &= sweepWhere.hasAttribute("rscale");
 				sweepHasAttributes &= sweepWhere.hasAttribute("rstart");
 				sweepHasAttributes &= sweepWhere.hasAttribute("elangle");
-				sweepHasAttributes &= sweepHow.hasAttribute("astart");
 				sweepHasPerRayAngleAttributes &= sweepHow.hasAttribute("startazA");
 				sweepHasPerRayAngleAttributes &= sweepHow.hasAttribute("stopazA");
 				if(!sweepHasAttributes){
@@ -248,7 +252,10 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 							sweepData->rayAngles.push_back((startAngles[i] + stopAngles[i]) / 2.0);
 						}
 					}else{
-						float startAngle = getDoubleAttribute(sweepHow, "astart");
+						float startAngle = 0;
+						if(sweepHow.hasAttribute("astart")){
+							startAngle = getDoubleAttribute(sweepHow, "astart");
+						}
 						for(size_t i = 0; i < sweepData->rayCount; i++){
 							sweepData->rayAngles.push_back(startAngle + ((float)i / (float)sweepData->rayCount) * 360.0f);
 						}
@@ -507,3 +514,7 @@ void OdimH5RadarReader::UnloadFile(){
 OdimH5RadarReader::~OdimH5RadarReader(){
 	UnloadFile();
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif

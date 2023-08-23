@@ -51,9 +51,10 @@ bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 	}
+	float sliderWidth = (flags & CustomFloatInput_SliderOnly) ? 20 * fontSize + style.ItemSpacing.x : 12 * fontSize;
 	if(defaultValue != NULL){
 		float frameHeight = ImGui::GetFrameHeight();
-		ImGui::PushItemWidth(12 * fontSize - frameHeight - style.ItemSpacing.x);
+		ImGui::PushItemWidth(sliderWidth - frameHeight - style.ItemSpacing.x);
 		changed |= ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
@@ -62,7 +63,7 @@ bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 			changed = true;
 		}
 	}else{
-		ImGui::PushItemWidth(12 * fontSize);
+		ImGui::PushItemWidth(sliderWidth);
 		changed |= ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
 		ImGui::PopItemWidth();
 	}
@@ -299,15 +300,20 @@ void AImGuiUI::Tick(float deltaTime)
 				ImGui::PopItemWidth();
 				
 				if(globalState.viewMode == GlobalState::VIEW_MODE_SLICE){
-					const char* sliceModes[] = {"Invalid", "Sweep Angle", "Constant Altitude", "Invalid"};
+					const char* sliceModes[] = {"Invalid", "Sweep Angle", "Constant Altitude", "Vertical", "Invalid"};
 					ImGui::PushItemWidth(15 * fontSize);
-					ImGui::SliderInt("Slice Mode", (int*)&globalState.sliceMode, 0, 1, sliceModes[std::clamp(globalState.sliceMode + 1, 0, 3)]);
+					ImGui::SliderInt("Slice Mode", (int*)&globalState.sliceMode, 0, 2, sliceModes[std::clamp(globalState.sliceMode + 1, 0, 4)]);
 					ImGui::PopItemWidth();
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_CONSTANT_ALTITUDE){
 						CustomFloatInput("Slice Altitude (meters)", 0, 25000, &globalState.sliceAltitude, &globalState.defaults->sliceAltitude);
 					}
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_SWEEP_ANGLE){
 						CustomFloatInput("Slice Angle (degrees)", 0.5, 19.5, &globalState.sliceAngle, &globalState.defaults->sliceAngle);
+					}
+					if(globalState.sliceMode == GlobalState::SLICE_MODE_VERTICAL){
+						CustomFloatInput("Slice Rotation", 0, 180, &globalState.sliceVerticalRotation, &globalState.defaults->sliceVerticalRotation, CustomFloatInput_SliderOnly);
+						CustomFloatInput("Slice X location", -1, 1, &globalState.sliceVerticalLocationX, &globalState.defaults->sliceVerticalLocationX, CustomFloatInput_SliderOnly);
+						CustomFloatInput("Slice Y location", -1, 1, &globalState.sliceVerticalLocationY, &globalState.defaults->sliceVerticalLocationY, CustomFloatInput_SliderOnly);
 					}
 					ImGui::Checkbox("Volumetric Slice", &globalState.sliceVolumetric);
 				}
@@ -384,6 +390,7 @@ void AImGuiUI::Tick(float deltaTime)
 						if(ImGui::Button("Delete")) {
 							if(isSelectedForDeletion){
 								globalState.locationMarkers.erase(globalState.locationMarkers.begin()+id);
+								markersChanged = true;
 								deleteId = -1;
 							}else{
 								deleteId = id;
@@ -486,6 +493,13 @@ void AImGuiUI::Tick(float deltaTime)
 					//ImGui::SetWindowCollapsed(true);
 					ExternalWindow();
 				}
+				ImGui::TreePop();
+			}
+			
+			if (ImGui::TreeNodeEx("Reset", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+				if(ImGui::Button("Reset Basic Settings")) {
+					globalState.EmitEvent("ResetBasicSettings");
+				}
 				{
 					// button must be clicked twice
 					static bool selectedForDeletion = false;
@@ -499,9 +513,9 @@ void AImGuiUI::Tick(float deltaTime)
 						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 					}
-					if(ImGui::Button("Reset Basic Settings")) {
+					if(ImGui::Button("Reset All Settings")) {
 						if(selectedForDeletion){
-							globalState.EmitEvent("ResetBasicSettings");
+							globalState.EmitEvent("ResetAllSettings");
 							selectedForDeletion = false;
 						}else{
 							selectedForDeletion = true;
@@ -514,6 +528,7 @@ void AImGuiUI::Tick(float deltaTime)
 				}
 				ImGui::TreePop();
 			}
+				
 			if (ImGui::TreeNodeEx("Joke", ImGuiTreeNodeFlags_SpanAvailWidth)) {	
 				ImGui::Checkbox("Audio Height", &globalState.audioControlledHeight);
 				ImGui::Checkbox("Audio Opacity", &globalState.audioControlledOpacity);

@@ -49,6 +49,8 @@ public:
 	
 	bool isRadarVolumeViewActive = true;
 	
+	FVector oldCameraPosition = FVector(0, 0, 0.0000000000000001);
+	
 	std::vector<uint64_t> callbackIds = {};
 
 	void MoveFB(float value);

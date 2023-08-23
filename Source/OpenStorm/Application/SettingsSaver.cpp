@@ -31,6 +31,9 @@ void ASettingsSaver::BeginPlay(){
 		callbackIds.push_back(globalState->RegisterEvent("ResetBasicSettings", [this](std::string stringData, void* extraData) {
 			ResetBasicSettings();
 		}));
+		callbackIds.push_back(globalState->RegisterEvent("ResetAllSettings", [this](std::string stringData, void* extraData) {
+			ResetAllSettings();
+		}));
 		LoadSettings();
 		LoadLocationMarkers();
 	}
@@ -109,7 +112,7 @@ bool ASettingsSaver::SaveJson(FString filename, TSharedPtr<FJsonObject> jsonObje
 #define QUOTE(seq) ""#seq""
 
 #define LOAD_MACRO_FLOAT(NAME) if(jsonObject->TryGetNumberField(TEXT(QUOTE(NAME)), tmpFloat)){ \
-	globalState->NAME = tmpFloat; \
+	globalState->NAME = (decltype(globalState->NAME))tmpFloat; \
 }
 
 #define LOAD_MACRO_BOOL(NAME) if(jsonObject->TryGetBoolField(TEXT(QUOTE(NAME)), tmpBool)){ \
@@ -133,6 +136,14 @@ void ASettingsSaver::LoadSettings() {
 		LOAD_MACRO_FLOAT(verticalScale);
 		LOAD_MACRO_BOOL(spatialInterpolation);
 		LOAD_MACRO_BOOL(temporalInterpolation);
+		LOAD_MACRO_FLOAT(viewMode);
+		LOAD_MACRO_FLOAT(sliceMode);
+		LOAD_MACRO_FLOAT(sliceAltitude);
+		LOAD_MACRO_FLOAT(sliceAngle);
+		LOAD_MACRO_FLOAT(sliceVerticalLocationX);
+		LOAD_MACRO_FLOAT(sliceVerticalLocationY);
+		LOAD_MACRO_FLOAT(sliceVerticalRotation);
+		LOAD_MACRO_BOOL(sliceVolumetric);
 		// --Movement--
 		LOAD_MACRO_FLOAT(moveSpeed);
 		LOAD_MACRO_FLOAT(rotateSpeed);
@@ -157,7 +168,7 @@ void ASettingsSaver::LoadSettings() {
 }
 
 #define SAVE_MACRO_FLOAT(NAME) if(globalState->NAME != globalState->defaults->NAME){ \
-	jsonObject->SetNumberField(TEXT(QUOTE(NAME)), globalState->NAME); \
+	jsonObject->SetNumberField(TEXT(QUOTE(NAME)), (double)globalState->NAME); \
 } else { \
 	jsonObject->RemoveField(TEXT(QUOTE(NAME))); \
 }
@@ -180,10 +191,23 @@ void ASettingsSaver::SaveSettings() {
 		} else {
 			jsonObject->RemoveField(TEXT("cutoff"));
 		}
-		SAVE_MACRO_FLOAT(opacityMultiplier);
+		if(globalState->opacityMultiplier != globalState->defaults->opacityMultiplier){
+			// prevent users from accidentally hiding everything across restarts
+			jsonObject->SetNumberField(TEXT("opacityMultiplier"), std::max(globalState->opacityMultiplier, 0.01f));
+		} else {
+			jsonObject->RemoveField(TEXT("opacityMultiplier"));
+		}
 		SAVE_MACRO_FLOAT(verticalScale);
 		SAVE_MACRO_BOOL(spatialInterpolation);
 		SAVE_MACRO_BOOL(temporalInterpolation);
+		SAVE_MACRO_FLOAT(viewMode);
+		SAVE_MACRO_FLOAT(sliceMode);
+		SAVE_MACRO_FLOAT(sliceAltitude);
+		SAVE_MACRO_FLOAT(sliceAngle);
+		SAVE_MACRO_FLOAT(sliceVerticalLocationX);
+		SAVE_MACRO_FLOAT(sliceVerticalLocationY);
+		SAVE_MACRO_FLOAT(sliceVerticalRotation);
+		SAVE_MACRO_BOOL(sliceVolumetric);
 		// --Movement--
 		SAVE_MACRO_FLOAT(moveSpeed);
 		SAVE_MACRO_FLOAT(rotateSpeed);
@@ -223,6 +247,14 @@ void ASettingsSaver::ResetBasicSettings() {
 		RESET_MACRO(verticalScale);
 		RESET_MACRO(spatialInterpolation);
 		RESET_MACRO(temporalInterpolation);
+		RESET_MACRO(viewMode);
+		RESET_MACRO(sliceMode);
+		RESET_MACRO(sliceAltitude);
+		RESET_MACRO(sliceAngle);
+		RESET_MACRO(sliceVerticalLocationX);
+		RESET_MACRO(sliceVerticalLocationY);
+		RESET_MACRO(sliceVerticalRotation);
+		RESET_MACRO(sliceVolumetric);
 		// --Movement--
 		if(globalState->moveSpeed <= 10){
 			RESET_MACRO(moveSpeed);
@@ -233,7 +265,60 @@ void ASettingsSaver::ResetBasicSettings() {
 		// --Animation--
 		RESET_MACRO(animate);
 		RESET_MACRO(animateCutoff);
-		RESET_MACRO(animateSpeed);
+		// RESET_MACRO(animateSpeed);
+		// RESET_MACRO(animateCutoffSpeed);
+		// --Data--
+		// RESET_MACRO(pollData);
+		// --Map--
+		// RESET_MACRO(enableMap);
+		// RESET_MACRO(mapBrightness);
+		// Settings
+		// RESET_MACRO(maxFPS);
+		// RESET_MACRO(vsync);
+		// RESET_MACRO(quality);
+		// RESET_MACRO(qualityCustomStepSize);
+		RESET_MACRO(enableFuzz);
+		// RESET_MACRO(temporalAntiAliasing);
+		// --Joke--
+		RESET_MACRO(audioControlledCutoff);
+		RESET_MACRO(audioControlledHeight);
+		RESET_MACRO(audioControlledOpacity);
+		RESET_MACRO(audioControlMultiplier);
+
+
+
+		globalState->EmitEvent("UpdateVolumeParameters");
+		globalState->EmitEvent("UpdateEngineSettings");
+		globalState->EmitEvent("ChangeProduct", "", &globalState->volumeType);
+	}
+}
+
+void ASettingsSaver::ResetAllSettings() {
+	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
+		GlobalState* globalState = &gameState->globalState;
+		TSharedPtr<FJsonObject> jsonObject = LoadJson(settingsFile);
+		// Main
+		// --Radar--
+		RESET_MACRO(volumeType);
+		RESET_MACRO(cutoff);
+		RESET_MACRO(opacityMultiplier);
+		RESET_MACRO(verticalScale);
+		RESET_MACRO(spatialInterpolation);
+		RESET_MACRO(temporalInterpolation);
+		RESET_MACRO(viewMode);
+		RESET_MACRO(sliceMode);
+		RESET_MACRO(sliceAltitude);
+		RESET_MACRO(sliceAngle);
+		RESET_MACRO(sliceVerticalLocationX);
+		RESET_MACRO(sliceVerticalLocationY);
+		RESET_MACRO(sliceVerticalRotation);
+		RESET_MACRO(sliceVolumetric);
+		// --Movement--
+		RESET_MACRO(moveSpeed);
+		RESET_MACRO(rotateSpeed);
+		// --Animation--
+		RESET_MACRO(animate);
+		RESET_MACRO(animateCutoff);
 		RESET_MACRO(animateSpeed);
 		RESET_MACRO(animateCutoffSpeed);
 		// --Data--
