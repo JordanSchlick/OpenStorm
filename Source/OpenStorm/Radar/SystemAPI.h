@@ -9,11 +9,16 @@ public:
 	struct FileStats{
 		bool exists = false;
 		bool isDirectory = false;
-		size_t size = 0;	
-		double mtime = 0;	
+		size_t size = 0;
+		double mtime = 0;
+		std::string name = "";
+		bool operator < (const FileStats& other) const
+		{
+			return (name < other.name);
+		}
 	};
 	static double CurrentTime();
-	static std::vector<std::string> ReadDirectory(std::string path);
+	static std::vector<FileStats> ReadDirectory(std::string path);
 	static FileStats GetFileStats(std::string path);
 	static bool CreateDirectory(std::string path);
 };

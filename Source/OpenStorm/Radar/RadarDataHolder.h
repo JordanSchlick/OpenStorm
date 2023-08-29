@@ -14,11 +14,11 @@ class RadarProduct;
 class RadarFile{
 public:
 	// time that the radar was scanned
-	double time;
+	double time = 0;
 	// time that the file was last modified
-	double mtime;
+	double mtime = 0;
 	// size of the file
-	size_t size;
+	size_t size = 0;
 	// path to file on disk
 	std::string path = "";
 	// name of file

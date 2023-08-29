@@ -95,7 +95,12 @@
 		"stdlib.h": "c",
 		"cinttypes": "cpp",
 		"complex": "cpp",
-		"xxatomic": "cpp"
+		"xxatomic": "cpp",
+		"charconv": "cpp",
+		"format": "cpp",
+		"forward_list": "cpp",
+		"span": "cpp",
+		"coroutine": "cpp"
 	},
 	"editor.insertSpaces": false
 }

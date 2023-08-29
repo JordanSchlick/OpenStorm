@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <functional>
 
+class AsyncPollFilesTask;
 
 class RadarCollection{
 public:
@@ -65,8 +66,11 @@ public:
 	// read file info from a directory
 	void ReadFiles(std::string path);
 	
+	// get unix timestamp from the name of a file
+	static double ParseFileNameDate(std::string filename);
+	
 	// poll current directory for updates
-	void PollFiles(std::string defaultFileName = "");
+	void PollFiles();
 	
 	// reload file at index, -1 for current
 	void ReloadFile(int index);
@@ -107,6 +111,9 @@ public:
 private:	
 	// location of directory to load from
 	std::string filePath = "";
+	
+	// file to initially start on when loading directory
+	std::string defaultFileName = "";
 
 	// true if allocate has been called
 	bool allocated = false;
@@ -174,9 +181,6 @@ private:
 	// list of files
 	std::vector<RadarFile> radarFiles = {};
 	
-	// map used to speed up the reloading large directories
-	std::unordered_map<std::string, RadarFile> radarFilesCache = {};
-	
 	// callbacks to emit to
 	std::vector<std::function<void(RadarUpdateEvent)>> listeners = {};
 	
@@ -189,7 +193,10 @@ private:
 	// emit radar data to all listeners
 	void Emit(RadarDataHolder* holder);
 	
+	// finish polling data on main thread after poll task has completed
+	void PollFilesFinalize();
 	
+	AsyncPollFilesTask* pollFilesTask = NULL;
 	
 	int runs = 0;
 };

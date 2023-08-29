@@ -34,11 +34,12 @@ public:
 
 
 void AsyncTaskRunner::Start(bool autoDeleteTask) {
-	if(running || finished){
+	if(running){
 		fprintf(stderr, "Error: tried to start AsyncTaskRunner multiple times\n");
 		return;
 	}
 	running = true;
+	finished = false;
 	this->autoDelete = autoDeleteTask;
 	FAutoDeleteAsyncTask<FUnrealAsyncTask>* task = new FAutoDeleteAsyncTask<FUnrealAsyncTask>([this] {
 		InternalTask();
@@ -54,11 +55,12 @@ std::vector<std::future<void>> pendingFutures;
 
 
 void AsyncTaskRunner::Start(bool autoDeleteTask) {
-	if(running || finished){
+	if(running){
 		fprintf(stderr, "Error: tried to start AsyncTaskRunner multiple times\n");
 		return;
 	}
 	running = true;
+	finished = false;
 	this->autoDelete = autoDeleteTask;
 	if(0){
 		std::future<void> future = std::async(std::launch::async, [this] {

@@ -4,6 +4,7 @@
 
 
 #include <algorithm>
+#include <ctime>
 
 // modulo that always returns positive
 inline int modulo(int i, int n) {
@@ -35,6 +36,93 @@ public:
 		#endif
 		
 		collection->LogState();
+	}
+};
+
+
+class AsyncPollFilesTask : public AsyncTaskRunner {
+public:
+	
+	// RadarCollection* collection;
+	std::string filePath;
+	// map used to speed up the reloading large directories
+	std::unordered_map<std::string, RadarFile> radarFilesCache = {};
+	// new array of files
+	std::vector<RadarFile> radarFilesNew = {};
+	// if the new array of files is ready for use
+	bool ready = false;
+	// AsyncPollFilesTask(RadarCollection* radarCollection){
+	// 	collection = radarCollection;
+	// }
+	void Task(){
+		radarFilesNew.clear();
+		double benchTime;
+		benchTime = SystemAPI::CurrentTime();
+		auto files = SystemAPI::ReadDirectory(filePath);
+		benchTime = SystemAPI::CurrentTime() - benchTime;
+		fprintf(stderr, "dir list time %lf\n", benchTime);
+		
+		benchTime = SystemAPI::CurrentTime();
+		std::sort(files.begin(), files.end());
+		benchTime = SystemAPI::CurrentTime() - benchTime;
+		fprintf(stderr, "sort time %lf\n", benchTime);
+		//fprintf(stderr, "files %i\n", (int)files.size());
+		
+		benchTime = SystemAPI::CurrentTime();
+		double now = SystemAPI::CurrentTime();
+		//fprintf(stderr, "now: %f\n", now);
+		int fileIndex = -1;
+		int lastFileIndex = files.size() - 1;
+		for (auto file : files) {
+			std::string filename = file.name;
+			fileIndex++;
+			//fprintf(stderr, "%s\n", (filePath + filename).c_str());
+			if(file.isDirectory || filename == ".gitkeep"){
+				continue;
+			}
+			std::string path = filePath + filename;
+			
+			if(radarFilesCache.find(filename) != radarFilesCache.end()){
+				RadarFile radarFile = radarFilesCache[filename];
+				if(now - radarFile.mtime < 3600 || fileIndex == lastFileIndex){
+					// only stat files that have been modified in the last hour or is the last one for changes
+					//fprintf(stderr, "file: %f %f\n", now, radarFile.mtime);
+					SystemAPI::FileStats stats = SystemAPI::GetFileStats(path);
+					if(stats.isDirectory){
+						continue;
+					}
+					radarFile.mtime = stats.mtime;
+					radarFile.size = stats.size;
+				}
+				radarFilesNew.push_back(radarFile);
+			}else{
+				RadarFile radarFile = {};
+				radarFile.path = path;
+				radarFile.name = filename;
+				radarFile.time = RadarCollection::ParseFileNameDate(filename);
+				radarFile.size = file.size;
+				if(file.mtime > 0){
+					radarFile.mtime = file.mtime;
+				}if(radarFile.time > 0){
+					radarFile.mtime = radarFile.time;
+					// fprintf(stderr, "used parsed date %lf\n", radarFile.mtime);
+				}else{
+					// only stat if time was not parsed correctly
+					SystemAPI::FileStats stats = SystemAPI::GetFileStats(path);
+					if(stats.isDirectory){
+						continue;
+					}
+					radarFile.size = stats.size;
+					radarFile.mtime = stats.mtime;
+					// fprintf(stderr, "used stat for date\n");
+				}
+				radarFilesNew.push_back(radarFile);
+				radarFilesCache[filename] = radarFile;
+			}
+		}
+		benchTime = SystemAPI::CurrentTime() - benchTime;
+		fprintf(stderr, "stat time %lf\n", benchTime);
+		ready = true;
 	}
 };
 
@@ -80,7 +168,10 @@ void RadarCollection::Free() {
 
 void RadarCollection::Clear() {
 	radarFiles.clear();
-	radarFilesCache.clear();
+	if(pollFilesTask != NULL){
+		pollFilesTask->Delete();
+		pollFilesTask = NULL;
+	}
 	if(cache != NULL){
 		for(int i = 0; i < cacheSize; i++){
 			cache[i].Unload();
@@ -169,6 +260,10 @@ void RadarCollection::EventLoop() {
 	}else{
 		nextAdvanceTime = 0;
 	}
+	if(pollFilesTask != NULL && pollFilesTask->ready){
+		PollFilesFinalize();
+		pollFilesTask->ready = false;
+	}
 	if(poll){
 		if(nextPollTime <= now){
 			PollFiles();
@@ -215,69 +310,93 @@ void RadarCollection::ReadFiles(std::string path) {
 	int lastSlash = std::max(std::max((int)path.find_last_of('/'), (int)path.find_last_of('\\')), 0);
 	filePath = path.substr(0, lastSlash + 1);
 	std::string inputFilename = path.substr(lastSlash + 1);
+	defaultFileName = isDirectory ? "" : inputFilename;
 	//fprintf(stderr, "lastSlash var %i\n", (int)lastSlash);
 	//fprintf(stderr, "Path var %s\n", path.c_str());
 	//fprintf(stderr, "filePath var %s\n", filePath.c_str());
 	
 	Clear();
-	PollFiles(isDirectory ? "" : inputFilename);
+	PollFiles();
 }
 
-void RadarCollection::PollFiles(std::string defaultFilename) {
-	if(filePath == ""){
-		// no path to read from
-		return;
-	}
-	std::vector<RadarFile> radarFilesNew = {};
-	auto files = SystemAPI::ReadDirectory(filePath);
-	std::sort(files.begin(), files.end());
-	//fprintf(stderr, "files %i\n", (int)files.size());
-	float aReallyBadWayOfAssigningAnArbitraryTime = 1;
-	double now = SystemAPI::CurrentTime();
-	//fprintf(stderr, "now: %f\n", now);
-	int fileIndex = -1;
-	int lastFileIndex = files.size() - 1;
-	for (auto filename : files) {
-		fileIndex++;
-		//fprintf(stderr, "%s\n", (filePath + filename).c_str());
-		if(filename == ".gitkeep"){
-			continue;
+double RadarCollection::ParseFileNameDate(std::string filename) {
+	std::string datePart = "";
+	std::string timePart = "";
+	int numberPartStartIndex = 0;
+	int filenameLength = filename.length();
+	for(int i = 0; i <= filenameLength; i++){
+		bool notPart = i == filenameLength;
+		if(!notPart){
+			char character = filename[i];
+			notPart = !('0' <= character && character <= '9');
 		}
-		std::string path = filePath + filename;
-		
-		if(radarFilesCache.find(filename) != radarFilesCache.end()){
-			RadarFile radarFile = radarFilesCache[filename];
-			radarFile.time = aReallyBadWayOfAssigningAnArbitraryTime++;
-			if(now - radarFile.mtime < 3600 || fileIndex == lastFileIndex){
-				// only stat files that have been modified in the last hour or is the last one for changes
-				//fprintf(stderr, "file: %f %f\n", now, radarFile.mtime);
-				SystemAPI::FileStats stats = SystemAPI::GetFileStats(path);
-				if(stats.isDirectory){
-					continue;
+		if(notPart){
+			int partSize = i - numberPartStartIndex;
+			if(partSize > 0){
+				std::string part = filename.substr(numberPartStartIndex, partSize);
+				if(partSize == 8){
+					int beginNumber = std::stoi(part.substr(0, 4));
+					if(beginNumber > 1900 && beginNumber < 2999){
+						datePart = part;
+					}
 				}
-				radarFile.mtime = stats.mtime;
-				radarFile.size = stats.size;
+				if(partSize == 6){
+					timePart = part;
+				}
+				if(partSize == 14){
+					int beginNumber = std::stoi(part.substr(0, 4));
+					if(beginNumber > 1900 && beginNumber < 2999){
+						datePart = part.substr(0, 8);
+						timePart = part.substr(8, 6);
+					}
+				}
+				if(partSize == 12){
+					int beginNumber = std::stoi(part.substr(0, 4));
+					if(beginNumber > 1900 && beginNumber < 2999){
+						datePart = part.substr(0, 8);
+						timePart = part.substr(8, 6);
+					}
+				}
 			}
-			radarFilesNew.push_back(radarFile);
-		}else{
-			RadarFile radarFile = {};
-			radarFile.path = path;
-			radarFile.name = filename;
-			radarFile.time = aReallyBadWayOfAssigningAnArbitraryTime++;
-			SystemAPI::FileStats stats = SystemAPI::GetFileStats(path);
-			if(stats.isDirectory){
-				continue;
-			}
-			radarFile.size = stats.size;
-			radarFile.mtime = stats.mtime;
-			radarFilesNew.push_back(radarFile);
-			radarFilesCache[filename] = radarFile;
+			numberPartStartIndex = i + 1;
 		}
 	}
+	if(datePart == "" || timePart == ""){
+		return 0;
+	}
+	struct tm t = {0};
+	t.tm_year = std::stoi(datePart.substr(0, 4)) - 1900; 
+	t.tm_mon = std::stoi(datePart.substr(4, 2)) - 1;
+	t.tm_mday = std::stoi(datePart.substr(6, 2));
+	if(timePart.length() == 4){
+		t.tm_hour = std::stoi(datePart.substr(0, 2));
+		t.tm_min = std::stoi(datePart.substr(2, 2));
+	}else{
+		t.tm_hour = std::stoi(datePart.substr(0, 2));
+		t.tm_min = std::stoi(datePart.substr(2, 2));
+		t.tm_sec = std::stoi(datePart.substr(4, 2));
+	}
 	
-	// TODO: read propper file time and sort accordingly
 	
+	
+	#ifdef _WIN32
+	time_t timeSinceEpoch = _mkgmtime(&t);
+	// fprintf(stderr, "%i %i %i %i %i %i %lli\n", t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, timeSinceEpoch);
+	#else
+	time_t timeSinceEpoch = timegm(&t);
+	#endif
+	return (double)timeSinceEpoch;
+}
+
+
+
+void RadarCollection::PollFilesFinalize() {
+	double benchTime;
+	
+	benchTime = SystemAPI::CurrentTime();
 	bool moveToEnd = false;
+	
+	std::vector<RadarFile>* radarFilesNew = &pollFilesTask->radarFilesNew;
 	
 	if(radarFiles.size() > 0 && firstItemIndex < radarFiles.size() && lastItemIndex < radarFiles.size()){
 		// TODO: implement reloading files by replacing radarFiles and changing firstItemIndex and lastItemIndex to reflect the new vector
@@ -289,12 +408,12 @@ void RadarCollection::PollFiles(std::string defaultFilename) {
 		std::string lastItemName = radarFiles[lastItemIndex].name;
 		int newFirstItemIndex = -1;
 		int newLastItemIndex = -1;
-		int filesCountNew = radarFilesNew.size();
+		int filesCountNew = radarFilesNew->size();
 		int offset = firstItemIndex;
 		for(int i = 0; i < filesCountNew && (newFirstItemIndex == -1 || newLastItemIndex == -1); i++){
 			// start with offset so minimal loops are needed if files are just being added to a large directory
 			int location = (i + offset) % filesCountNew;
-			RadarFile* fileNew = &radarFilesNew[location];
+			RadarFile* fileNew = &(*radarFilesNew)[location];
 			if(newFirstItemIndex == -1 && firstItemName == fileNew->name){
 				newFirstItemIndex = location;
 			}
@@ -308,35 +427,35 @@ void RadarCollection::PollFiles(std::string defaultFilename) {
 			// reload files whose sizes have changed starting from currentPosition and going forward
 			for(int i = 0; i <= cachedAfter; i++){
 				int location = lastItemIndex - cachedAfter + i;
-				if(radarFiles[location].size != radarFilesNew[location + indexOffset].size){
+				if(radarFiles[location].size != (*radarFilesNew)[location + indexOffset].size){
 					ReloadFile((currentPosition + i) % cacheSize);
 				}
 			}
 			// reload files whose sizes have changed in the other direction from currentPosition
 			for(int i = 1; i <= cachedBefore; i++){
 				int location = firstItemIndex + cachedBefore - i;
-				if(radarFiles[location].size != radarFilesNew[location + indexOffset].size){
+				if(radarFiles[location].size != (*radarFilesNew)[location + indexOffset].size){
 					ReloadFile((currentPosition - i + cacheSize) % cacheSize);
 				}
 			}
 			lastItemIndex = newLastItemIndex;
 			firstItemIndex = newFirstItemIndex;
-			radarFiles = radarFilesNew;
+			radarFiles = std::move(*radarFilesNew);
 		}else{
 			// loaded range has been modified on disk and needs to be completely reloaded
 			Clear();
-			radarFiles = radarFilesNew;
+			radarFiles = std::move(*radarFilesNew);
 			lastItemIndex = radarFiles.size() - 1;
 			firstItemIndex = lastItemIndex;
 		}
 	}else{
-		radarFiles = radarFilesNew;
+		radarFiles = std::move(*radarFilesNew);
 		if(lastItemIndex == -1){
-			if(defaultFilename != ""){
+			if(defaultFileName != ""){
 				// start on chosen file
 				int index = 0;
 				for (auto file : radarFiles) {
-					if(file.name == defaultFilename){
+					if(file.name == defaultFileName){
 						lastItemIndex = index;
 						firstItemIndex = lastItemIndex;
 						break;
@@ -350,11 +469,35 @@ void RadarCollection::PollFiles(std::string defaultFilename) {
 			}
 		}
 	}
+	
+	benchTime = SystemAPI::CurrentTime() - benchTime;
+	fprintf(stderr, "move time %lf\n", benchTime);
+	
+	benchTime = SystemAPI::CurrentTime();
 	UnloadOldData();
 	LoadNewData();
 	if(moveToEnd && cachedAfter > 0){
 		// a better place for keeping the current position at the end might be in LoadNewData with a global state set on Move
 		Move(cachedAfter);
+	}
+	
+	benchTime = SystemAPI::CurrentTime() - benchTime;
+	fprintf(stderr, "load time %lf\n", benchTime);
+}
+
+void RadarCollection::PollFiles() {
+	if(filePath == ""){
+		// no path to read from
+		return;
+	}
+	
+	if(pollFilesTask == NULL){
+		pollFilesTask = new AsyncPollFilesTask();
+	}
+	
+	if(!pollFilesTask->running && !pollFilesTask->ready){
+		pollFilesTask->filePath = filePath;
+		pollFilesTask->Start();
 	}
 }
 

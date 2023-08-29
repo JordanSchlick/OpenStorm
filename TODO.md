@@ -20,12 +20,13 @@
 - [X] Support gzip nexrad archives
 - [ ] More Advanced Tools/Options for interacting, measuring, and viewing data
 - [ ] Top down radar view panning
-- [ ] Save settings to disk
-- [ ] Implement map data
-- [ ] Pseudo-2D single sweep view
+- [X] Save settings to disk
+- [X] Implement map data
+- [X] Pseudo-2D single sweep view
+- [ ] Add GIS boundaries and roads
 
 ## Future:
-- [ ] Mobile Support (Possibly)
+- [ ] Mobile Support
 - [ ] Combining radar data from multiple stations
 - [ ] Change radar decoder to one that is more performant and uses less memory
 - [ ] Display real time lightning
