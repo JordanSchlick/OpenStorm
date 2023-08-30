@@ -20,6 +20,8 @@
 // #include <fileapi.h>
 // #include <stringapiset.h>
 #undef CreateDirectory
+#undef max
+#undef min
 #else
 #include <dirent.h>
 #endif
