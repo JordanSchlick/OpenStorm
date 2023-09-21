@@ -1,37 +1,39 @@
 {
-    "configurations": [
-        {
-            "name": "Win32",
-            "includePath": [
-                "${workspaceFolder}/**",
-                "${default}",
-                //"${workspaceFolder}/Plugins/UnrealHDF5/Source/UnrealHDF5/hdf5",
-                //"C:/files/Epic/UE_5.2/Engine/Source/Runtime/Engine/Classes",
-                //"C:/files/Epic/UE_5.2/Engine/Source/Runtime/Core/Public",
-                //"C:/files/Epic/UE_5.2/Engine/Source/Runtime/CoreUObject/Public",
-                //"C:/files/Epic/UE_5.2/Engine/Intermediate/Build/Win64/UnrealEditor/Inc/Engine/UHT",
-                "C:/files/Epic/UE_5.2/Engine/Source/Runtime/**",
-                "C:/files/Epic/UE_5.2/Engine/Source/Editor/**",
-                "C:/files/Epic/UE_5.2/Engine/Source/Developer/**",
-                "C:/files/Epic/UE_5.2/Engine/Source/",
-                "C:/files/Epic/UE_5.2/Engine/Shaders/Shared",
-                "C:/files/Epic/UE_5.2/Engine/Intermediate/Build/Win64/UnrealEditor/Inc/**"
-            ],
-            "forcedInclude": [
-                "${workspaceFolder}/Intermediate/Build/Win64/x64/UnrealEditor/Development/OpenStorm/Definitions.OpenStorm.h"
-            ],
-            "defines": [
-                "_DEBUG",
-                "UNICODE",
-                "_UNICODE",
-                "HDF5"
-            ],
-            "windowsSdkVersion": "10.0.19041.0",
-            "compilerPath": "cl.exe",
-            "cStandard": "c17",
-            "cppStandard": "c++17",
-            "intelliSenseMode": "windows-msvc-x64"
-        }
-    ],
-    "version": 4
+	"configurations": [
+		{
+			"name": "Win32",
+			"includePath": [
+				"${workspaceFolder}/Source/**",
+				"${workspaceFolder}/Plugins/**",
+				"${workspaceFolder}/Intermediate/**",
+				"${default}",
+				//"${workspaceFolder}/Plugins/UnrealHDF5/Source/UnrealHDF5/hdf5",
+				
+				// make a simlink to the engine beside this repository
+				// windows example: mklink /D UnrealEngine C:\files\Epic\UE_5.2\Engine
+				// linux example: ln -s /path/to/Engine UnrealEngine
+				"${workspaceFolder}/../UnrealEngine/Source/Runtime/**",
+				"${workspaceFolder}/../UnrealEngine/Source/Editor/**",
+				"${workspaceFolder}/../UnrealEngine/Source/Developer/**",
+				"${workspaceFolder}/../UnrealEngine/Source/",
+				"${workspaceFolder}/../UnrealEngine/Shaders/Shared",
+				"${workspaceFolder}/../UnrealEngine/Intermediate/Build/Win64/UnrealEditor/Inc/**"
+			],
+			"forcedInclude": [
+				"${workspaceFolder}/Intermediate/Build/Win64/x64/UnrealEditor/Development/OpenStorm/Definitions.OpenStorm.h"
+			],
+			"defines": [
+				"_DEBUG",
+				"UNICODE",
+				"_UNICODE",
+				"HDF5"
+			],
+			"windowsSdkVersion": "10.0.19041.0",
+			"compilerPath": "cl.exe",
+			"cStandard": "c17",
+			"cppStandard": "c++17",
+			"intelliSenseMode": "windows-msvc-x64"
+		}
+	],
+	"version": 4
 }

@@ -1,17 +1,19 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Build Unreal Development Win64",
-            "type": "shell",
-            // Assign output file name with VSCode inner variables like ${fileBasename}
-            "command": "C:/files/Epic/UE_5.2/Engine/Build/BatchFiles/Build.bat OpenStormEditor Win64 Development -Project=\"${workspaceFolder}/OpenStorm.uproject\"",
-            "options": {
-            },
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        }
-    ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Unreal Development Win64",
+			"type": "shell",
+			// Assign output file name with VSCode inner variables like ${fileBasename}
+			//"command": "C:/files/Epic/UE_5.2/Engine/Build/BatchFiles/Build.bat OpenStormEditor Win64 Development -Project=\"${workspaceFolder}/OpenStorm.uproject\"",
+			//"command": "${workspaceFolder}/../UnrealEngine/Build/BatchFiles/Build.bat OpenStormEditor Win64 Development -Project=\"${workspaceFolder}/OpenStorm.uproject\"",
+			"command": "${workspaceFolder}/.vscode/build.bat OpenStormEditor Win64 Development -Project=\"${workspaceFolder}/OpenStorm.uproject\"",
+			"options": {
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
 }
