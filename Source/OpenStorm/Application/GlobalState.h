@@ -52,7 +52,7 @@ public:
 	bool enableMap = true; // if the globe should be rendered
 	
 	float maxFPS = 60.0f; // maximum frames per second
-	float animateSpeed = 3.0f; // speed of animation
+	float animateSpeed = 5.0f; // speed of animation
 	float animateCutoffSpeed = 0.2f; // speed of animation
 	float cutoff = 0.0f; // how much of the radar intensity range to hide starting at the lowest
 	float opacityMultiplier = 1.0f; // how opaque the radar volume is

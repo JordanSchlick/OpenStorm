@@ -39,7 +39,7 @@ public:
 	}
 };
 
-
+// task for asynchronously reading file list from disk
 class AsyncPollFilesTask : public AsyncTaskRunner {
 public:
 	

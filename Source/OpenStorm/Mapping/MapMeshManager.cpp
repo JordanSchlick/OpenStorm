@@ -84,17 +84,6 @@ void UpdateMapMeshPositionFromGlobe(AMapMesh* mapMesh, Globe* globe){
 	mapMesh->UpdatePosition(center, SimpleVector3<>(globe->rotationAroundX, 0, globe->rotationAroundPolls));
 }
 
-inline std::string GetRelativePath(FString inString){
-	FString file =  FPaths::Combine(FPaths::ProjectDir(), inString);
-	FString fullFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*file);
-	return std::string(StringCast<ANSICHAR>(*fullFilePath).Get());
-}
-
-inline std::string GetUserPath(FString inString){
-	FString file =  FPaths::Combine(FPaths::Combine(FPlatformProcess::UserSettingsDir(), TEXT("OpenStorm")), inString);
-	FString fullFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*file);
-	return std::string(StringCast<ANSICHAR>(*fullFilePath).Get());
-}
 
 void AMapMeshManager::EnableMap(){
 	if(enabled){
@@ -111,9 +100,9 @@ void AMapMeshManager::EnableMap(){
 	ElevationData::LoadData(fullElevationFilePathCstr);
 	
 	
-	std::string staticCacheLocation = GetRelativePath(TEXT("Content/Data/Map/ImageryOnly/"));
-	std::string staticCacheTarLocation = GetRelativePath(TEXT("Content/Data/Map/ImageryOnly.tar"));
-	std::string dynamicCacheLocation = GetUserPath(TEXT("Map/USGSImageryOnly/"));
+	std::string staticCacheLocation = StringUtils::GetRelativePath(TEXT("Content/Data/Map/ImageryOnly/"));
+	std::string staticCacheTarLocation = StringUtils::GetRelativePath(TEXT("Content/Data/Map/ImageryOnly.tar"));
+	std::string dynamicCacheLocation = StringUtils::GetUserPath(TEXT("Map/USGSImageryOnly/"));
 	fprintf(stderr, "path %s\n", staticCacheLocation.c_str());
 	fprintf(stderr, "path %s\n", dynamicCacheLocation.c_str());
 	tileProvider = new TileProvider("USGSImageryOnly", "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}", "image/jpeg", 10);

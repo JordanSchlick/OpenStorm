@@ -5,7 +5,20 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${default}",
-                "${workspaceFolder}/Plugins/UnrealHDF5/Source/UnrealHDF5/hdf5/disabled"
+                //"${workspaceFolder}/Plugins/UnrealHDF5/Source/UnrealHDF5/hdf5",
+                //"C:/files/Epic/UE_5.2/Engine/Source/Runtime/Engine/Classes",
+                //"C:/files/Epic/UE_5.2/Engine/Source/Runtime/Core/Public",
+                //"C:/files/Epic/UE_5.2/Engine/Source/Runtime/CoreUObject/Public",
+                //"C:/files/Epic/UE_5.2/Engine/Intermediate/Build/Win64/UnrealEditor/Inc/Engine/UHT",
+                "C:/files/Epic/UE_5.2/Engine/Source/Runtime/**",
+                "C:/files/Epic/UE_5.2/Engine/Source/Editor/**",
+                "C:/files/Epic/UE_5.2/Engine/Source/Developer/**",
+                "C:/files/Epic/UE_5.2/Engine/Source/",
+                "C:/files/Epic/UE_5.2/Engine/Shaders/Shared",
+                "C:/files/Epic/UE_5.2/Engine/Intermediate/Build/Win64/UnrealEditor/Inc/**"
+            ],
+            "forcedInclude": [
+                "${workspaceFolder}/Intermediate/Build/Win64/x64/UnrealEditor/Development/OpenStorm/Definitions.OpenStorm.h"
             ],
             "defines": [
                 "_DEBUG",
