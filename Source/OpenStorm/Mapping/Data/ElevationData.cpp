@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <cstdlib>
 
+# include "../../EngineHelpers/StringUtils.h"
 # include "../../Radar/Deps/zlib/zlib.h"
 
 // modulo that always returns positive
@@ -156,5 +157,24 @@ namespace ElevationData{
 		longitude = (longitude / M_PI / 2.0) * elevationDataWidth;
 		
 		return GetDataAtIndex(longitude, latitude);
+	}
+	
+	int referenceCounter = 0;
+	
+	void StartUsing(){
+		if(referenceCounter == 0){
+			std::string elevationFile = StringUtils::GetRelativePath(TEXT("Content/Data/elevation.bin.gz"));
+			LoadData(elevationFile);
+		}
+		referenceCounter++;
+	}
+	void StopUsing(){
+		referenceCounter--;
+		if(referenceCounter <= 0){
+			if(referenceCounter < 0){
+				fprintf(stderr, "ERROR: elevation data reference counter is negative");
+			}
+			UnloadData();
+		}
 	}
 }

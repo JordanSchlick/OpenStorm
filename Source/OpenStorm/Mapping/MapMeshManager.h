@@ -46,6 +46,7 @@ public:
 	~AMapMeshManager();
 	
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type endPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
 	
 	void EnableMap();

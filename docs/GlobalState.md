@@ -13,7 +13,7 @@ Events are named. They can also have some data associated with them. Extra data 
 * `VolumeUpdate(unused, RadarData*)` - A new radar volume was displayed
 * `LoadDirectory(directory to load,Null)` - Load a directory of radar files
 * `DevReloadFile` - Reload the current file
-* `Teleport(unused, SimpleVector3<double>*)` - Teleport the camera to the game location specified by SimpleVector3
+* `Teleport(unused, SimpleVector3<float>*)` - Teleport the camera to the game location specified by SimpleVector3
 * `ResetBasicSettings` - Reset all simple settings that do not require much setup
 * `ResetAllSettings` - Reset all settings to default
 * `UpdateEngineSettings` - Update engine settings from global state

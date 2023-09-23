@@ -28,6 +28,12 @@ AMapMeshManager::~AMapMeshManager(){
 	delete globe;
 }
 
+void UpdateMapMeshPositionFromGlobe(AMapMesh* mapMesh, Globe* globe){
+	SimpleVector3 center = SimpleVector3<>(globe->center);
+	center.Multiply(globe->scale);
+	mapMesh->UpdatePosition(center, SimpleVector3<>(globe->rotationAroundX, 0, globe->rotationAroundPolls));
+}
+
 void AMapMeshManager::BeginPlay(){
 	PrimaryActorTick.bCanEverTick = true;
 	Super::BeginPlay();
@@ -35,10 +41,33 @@ void AMapMeshManager::BeginPlay(){
 	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
 	if(gameMode != NULL){
 		GlobalState* globalState = &gameMode->globalState;
+		callbackIds.push_back(globalState->RegisterEvent("GlobeUpdate", [this, globalState](std::string stringData, void* extraData){
+			if(!enabled){
+				return;
+			}
+			UpdateMapMeshPositionFromGlobe(rootMapMesh, globalState->globe);
+		}));
+		callbackIds.push_back(globalState->RegisterEvent("CameraMove", [this, globalState](std::string stringData, void* extraData){
+			cameraLocation = SimpleVector3<double>(*(SimpleVector3<float>*)extraData);
+		}));
 	}else{
 		EnableMap();
 	}
 	
+}
+
+void AMapMeshManager::EndPlay(const EEndPlayReason::Type endPlayReason){
+	Super::EndPlay(endPlayReason);
+	
+	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
+	if(gameMode != NULL){
+		GlobalState* globalState = &gameMode->globalState;
+		// unregister all events
+		for(auto id : callbackIds){
+			globalState->UnregisterEvent(id);
+		}
+		callbackIds.clear();
+	}
 }
 
 void AMapMeshManager::Tick(float DeltaTime){
@@ -78,27 +107,13 @@ void AMapMeshManager::Tick(float DeltaTime){
 }
 
 
-void UpdateMapMeshPositionFromGlobe(AMapMesh* mapMesh, Globe* globe){
-	SimpleVector3 center = SimpleVector3<>(globe->center);
-	center.Multiply(globe->scale);
-	mapMesh->UpdatePosition(center, SimpleVector3<>(globe->rotationAroundX, 0, globe->rotationAroundPolls));
-}
-
-
 void AMapMeshManager::EnableMap(){
 	if(enabled){
 		return;
 	}
 	enabled = true;
 	
-	FString elevationFile =  FPaths::Combine(FPaths::ProjectDir(), TEXT("Content/Data/elevation.bin.gz"));
-	FString fullElevationFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*elevationFile);
-	UE_LOG(LogTemp, Display, TEXT("Elevation data file should be located at %s"), *fullElevationFilePath);
-	// const char* fullElevationFilePathCstr = StringCast<ANSICHAR>(*fullElevationFilePath).Get();
-	// fprintf(stderr, "path %s\n", fullElevationFilePathCstr);
-	std::string fullElevationFilePathCstr = StringUtils::FStringToSTDString(fullElevationFilePath);
-	ElevationData::LoadData(fullElevationFilePathCstr);
-	
+	ElevationData::StartUsing();
 	
 	std::string staticCacheLocation = StringUtils::GetRelativePath(TEXT("Content/Data/Map/ImageryOnly/"));
 	std::string staticCacheTarLocation = StringUtils::GetRelativePath(TEXT("Content/Data/Map/ImageryOnly.tar"));
@@ -125,12 +140,6 @@ void AMapMeshManager::EnableMap(){
 	if(gameMode != NULL){
 		GlobalState* globalState = &gameMode->globalState;
 		globe->scale = globalState->globe->scale;
-		callbackIds.push_back(globalState->RegisterEvent("GlobeUpdate", [this, globalState](std::string stringData, void* extraData){
-			UpdateMapMeshPositionFromGlobe(rootMapMesh, globalState->globe);
-		}));
-		callbackIds.push_back(globalState->RegisterEvent("CameraMove", [this, globalState](std::string stringData, void* extraData){
-			cameraLocation = SimpleVector3<double>(*(SimpleVector3<float>*)extraData);
-		}));
 		UpdateMapMeshPositionFromGlobe(rootMapMesh, globalState->globe);
 	}
 }
@@ -140,17 +149,7 @@ void AMapMeshManager::DisableMap(){
 		return;
 	}
 	enabled = false;
-	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
-	if(gameMode != NULL){
-		GlobalState* globalState = &gameMode->globalState;
-		// unregister all events
-		for(auto id : callbackIds){
-			globalState->UnregisterEvent(id);
-		}
-	}
-	
-	callbackIds.clear();
-	ElevationData::UnloadData();
+	ElevationData::StopUsing();
 	if(rootMapMesh != NULL){
 		rootMapMesh->Destroy();
 		rootMapMesh = NULL;

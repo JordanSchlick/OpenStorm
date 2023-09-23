@@ -59,7 +59,7 @@ void ARadarViewPawn::BeginPlay()
 
 		GlobalState* globalState = &gameState->globalState;
 		callbackIds.push_back(globalState->RegisterEvent("Teleport", [this](std::string stringData, void* extraData) {
-			SimpleVector3<>* vec = (SimpleVector3<>*)extraData;
+			SimpleVector3<float>* vec = (SimpleVector3<float>*)extraData;
 			SetActorLocation(FVector(vec->x, vec->y, vec->z));
 		}));
 	}

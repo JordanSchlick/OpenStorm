@@ -1,0 +1,114 @@
+
+#include "GISPolyline.h"
+#include "ProceduralMeshComponent.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Engine/Texture2D.h"
+#include "Materials/Material.h"
+#include "Materials/MaterialInstanceDynamic.h"
+
+#include "../Objects/RadarGameStateBase.h"
+#include "../Application/GlobalState.h"
+#include "../Radar/Globe.h"
+#include "./Data/ShapeFile.h"
+#include "./Data/ElevationData.h"
+
+AGISPolyline::AGISPolyline(){
+	material = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/Map.Map'")).Object;
+	materialInstance = UMaterialInstanceDynamic::Create(material, this, "MapMeshMaterialInstance");
+	proceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>("ProceduralMesh");
+	proceduralMesh->bUseAsyncCooking = true;
+	RootComponent = proceduralMesh;
+}
+
+AGISPolyline::~AGISPolyline(){
+	
+}
+
+void AGISPolyline::BeginPlay(){
+	PrimaryActorTick.bCanEverTick = true;
+	Super::BeginPlay();
+}
+
+inline FVector SimpleVector3ToFVector(SimpleVector3<float> vec){
+	return FVector(vec.x, vec.y, vec.z);
+}
+
+void AGISPolyline::DisplayObject(GISObject* object){
+	static Globe globe = {};
+	
+	TArray<FVector> vertices = {};
+	TArray<FVector> normals = {};
+	TArray<int> triangles = {};
+	TArray<FVector2D> uv0 = {};
+	vertices.Empty(object->geometryCount);
+	normals.Empty(object->geometryCount);
+	triangles.Empty(object->geometryCount * 3);
+	uv0.Empty(object->geometryCount);
+	
+	float width = 20;
+	bool hasDoneFirstPoint = false;
+	int64_t initialPointIndex = 0;
+	int64_t currentPointIndex = 0;
+	while(currentPointIndex < object->geometryCount - 1){
+		float pointPart1 = object->geometry[currentPointIndex];
+		if(!std::isfinite(pointPart1)){
+			// NaN detected, stop current line and begin next
+			currentPointIndex++;
+			initialPointIndex = currentPointIndex;
+			hasDoneFirstPoint = false;
+			continue;
+		}
+		int64_t nextIndex = std::min(currentPointIndex + 2, (int64_t)object->geometryCount - 2);
+		float nextPart1 = object->geometry[nextIndex];
+		if(!std::isfinite(nextPart1)){
+			// next part is a NaN separator so use current point
+			nextIndex = currentPointIndex;
+		}
+		SimpleVector3<float> nextPoint = globe.GetPointScaledDegrees(object->geometry[nextIndex],object->geometry[nextIndex + 1],0);
+		int64_t previousIndex = std::max(currentPointIndex - 2, initialPointIndex);
+		SimpleVector3<float> previousPoint = globe.GetPointScaledDegrees(object->geometry[previousIndex],object->geometry[previousIndex + 1],0);
+		float elevation = ElevationData::GetDataAtPointRadians(object->geometry[currentPointIndex] / 180.0f * PI, object->geometry[currentPointIndex + 1] / 180.0f * PI);
+		SimpleVector3<float> point = globe.GetPointScaledDegrees(object->geometry[currentPointIndex], object->geometry[currentPointIndex + 1], 1000 + elevation);
+		currentPointIndex += 2;
+		
+		// outwards for making line thick
+		SimpleVector3<float> outwards = nextPoint;
+		outwards.Subtract(previousPoint);
+		outwards.Cross(point);
+		outwards.ProjectOntoPlane(point);
+		outwards.Normalize();
+		outwards.Multiply(width);
+		
+		vertices.Add(SimpleVector3ToFVector(point + outwards));
+		vertices.Add(SimpleVector3ToFVector(point - outwards));
+		uv0.Add(FVector2D(0,0));
+		uv0.Add(FVector2D(0,1));
+		point.Normalize();
+		normals.Add(SimpleVector3ToFVector(point));
+		normals.Add(SimpleVector3ToFVector(point));
+		
+		if(hasDoneFirstPoint){
+			int vertexCount = vertices.Num();
+			// triangle 1
+			triangles.Add(vertexCount - 4);
+			triangles.Add(vertexCount - 3);
+			triangles.Add(vertexCount - 2);
+			// triangle 2
+			triangles.Add(vertexCount - 2);
+			triangles.Add(vertexCount - 3);
+			triangles.Add(vertexCount - 1);
+		}
+		hasDoneFirstPoint = true;
+	}
+	
+	if(triangles.Num() > 0){
+		proceduralMesh->CreateMeshSection(0, vertices, triangles, normals, uv0, TArray<FColor>(), TArray<FProcMeshTangent>(), true);
+		// proceduralMesh->SetMaterial(0, materialInstance);
+	}
+}
+
+void AGISPolyline::PositionObject(Globe* globe){
+	SimpleVector3 center = SimpleVector3<>(globe->center);
+	center.Multiply(globe->scale);
+	SetActorLocationAndRotation(SimpleVector3ToFVector(center), FQuat(FVector(1, 0, 0), -globe->rotationAroundX) * FQuat(FVector(0, 0, 1), -globe->rotationAroundPolls));
+}

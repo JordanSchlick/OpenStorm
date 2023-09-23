@@ -371,7 +371,7 @@ void AImGuiUI::Tick(float deltaTime)
 						markersChanged |= ImGui::Checkbox("", &marker.enabled);
 						ImGui::SameLine();
 						if (ImGui::Button("Teleport")) {
-							SimpleVector3 location = globalState.globe->GetPointScaledDegrees(marker.latitude, marker.longitude, marker.altitude);
+							SimpleVector3<float> location = SimpleVector3<float>(globalState.globe->GetPointScaledDegrees(marker.latitude, marker.longitude, marker.altitude));
 							globalState.EmitEvent("Teleport","", &location);
 						}
 						ImGui::SameLine();

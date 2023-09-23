@@ -122,7 +122,15 @@
 		"__threading_support": "cpp",
 		"__tree": "cpp",
 		"__tuple": "cpp",
-		"__verbose_abort": "cpp"
+		"__verbose_abort": "cpp",
+		"hash_map": "cpp",
+		"stack": "cpp",
+		"valarray": "cpp",
+		"*.ipp": "cpp"
 	},
-	"editor.insertSpaces": false
+	"editor.insertSpaces": false,
+	"cSpell.words": [
+		"polyline",
+		"polylines"
+	]
 }

@@ -26,6 +26,7 @@ Discord server invite [https://discord.gg/K3aU2hEYvJ](https://discord.gg/K3aU2hE
 * Linux and Windows support
 * NEXRAD and ODIM H5 radar data support
 * VR headset viewing
+* 3D globe map with elevation
 
 
 ## Getting data
@@ -63,7 +64,7 @@ Create a symlink to your Unreal Engine installation beside this repository to en
 Windows example(needs admin privileges): `mklink /D UnrealEngine "C:\files\Epic\UE_5.2\Engine"`  
 Linux example: `ln -s "/path/to/UE/Engine" UnrealEngine`  
 ### Coding Guidelines
-In general just try to be consistent with existing code. The following guidelines are should be followed. You may be asked to conform if your code significantly violates them.
+In general just try to be consistent with existing code. The following guidelines should be followed. You may be asked to conform if your code significantly violates them.
 * The Radar source directory and everything under it must be self contained and can not have dependencies on Unreal Engine. It is meant to be a separable library that can be used outside of OpenStorm. There are currently node and python bindings available for it.
 * Indentation uses tabs.
 * Class functions are upper case while variables are lower case.
