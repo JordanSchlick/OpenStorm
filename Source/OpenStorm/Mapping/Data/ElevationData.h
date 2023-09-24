@@ -10,7 +10,7 @@ namespace ElevationData{
 	void UnloadData();
 	
 	// get point from the data with interpolation
-	float GetDataAtPointRadians(double latitude, double longitude);
+	float GetDataAtPointRadians(float latitude, float longitude);
 	
 	// load and increment reference counter
 	// make sure to call StopUsing after

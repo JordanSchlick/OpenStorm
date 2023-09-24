@@ -27,8 +27,10 @@
 
 class GISLoaderTask : public AsyncTaskRunner{
 public:
-	
+	// camera location in radians
 	SimpleVector3<double> cameraLocation;
+	// groups of objects
+	std::vector<GISGroup> objectGroups;
 	// all objects
 	std::vector<GISObject> objects;
 	// lock for objectsToAdd and objectsToRemove
@@ -38,17 +40,26 @@ public:
 	// indexes of objects to remove
 	std::vector<uint64_t> objectsToRemove;
 	// if the results are ready to be consumed by the main thread
-	bool ready = false;
+	//bool ready = false;
 	// if the shape files have been loaded
 	bool loaded = false;
 	
 	virtual void Task(){
 		if(!loaded){
+			objectGroups = {
+				GISGroup(500000, 10), // default 0
+				GISGroup(8000000, 40), // country 1
+				GISGroup(2000000, 20), // state 2
+				GISGroup(400000, 7), // county 3
+				GISGroup(100000, 3), // motorways 4
+			};
 			ReadShapeFile("J:/datasets/mapping/derived/final/non-existant.shp", &objects);
-			// ReadShapeFile("J:/datasets/mapping/derived/final/motorways.shp", &objects);
-			//ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-counties.shp", &objects);
-			ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-states.shp", &objects);
-			ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-countries.shp", &objects);
+			// ReadShapeFile("J:/datasets/mapping/derived/final/grid-1deg.shp", &objects);
+			ReadShapeFile("J:/datasets/mapping/derived/final/motorways.shp", &objects, 4);
+			ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-counties.shp", &objects, 3);
+			ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-states.shp", &objects, 2);
+			ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-countries.shp", &objects, 1);
+			fprintf(stderr, "Loaded %i GIS objects\n", (int)objects.size());
 			// ReadShapeFile("J:/datasets/mapping/derived/final/russia.shp", &objects);
 			loaded = true;
 		}
@@ -57,8 +68,9 @@ public:
 		SimpleVector3<float> cameraPosition = SimpleVector3<float>(defaultGlobe.GetPoint(cameraLocation));
 		for(size_t i = 0; i < objects.size(); i++){
 			GISObject* object = &objects[i];
+			GISGroup* objectGroup = &objectGroups[object->groupId];
 			float distance = cameraPosition.Distance(object->location);
-			bool shouldShow = distance < 400000 || i < 100000;
+			bool shouldShow = distance < objectGroup->showDistance;// || i < 100000;
 			if(shouldShow != object->shown){
 				object->shown = shouldShow;
 				if(shouldShow){
@@ -72,7 +84,6 @@ public:
 				}
 			}
 		}
-		fprintf(stderr, "Loaded %i GIS objects\n", (int)objects.size());
 	}
 	
 	~GISLoaderTask(){
@@ -96,11 +107,14 @@ void AGISManager::BeginPlay(){
 	PrimaryActorTick.bCanEverTick = true;
 	Super::BeginPlay();
 	
+	
+	
 	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
 	if(gameMode != NULL){
 		GlobalState* globalState = &gameMode->globalState;
 		callbackIds.push_back(globalState->RegisterEvent("GlobeUpdate", [this, globalState](std::string stringData, void* extraData){
 			UpdatePositionsFromGlobe();
+			needsRecalculation = true;
 		}));
 		callbackIds.push_back(globalState->RegisterEvent("CameraMove", [this, globalState](std::string stringData, void* extraData){
 			cameraLocation = SimpleVector3<double>(*(SimpleVector3<float>*)extraData);
@@ -147,7 +161,7 @@ void AGISManager::Tick(float DeltaTime){
 				mapBrightness = globalState->mapBrightness;
 			}
 			if(loaderTask != NULL){
-				
+				loaderTask->cameraLocation = globe->GetLocationScaled(cameraLocation);
 			}
 		}
 	}
@@ -166,10 +180,13 @@ void AGISManager::Tick(float DeltaTime){
 			polylines[id]->Destroy();
 			polylines.erase(id);
 		}
-		fprintf(stderr, "%i ", (int)objectsToAdd.size());
+		if(objectsToAdd.size() > 0){
+			fprintf(stderr, "%i ", (int)objectsToAdd.size());
+		}
 		for(uint64_t id : objectsToAdd){
 			AGISPolyline* polyline = world->SpawnActor<AGISPolyline>(AGISPolyline::StaticClass());
-			polyline->DisplayObject(&loaderTask->objects[id]);
+			GISObject* object = &loaderTask->objects[id];
+			polyline->DisplayObject(object, &loaderTask->objectGroups[object->groupId]);
 			polyline->PositionObject(globe);
 			polylines[id] = polyline;
 		}

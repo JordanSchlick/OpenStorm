@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include "./Data/ShapeFile.h"
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "GameFramework/Actor.h"
@@ -28,7 +28,7 @@ public:
 	UProceduralMeshComponent* proceduralMesh;
 	
 	// update position of all meshes after globe update
-	void DisplayObject(GISObject* object);
+	void DisplayObject(GISObject* object, GISGroup* group);
 	
 	// position object onto a globe
 	void PositionObject(Globe* globe);

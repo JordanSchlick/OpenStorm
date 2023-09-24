@@ -48,7 +48,7 @@ struct PolygonHeader{
 };
 #pragma pack(pop)
 
-bool ReadShapeFile(std::string fileName, std::vector<GISObject>* output)
+bool ReadShapeFile(std::string fileName, std::vector<GISObject>* output, uint8_t groupId)
 {
 	//return true;
 	SystemAPI::FileStats stats = SystemAPI::GetFileStats(fileName);
@@ -116,14 +116,15 @@ bool ReadShapeFile(std::string fileName, std::vector<GISObject>* output)
 			// create GISObject
 			// output->push_back(GISObject());
 			GISObject object = {};//&output[0][output->size() - 1];
+			object.groupId = groupId;
 			object.geometryCount = polyHead.numberOfPoints * 2 + polyHead.numberOfParts - 1;
 			// fprintf(stderr, "%i ", object.geometryCount);
 			// float* stuff = new float[object.geometryCount];
 			object.geometry = new float[object.geometryCount];
-			object.isGeometry = true;
-			object.location = SimpleVector3<float>(globe.GetPointDegrees((polyHead.minY + polyHead.maxY) / 2.0, (polyHead.minX + polyHead.maxX) / 2.0, 0));
+			//object.location = SimpleVector3<float>(globe.GetPointDegrees((polyHead.minY + polyHead.maxY) / 2.0, (polyHead.minX + polyHead.maxX) / 2.0, 0));
 			uint32_t geometryIndex = 0;
 			uint32_t partIndex = 1;
+			SimpleVector3<float> averageLocation = SimpleVector3<float>();
 			for(uint32_t i = parts[0]; i < polyHead.numberOfPoints; i++){
 				if(partIndex < polyHead.numberOfParts){
 					uint32_t part = parts[partIndex];
@@ -134,9 +135,16 @@ bool ReadShapeFile(std::string fileName, std::vector<GISObject>* output)
 					}
 				}
 				// copy point
-				object.geometry[geometryIndex++] = points[i*2 + 1];
-				object.geometry[geometryIndex++] = points[i*2];
+				float lat = points[i*2 + 1];
+				float lon = points[i*2];
+				object.geometry[geometryIndex++] = lat;
+				object.geometry[geometryIndex++] = lon;
+				averageLocation.Add(globe.GetPointDegrees(lat,lon,0));
 			}
+			averageLocation.RectangularToSpherical();
+			averageLocation.radius() = globe.surfaceRadius;
+			averageLocation.SphericalToRectangular();
+			object.location = averageLocation;
 			if(geometryIndex > object.geometryCount){
 				fprintf(stderr, "BAD geometryCount %i %i\n", object.geometryCount, geometryIndex);
 				break;

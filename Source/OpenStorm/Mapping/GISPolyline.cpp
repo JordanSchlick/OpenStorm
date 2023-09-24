@@ -33,7 +33,7 @@ inline FVector SimpleVector3ToFVector(SimpleVector3<float> vec){
 	return FVector(vec.x, vec.y, vec.z);
 }
 
-void AGISPolyline::DisplayObject(GISObject* object){
+void AGISPolyline::DisplayObject(GISObject* object, GISGroup* group){
 	static Globe globe = {};
 	
 	TArray<FVector> vertices = {};
@@ -45,7 +45,7 @@ void AGISPolyline::DisplayObject(GISObject* object){
 	triangles.Empty(object->geometryCount * 3);
 	uv0.Empty(object->geometryCount);
 	
-	float width = 20;
+	float width = group->width / 2.0f;
 	bool hasDoneFirstPoint = false;
 	int64_t initialPointIndex = 0;
 	int64_t currentPointIndex = 0;
@@ -67,42 +67,68 @@ void AGISPolyline::DisplayObject(GISObject* object){
 		SimpleVector3<float> nextPoint = globe.GetPointScaledDegrees(object->geometry[nextIndex],object->geometry[nextIndex + 1],0);
 		int64_t previousIndex = std::max(currentPointIndex - 2, initialPointIndex);
 		SimpleVector3<float> previousPoint = globe.GetPointScaledDegrees(object->geometry[previousIndex],object->geometry[previousIndex + 1],0);
-		float elevation = ElevationData::GetDataAtPointRadians(object->geometry[currentPointIndex] / 180.0f * PI, object->geometry[currentPointIndex + 1] / 180.0f * PI);
-		SimpleVector3<float> point = globe.GetPointScaledDegrees(object->geometry[currentPointIndex], object->geometry[currentPointIndex + 1], 1000 + elevation);
+		//float elevation = ElevationData::GetDataAtPointRadians(object->geometry[currentPointIndex] / 180.0f * PI, object->geometry[currentPointIndex + 1] / 180.0f * PI);
+		SimpleVector3<float> point = globe.GetPointScaledDegrees(object->geometry[currentPointIndex], object->geometry[currentPointIndex + 1], 1000 /*+ elevation*/);
 		currentPointIndex += 2;
 		
+		SimpleVector3<float> direction = point;
+		direction.Subtract(previousPoint);
+		SimpleVector3<float> direction2 = nextPoint;
+		direction2.Subtract(point);
+		if(!std::isfinite(direction.x)){
+			direction = direction2;
+		}
+		if(!std::isfinite(direction2.x)){
+			direction2 = direction;
+		}
+		
 		// outwards for making line thick
-		SimpleVector3<float> outwards = nextPoint;
-		outwards.Subtract(previousPoint);
+		SimpleVector3<float> outwards = direction;
+		outwards.Normalize();
+		direction2.Normalize();
+		outwards.Add(direction2);
 		outwards.Cross(point);
-		outwards.ProjectOntoPlane(point);
+		// outwards.ProjectOntoPlane(point);
 		outwards.Normalize();
 		outwards.Multiply(width);
 		
-		vertices.Add(SimpleVector3ToFVector(point + outwards));
-		vertices.Add(SimpleVector3ToFVector(point - outwards));
-		uv0.Add(FVector2D(0,0));
-		uv0.Add(FVector2D(0,1));
-		point.Normalize();
-		normals.Add(SimpleVector3ToFVector(point));
-		normals.Add(SimpleVector3ToFVector(point));
-		
-		if(hasDoneFirstPoint){
-			int vertexCount = vertices.Num();
-			// triangle 1
-			triangles.Add(vertexCount - 4);
-			triangles.Add(vertexCount - 3);
-			triangles.Add(vertexCount - 2);
-			// triangle 2
-			triangles.Add(vertexCount - 2);
-			triangles.Add(vertexCount - 3);
-			triangles.Add(vertexCount - 1);
+		// segment very long single lines so they do not clip
+		float distance = direction.Magnitude();
+		int subsectionCount = std::max((int)(distance / 100), 1);
+		for(int i = 1; i <= subsectionCount; i++){
+			SimpleVector3 subPoint = previousPoint;
+			SimpleVector3 pointOffset = direction;
+			pointOffset.Multiply(i / (float)subsectionCount);
+			subPoint.Add(pointOffset);
+			subPoint = globe.GetLocationScaled(subPoint);
+			float elevation = ElevationData::GetDataAtPointRadians(-subPoint.z, subPoint.y + PI);
+			subPoint.radius() = 400 + elevation;
+			subPoint = globe.GetPointScaled(subPoint);
+			vertices.Add(SimpleVector3ToFVector(subPoint + outwards));
+			vertices.Add(SimpleVector3ToFVector(subPoint - outwards));
+			uv0.Add(FVector2D(0,0));
+			uv0.Add(FVector2D(0,1));
+			point.Normalize();
+			normals.Add(SimpleVector3ToFVector(point));
+			normals.Add(SimpleVector3ToFVector(point));
+			
+			if(hasDoneFirstPoint){
+				int vertexCount = vertices.Num();
+				// triangle 1
+				triangles.Add(vertexCount - 4);
+				triangles.Add(vertexCount - 3);
+				triangles.Add(vertexCount - 2);
+				// triangle 2
+				triangles.Add(vertexCount - 2);
+				triangles.Add(vertexCount - 3);
+				triangles.Add(vertexCount - 1);
+			}
+			hasDoneFirstPoint = true;
 		}
-		hasDoneFirstPoint = true;
 	}
 	
 	if(triangles.Num() > 0){
-		proceduralMesh->CreateMeshSection(0, vertices, triangles, normals, uv0, TArray<FColor>(), TArray<FProcMeshTangent>(), true);
+		proceduralMesh->CreateMeshSection(0, vertices, triangles, normals, uv0, TArray<FColor>(), TArray<FProcMeshTangent>(), false);
 		// proceduralMesh->SetMaterial(0, materialInstance);
 	}
 }

@@ -56,19 +56,19 @@ public:
 	// }
 	void Task(){
 		radarFilesNew.clear();
-		double benchTime;
-		benchTime = SystemAPI::CurrentTime();
+		// double benchTime;
+		// benchTime = SystemAPI::CurrentTime();
 		auto files = SystemAPI::ReadDirectory(filePath);
-		benchTime = SystemAPI::CurrentTime() - benchTime;
-		fprintf(stderr, "dir list time %lf\n", benchTime);
+		// benchTime = SystemAPI::CurrentTime() - benchTime;
+		// fprintf(stderr, "dir list time %lf\n", benchTime);
 		
-		benchTime = SystemAPI::CurrentTime();
+		// benchTime = SystemAPI::CurrentTime();
 		std::sort(files.begin(), files.end());
-		benchTime = SystemAPI::CurrentTime() - benchTime;
-		fprintf(stderr, "sort time %lf\n", benchTime);
+		// benchTime = SystemAPI::CurrentTime() - benchTime;
+		// fprintf(stderr, "sort time %lf\n", benchTime);
 		//fprintf(stderr, "files %i\n", (int)files.size());
 		
-		benchTime = SystemAPI::CurrentTime();
+		// benchTime = SystemAPI::CurrentTime();
 		double now = SystemAPI::CurrentTime();
 		//fprintf(stderr, "now: %f\n", now);
 		int fileIndex = -1;
@@ -120,8 +120,8 @@ public:
 				radarFilesCache[filename] = radarFile;
 			}
 		}
-		benchTime = SystemAPI::CurrentTime() - benchTime;
-		fprintf(stderr, "stat time %lf\n", benchTime);
+		// benchTime = SystemAPI::CurrentTime() - benchTime;
+		// fprintf(stderr, "stat time %lf\n", benchTime);
 		ready = true;
 	}
 };
@@ -391,9 +391,9 @@ double RadarCollection::ParseFileNameDate(std::string filename) {
 
 
 void RadarCollection::PollFilesFinalize() {
-	double benchTime;
+	// double benchTime;
 	
-	benchTime = SystemAPI::CurrentTime();
+	// benchTime = SystemAPI::CurrentTime();
 	bool moveToEnd = false;
 	
 	std::vector<RadarFile>* radarFilesNew = &pollFilesTask->radarFilesNew;
@@ -470,10 +470,10 @@ void RadarCollection::PollFilesFinalize() {
 		}
 	}
 	
-	benchTime = SystemAPI::CurrentTime() - benchTime;
-	fprintf(stderr, "move time %lf\n", benchTime);
+	// benchTime = SystemAPI::CurrentTime() - benchTime;
+	// fprintf(stderr, "move time %lf\n", benchTime);
 	
-	benchTime = SystemAPI::CurrentTime();
+	// benchTime = SystemAPI::CurrentTime();
 	UnloadOldData();
 	LoadNewData();
 	if(moveToEnd && cachedAfter > 0){
@@ -481,8 +481,8 @@ void RadarCollection::PollFilesFinalize() {
 		Move(cachedAfter);
 	}
 	
-	benchTime = SystemAPI::CurrentTime() - benchTime;
-	fprintf(stderr, "load time %lf\n", benchTime);
+	// benchTime = SystemAPI::CurrentTime() - benchTime;
+	// fprintf(stderr, "load time %lf\n", benchTime);
 }
 
 void RadarCollection::PollFiles() {

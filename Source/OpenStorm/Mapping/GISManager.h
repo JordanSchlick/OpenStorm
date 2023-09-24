@@ -20,7 +20,7 @@ class AGISManager : public AActor{
 	
 public:
 	// location of camera/pawn
-	SimpleVector3<> cameraLocation = {};
+	SimpleVector3<float> cameraLocation = {};
 	// globe used for generating meshes
 	Globe* globe;
 	// if the map is enabled

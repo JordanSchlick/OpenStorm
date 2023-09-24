@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #include <string>
 #include "../../Radar/SimpleVector3.h"
@@ -9,16 +10,31 @@ public:
 	
 	// location in cartesian space on an un-oriented globe in meters
 	SimpleVector3<float> location;
-	// if the shape is made up of many points or just one
-	bool isGeometry = false;
 	// array pairs of latitude,longitude floats and separate parts are delineated by NaNs
 	float* geometry = NULL;
 	// number of floats in geometry buffer
 	uint32_t geometryCount = 0;
 	// if the object is currently show in game
 	bool shown = false;
+	// index of group that this object belongs to
+	uint8_t groupId = 0;
 	
 	void Delete();
 };
 
-bool ReadShapeFile(std::string fileName, std::vector<GISObject>* output);
+class GISGroup{
+public:
+	// distance in real world meters from camera to show objects
+	float showDistance = 1000000;
+	// width of lines
+	float width = 20;
+	float colorR = 1;
+	float colorG = 1;
+	float colorB = 1;
+	GISGroup(float showDistance, float width){
+		this->showDistance = showDistance;
+		this->width = width;
+	}
+};
+
+bool ReadShapeFile(std::string fileName, std::vector<GISObject>* output, uint8_t groupId = 0);

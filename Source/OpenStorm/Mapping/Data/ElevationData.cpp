@@ -138,20 +138,24 @@ namespace ElevationData{
 		return val;
 	}
 	
-	float GetDataAtPointRadians(double latitude, double longitude){
+	float floatModulo(float value, float m){
+		return value - std::floorf(value / m) * m;
+	}
+	
+	float GetDataAtPointRadians(float latitude, float longitude){
 		if(elevationData == NULL){
 			return 0;
 		}
 		// flip and normalize
-		latitude = std::fmod(-latitude + M_PI / 2.0, M_PI);
-		if(latitude < 0){
-			latitude += M_PI;
-		}
+		latitude = floatModulo(-latitude + M_PI / 2.0, M_PI);
+		// if(latitude < 0){
+		// 	latitude += M_PI;
+		// }
 		// normalize
-		longitude = std::fmod(longitude + M_PI, M_PI * 2.0);
-		if(longitude < 0){
-			longitude += M_PI * 2.0;
-		}
+		longitude = floatModulo(longitude + M_PI, M_PI * 2.0);
+		// if(longitude < 0){
+		// 	longitude += M_PI * 2.0;
+		// }
 		// convert to buffer coordinates
 		latitude = (latitude / M_PI) * elevationDataHeight;
 		longitude = (longitude / M_PI / 2.0) * elevationDataWidth;

@@ -78,7 +78,7 @@ SimpleVector3<> Globe::GetLocation(SimpleVector3<> point){
 	vector.RectangularToSpherical();
 	vector.radius() -= surfaceRadius;
 	vector.theta() = -vector.theta() + M_PI / 2.0 - rotationAroundPolls;
-	vector.phi() = -vector.phi() - M_PI / 2.0;
+	vector.phi() = -vector.phi() + M_PI * 1.5;
 	return vector;
 	return SimpleVector3<>();
 }
