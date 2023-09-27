@@ -33,6 +33,9 @@ public:
 	// position object onto a globe
 	void PositionObject(Globe* globe);
 	
+	// set brightness of material
+	void SetBrightness(float brightness);
+	
 	AGISPolyline();
 	~AGISPolyline();
 	

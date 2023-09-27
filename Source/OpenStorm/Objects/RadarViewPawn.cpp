@@ -20,17 +20,16 @@ ARadarViewPawn::ARadarViewPawn()
 	//Setup Rootcomponent
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 	meshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ViewportMesh"));
+	camera = CreateDefaultSubobject<UCameraComponent>(TEXT("PlayerCamera"));
 	
 	UStaticMesh * playerMesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("StaticMesh'/Game/Meshes/inverted_cube.inverted_cube'")).Object;
-
 	UMaterial * material = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/RadarVolumeMaterial.RadarVolumeMaterial'")).Object;
 	
-	camera = CreateDefaultSubobject<UCameraComponent>(TEXT("PlayerCamera"));
 
 
 	meshComponent->SetStaticMesh(playerMesh);
-
 	meshComponent->SetMaterial(0, material);
+	meshComponent->TranslucencySortPriority = 1;
 	
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;

@@ -15,6 +15,7 @@
 #include "../Application/GlobalState.h"
 #include "../Radar/Globe.h"
 #include "../Radar/AsyncTask.h"
+#include "../Radar/SystemAPI.h"
 #include "../EngineHelpers/StringUtils.h"
 
 #include <cmath>
@@ -51,7 +52,7 @@ public:
 				GISGroup(8000000, 40), // country 1
 				GISGroup(2000000, 20), // state 2
 				GISGroup(400000, 7), // county 3
-				GISGroup(100000, 3), // motorways 4
+				GISGroup(100000, 3, 0.5, 0.5, 0.5), // motorways 4
 			};
 			ReadShapeFile("J:/datasets/mapping/derived/final/non-existant.shp", &objects);
 			// ReadShapeFile("J:/datasets/mapping/derived/final/grid-1deg.shp", &objects);
@@ -77,6 +78,11 @@ public:
 					changeQueueLock.lock();
 					objectsToAdd.push_back(i);
 					changeQueueLock.unlock();
+					while(objectsToAdd.size() >= 100 && !canceled){
+						// wait for main thread to consume list before adding more
+						SystemAPI::Sleep(0.01);
+						cameraPosition = SimpleVector3<float>(defaultGlobe.GetPoint(cameraLocation));
+					}
 				}else{
 					changeQueueLock.lock();
 					objectsToRemove.push_back(i);
@@ -150,15 +156,19 @@ void AGISManager::Tick(float DeltaTime){
 	ARadarGameStateBase* gameMode = world->GetGameState<ARadarGameStateBase>();
 	if(gameMode != NULL){
 		GlobalState* globalState = &gameMode->globalState;
-		if(globalState->enableMap && globalState->developmentMode && !enabled){
+		if(globalState->enableMap && globalState->enableMapGIS && !enabled){
 			EnableMap();
 		}
-		if(!globalState->enableMap && enabled){
+		if(!(globalState->enableMap && globalState->enableMapGIS) && enabled){
 			DisableMap();
 		}
 		if(enabled){
-			if(globalState->mapBrightness != mapBrightness){
-				mapBrightness = globalState->mapBrightness;
+			if(globalState->mapBrightness * globalState->mapBrightnessGIS != mapBrightness){
+				mapBrightness = globalState->mapBrightness * globalState->mapBrightnessGIS;
+				for(auto polyline : polylines){
+					// update brightness of all objects
+					polyline.second->SetBrightness(mapBrightness);
+				}
 			}
 			if(loaderTask != NULL){
 				loaderTask->cameraLocation = globe->GetLocationScaled(cameraLocation);
@@ -188,6 +198,7 @@ void AGISManager::Tick(float DeltaTime){
 			GISObject* object = &loaderTask->objects[id];
 			polyline->DisplayObject(object, &loaderTask->objectGroups[object->groupId]);
 			polyline->PositionObject(globe);
+			polyline->SetBrightness(mapBrightness);
 			polylines[id] = polyline;
 		}
 	}

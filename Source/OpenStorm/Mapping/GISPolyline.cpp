@@ -13,10 +13,11 @@
 #include "./Data/ElevationData.h"
 
 AGISPolyline::AGISPolyline(){
-	material = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/Map.Map'")).Object;
-	materialInstance = UMaterialInstanceDynamic::Create(material, this, "MapMeshMaterialInstance");
+	material = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("/Script/Engine.Material'/Game/Materials/GISLine.GISLine'")).Object;
+	materialInstance = UMaterialInstanceDynamic::Create(material, this, "GISLineMaterialInstance");
 	proceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>("ProceduralMesh");
 	proceduralMesh->bUseAsyncCooking = true;
+	proceduralMesh->SetMaterial(0, materialInstance);
 	RootComponent = proceduralMesh;
 }
 
@@ -40,10 +41,10 @@ void AGISPolyline::DisplayObject(GISObject* object, GISGroup* group){
 	TArray<FVector> normals = {};
 	TArray<int> triangles = {};
 	TArray<FVector2D> uv0 = {};
-	vertices.Empty(object->geometryCount);
-	normals.Empty(object->geometryCount);
-	triangles.Empty(object->geometryCount * 3);
-	uv0.Empty(object->geometryCount);
+	vertices.Empty(object->geometryCount * 1.5);
+	normals.Empty(object->geometryCount * 1.5);
+	triangles.Empty(object->geometryCount * 3 * 1.5);
+	uv0.Empty(object->geometryCount  * 1.5);
 	
 	float width = group->width / 2.0f;
 	bool hasDoneFirstPoint = false;
@@ -102,7 +103,7 @@ void AGISPolyline::DisplayObject(GISObject* object, GISGroup* group){
 			subPoint.Add(pointOffset);
 			subPoint = globe.GetLocationScaled(subPoint);
 			float elevation = ElevationData::GetDataAtPointRadians(-subPoint.z, subPoint.y + PI);
-			subPoint.radius() = 400 + elevation;
+			subPoint.radius() = 500 + elevation;
 			subPoint = globe.GetPointScaled(subPoint);
 			vertices.Add(SimpleVector3ToFVector(subPoint + outwards));
 			vertices.Add(SimpleVector3ToFVector(subPoint - outwards));
@@ -130,6 +131,7 @@ void AGISPolyline::DisplayObject(GISObject* object, GISGroup* group){
 	if(triangles.Num() > 0){
 		proceduralMesh->CreateMeshSection(0, vertices, triangles, normals, uv0, TArray<FColor>(), TArray<FProcMeshTangent>(), false);
 		// proceduralMesh->SetMaterial(0, materialInstance);
+		materialInstance->SetVectorParameterValue(TEXT("Color"), FVector4(group->colorR,group->colorG,group->colorB,1));
 	}
 }
 
@@ -137,4 +139,8 @@ void AGISPolyline::PositionObject(Globe* globe){
 	SimpleVector3 center = SimpleVector3<>(globe->center);
 	center.Multiply(globe->scale);
 	SetActorLocationAndRotation(SimpleVector3ToFVector(center), FQuat(FVector(1, 0, 0), -globe->rotationAroundX) * FQuat(FVector(0, 0, 1), -globe->rotationAroundPolls));
+}
+
+void AGISPolyline::SetBrightness(float brightness){
+	materialInstance->SetScalarParameterValue(TEXT("Brightness"), brightness);
 }

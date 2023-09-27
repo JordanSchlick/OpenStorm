@@ -35,6 +35,13 @@ public:
 		this->showDistance = showDistance;
 		this->width = width;
 	}
+	GISGroup(float showDistance, float width, float r, float g, float b){
+		this->showDistance = showDistance;
+		this->width = width;
+		this->colorR = r;
+		this->colorG = g;
+		this->colorB = b;
+	}
 };
 
 bool ReadShapeFile(std::string fileName, std::vector<GISObject>* output, uint8_t groupId = 0);

@@ -78,10 +78,10 @@ void AMapMeshManager::Tick(float DeltaTime){
 	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
 	if(gameMode != NULL){
 		GlobalState* globalState = &gameMode->globalState;
-		if(globalState->enableMap && !enabled){
+		if(globalState->enableMap && globalState->enableMapTiles && !enabled){
 			EnableMap();
 		}
-		if(!globalState->enableMap && enabled){
+		if(!(globalState->enableMap && globalState->enableMapTiles) && enabled){
 			DisableMap();
 		}
 		if(enabled){

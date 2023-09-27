@@ -36,6 +36,7 @@ T* ARadarSlice::FindActor() {
 ARadarSlice::ARadarSlice(){
 	proceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>("ProceduralMesh");
 	proceduralMesh->bUseAsyncCooking = true;
+	proceduralMesh->TranslucencySortPriority = 1;
 	RootComponent = proceduralMesh;
 }
 

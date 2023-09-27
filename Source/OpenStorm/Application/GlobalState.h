@@ -49,7 +49,6 @@ public:
 	bool audioControlledHeight = false;
 	bool audioControlledOpacity = false;
 	bool audioControlledCutoff = false;
-	bool enableMap = true; // if the globe should be rendered
 	
 	float maxFPS = 60.0f; // maximum frames per second
 	float animateSpeed = 5.0f; // speed of animation
@@ -64,7 +63,11 @@ public:
 	float qualityCustomStepSize = 5.0f; // if quality is set to 10 this value is used
 	float verticalScale = 1.0f; // multiply vertical scale
 	float audioControlMultiplier = 5.0f;
+	bool enableMap = true; // if the globe should be rendered
+	bool enableMapTiles = true; // if tiles should be shown
+	bool enableMapGIS = true; // if GIS objects should be shown
 	float mapBrightness = 0.2f; // brightness of map texture
+	float mapBrightnessGIS = 0.5f; // GIS brightness relative to map brightness
 	
 	int volumeType = 1; // type of radar product RadarData::VolumeType, defaults to 1 which is reflectivity
 	

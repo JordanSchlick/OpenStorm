@@ -353,6 +353,9 @@ void AImGuiUI::Tick(float deltaTime)
 			if (ImGui::TreeNodeEx("Map", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				ImGui::Checkbox("Show Map", &globalState.enableMap);
 				CustomFloatInput("Map Brightness", 0.01, 1.0, &globalState.mapBrightness, &globalState.defaults->mapBrightness);
+				ImGui::Checkbox("Show Tiles", &globalState.enableMapTiles);
+				ImGui::Checkbox("Show GIS info", &globalState.enableMapGIS);
+				CustomFloatInput("GIS Brightness", 0.01, 1.5, &globalState.mapBrightnessGIS, &globalState.defaults->mapBrightnessGIS);
 				if (ImGui::TreeNodeEx("Waypoints", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 					char idChr[3] = {};
 					bool markersChanged = false;

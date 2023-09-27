@@ -21,4 +21,5 @@ public:
 	static std::vector<FileStats> ReadDirectory(std::string path);
 	static FileStats GetFileStats(std::string path);
 	static bool CreateDirectory(std::string path);
+	static void Sleep(float seconds);
 };
