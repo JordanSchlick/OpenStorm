@@ -167,7 +167,7 @@ namespace ElevationData{
 	
 	void StartUsing(){
 		if(referenceCounter == 0){
-			std::string elevationFile = StringUtils::GetRelativePath(TEXT("Content/Data/elevation.bin.gz"));
+			std::string elevationFile = StringUtils::GetRelativePath(TEXT("Content/Data/Map/elevation.bin.gz"));
 			LoadData(elevationFile);
 		}
 		referenceCounter++;

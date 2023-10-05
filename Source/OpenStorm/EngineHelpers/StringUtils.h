@@ -11,17 +11,13 @@ namespace StringUtils {
 		return FString(UTF8_TO_TCHAR(inStr.c_str()));
 	}
 	
+	std::string GetRelativePath(FString inString);
+	
 	// get path relative to project root
-	inline std::string GetRelativePath(FString inString){
-		FString file =  FPaths::Combine(FPaths::ProjectDir(), inString);
-		FString fullFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*file);
-		return FStringToSTDString(fullFilePath);
+	inline std::string GetRelativePath(std::string inString){
+		return GetRelativePath(STDStringToFString(inString));
 	}
 	
 	// get path relative to user settings directory, it is AppData/OpenStorm/ on windows
-	inline std::string GetUserPath(FString inString){
-		FString file =  FPaths::Combine(FPaths::Combine(FPlatformProcess::UserSettingsDir(), TEXT("OpenStorm")), inString);
-		FString fullFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*file);
-		return FStringToSTDString(fullFilePath);
-	}
+	std::string GetUserPath(FString inString);
 }

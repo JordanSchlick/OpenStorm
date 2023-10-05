@@ -25,17 +25,18 @@ public:
 class GISGroup{
 public:
 	// distance in real world meters from camera to show objects
-	float showDistance = 1000000;
+	float showDistance = 500000;
 	// width of lines
-	float width = 20;
+	float width = 10;
 	float colorR = 1;
 	float colorG = 1;
 	float colorB = 1;
-	GISGroup(float showDistance, float width){
+	inline GISGroup(){}
+	inline GISGroup(float showDistance, float width){
 		this->showDistance = showDistance;
 		this->width = width;
 	}
-	GISGroup(float showDistance, float width, float r, float g, float b){
+	inline GISGroup(float showDistance, float width, float r, float g, float b){
 		this->showDistance = showDistance;
 		this->width = width;
 		this->colorR = r;

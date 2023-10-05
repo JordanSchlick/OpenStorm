@@ -115,9 +115,9 @@ void AMapMeshManager::EnableMap(){
 	
 	ElevationData::StartUsing();
 	
-	std::string staticCacheLocation = StringUtils::GetRelativePath(TEXT("Content/Data/Map/ImageryOnly/"));
-	std::string staticCacheTarLocation = StringUtils::GetRelativePath(TEXT("Content/Data/Map/ImageryOnly.tar"));
-	std::string dynamicCacheLocation = StringUtils::GetUserPath(TEXT("Map/USGSImageryOnly/"));
+	std::string staticCacheLocation = StringUtils::GetRelativePath(TEXT("Content/Data/Map/Tiles/ImageryOnly/"));
+	std::string staticCacheTarLocation = StringUtils::GetRelativePath(TEXT("Content/Data/Map/Tiles/ImageryOnly.tar"));
+	std::string dynamicCacheLocation = StringUtils::GetUserPath(TEXT("Map/Tiles/USGSImageryOnly/"));
 	fprintf(stderr, "path %s\n", staticCacheLocation.c_str());
 	fprintf(stderr, "path %s\n", dynamicCacheLocation.c_str());
 	tileProvider = new TileProvider("USGSImageryOnly", "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}", "image/jpeg", 10);

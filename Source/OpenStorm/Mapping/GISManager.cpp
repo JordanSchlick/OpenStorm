@@ -8,8 +8,9 @@
 #include "HAL/FileManager.h"
 
 #include "GISPolyline.h"
-#include "Data/ElevationData.h"
-#include "Data/ShapeFile.h"
+#include "./Data/ElevationData.h"
+#include "./Data/ShapeFile.h"
+#include "./Data/SimpleConfig.h"
 #include "../Objects/RadarGameStateBase.h"
 // #include "../Objects/RadarViewPawn.h"
 #include "../Application/GlobalState.h"
@@ -23,7 +24,10 @@
 
 #define M_PI       3.14159265358979323846
 
-
+static bool endsWith(const std::string& str, const std::string& suffix)
+{
+    return str.size() >= suffix.size() && 0 == str.compare(str.size()-suffix.size(), suffix.size(), suffix);
+}
 
 
 class GISLoaderTask : public AsyncTaskRunner{
@@ -47,19 +51,43 @@ public:
 	
 	virtual void Task(){
 		if(!loaded){
-			objectGroups = {
-				GISGroup(500000, 10), // default 0
-				GISGroup(8000000, 40), // country 1
-				GISGroup(2000000, 20), // state 2
-				GISGroup(400000, 7), // county 3
-				GISGroup(100000, 3, 0.5, 0.5, 0.5), // motorways 4
-			};
-			ReadShapeFile("J:/datasets/mapping/derived/final/non-existant.shp", &objects);
-			// ReadShapeFile("J:/datasets/mapping/derived/final/grid-1deg.shp", &objects);
-			ReadShapeFile("J:/datasets/mapping/derived/final/motorways.shp", &objects, 4);
-			ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-counties.shp", &objects, 3);
-			ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-states.shp", &objects, 2);
-			ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-countries.shp", &objects, 1);
+			// objectGroups = {
+			// 	GISGroup(500000, 10), // default 0
+			// 	GISGroup(8000000, 40), // country 1
+			// 	GISGroup(2000000, 20), // state 2
+			// 	GISGroup(400000, 7), // county 3
+			// 	GISGroup(100000, 3, 0.5, 0.5, 0.5), // motorways 4
+			// };
+			// ReadShapeFile("J:/datasets/mapping/derived/final/non-existant.shp", &objects);
+			// // ReadShapeFile("J:/datasets/mapping/derived/final/grid-1deg.shp", &objects);
+			// ReadShapeFile("J:/datasets/mapping/derived/final/motorways.shp", &objects, 4);
+			// ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-counties.shp", &objects, 3);
+			// ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-states.shp", &objects, 2);
+			// ReadShapeFile("J:/datasets/mapping/derived/final/boundaries-countries.shp", &objects, 1);
+			std::string dataPath = StringUtils::GetRelativePath(TEXT("Content/Data/Map/GIS/"));
+			std::vector<SystemAPI::FileStats> files = SystemAPI::ReadDirectory(dataPath);
+			
+			for(SystemAPI::FileStats file : files){
+				// find config files
+				if(endsWith(file.name, ".cnf")){
+					fprintf(stderr, "Found GIS config %s\n", file.name.c_str());
+					std::string filename = dataPath + file.name.substr(0, file.name.size() - 4);
+					SimpleConfig configFile = SimpleConfig(filename + ".cnf");
+					GISGroup gisGroup = GISGroup();
+					gisGroup.showDistance = configFile.GetFloat("showDistance", gisGroup.showDistance);
+					gisGroup.width = configFile.GetFloat("width", gisGroup.width);
+					gisGroup.colorR = configFile.GetFloat("colorR", gisGroup.colorR);
+					gisGroup.colorG = configFile.GetFloat("colorG", gisGroup.colorG);
+					gisGroup.colorB = configFile.GetFloat("colorB", gisGroup.colorB);
+					uint8_t groupId = objectGroups.size();
+					objectGroups.push_back(gisGroup);
+					
+					// read shape file with same name as config file
+					ReadShapeFile(filename + ".shp", &objects, groupId);
+					fprintf(stderr, "Loading GIS Shape file %s\n", (filename + ".shp").c_str());
+				}
+			}
+			
 			fprintf(stderr, "Loaded %i GIS objects\n", (int)objects.size());
 			// ReadShapeFile("J:/datasets/mapping/derived/final/russia.shp", &objects);
 			loaded = true;
@@ -176,10 +204,6 @@ void AGISManager::Tick(float DeltaTime){
 		}
 	}
 	if(enabled && loaderTask != NULL){
-		if(needsRecalculation && !loaderTask->running){
-			loaderTask->Start();
-			needsRecalculation = false;
-		}
 		std::vector<uint64_t> objectsToAdd;
 		std::vector<uint64_t> objectsToRemove;
 		loaderTask->changeQueueLock.lock();
@@ -200,6 +224,11 @@ void AGISManager::Tick(float DeltaTime){
 			polyline->PositionObject(globe);
 			polyline->SetBrightness(mapBrightness);
 			polylines[id] = polyline;
+		}
+		// starting the task after consuming the data is important to preventing an object from appearing in both the add and remove lists
+		if(needsRecalculation && !loaderTask->running){
+			loaderTask->Start();
+			needsRecalculation = false;
 		}
 	}
 }
