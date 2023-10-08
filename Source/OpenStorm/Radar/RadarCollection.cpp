@@ -80,6 +80,14 @@ public:
 			if(file.isDirectory || filename == ".gitkeep"){
 				continue;
 			}
+			size_t extensionLocation = filename.find_last_of('.');
+			if(extensionLocation != std::string::npos){
+				std::string fileExtension = filename.substr(extensionLocation);
+				std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), [](unsigned char c){ return std::tolower(c); });
+				if(fileExtension == ".miniraddata"){
+					continue;
+				}
+			}
 			std::string path = filePath + filename;
 			
 			if(radarFilesCache.find(filename) != radarFilesCache.end()){
@@ -307,7 +315,7 @@ RadarDataHolder* RadarCollection::GetCurrentRadarData() {
 void RadarCollection::ReadFiles(std::string path) {
 	std::string lastCharecter = path.substr(path.length() - 1,1);
 	bool isDirectory = lastCharecter == "/" || lastCharecter == "\\";
-	int lastSlash = std::max(std::max((int)path.find_last_of('/'), (int)path.find_last_of('\\')), 0);
+	int lastSlash = std::max(std::max((int)path.find_last_of('/'), (int)path.find_last_of('\\')), -1);
 	filePath = path.substr(0, lastSlash + 1);
 	std::string inputFilename = path.substr(lastSlash + 1);
 	defaultFileName = isDirectory ? "" : inputFilename;

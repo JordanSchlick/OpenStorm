@@ -126,7 +126,8 @@
 		"hash_map": "cpp",
 		"stack": "cpp",
 		"valarray": "cpp",
-		"*.ipp": "cpp"
+		"*.ipp": "cpp",
+		"alignedvector3": "cpp"
 	},
 	"editor.insertSpaces": false,
 	"cSpell.words": [

@@ -85,8 +85,8 @@ public:
 					auto productHolder = radarHolder->products[i];
 					if(!productHolder->isLoaded && productHolder->product->productType == RadarProduct::PRODUCT_DERIVED_VOLUME){
 						bool dependenciesMet = true;
-						std::map<RadarData::VolumeType, RadarData*> depencyData = {};
-						std::vector<RadarDataHolder::ProductHolder*> depencyDataHolders = {};
+						std::map<RadarData::VolumeType, RadarData*> dependencyData = {};
+						std::vector<RadarDataHolder::ProductHolder*> dependencyDataHolders = {};
 						// check dependencies
 						for(auto &type : productHolder->product->dependencies){
 							/*if(radarHolder->productsMap.find(type) != radarHolder->productsMap.end()){
@@ -94,20 +94,20 @@ public:
 							}*/
 							auto dependency = radarHolder->GetProduct(type);
 							if(dependency->isLoaded){
-								depencyData[dependency->volumeType] = dependency->radarData;
-								depencyDataHolders.push_back(dependency);
+								dependencyData[dependency->volumeType] = dependency->radarData;
+								dependencyDataHolders.push_back(dependency);
 							}else{
 								dependenciesMet = false;
 								break;
 							}
 						}
 						if(dependenciesMet){
-							for(auto &depencyHolder : depencyDataHolders){
+							for(auto &dependencyHolder : dependencyDataHolders){
 								// ensure the dependencies do not get freed while in use
-								depencyHolder->StartUsing();
+								dependencyHolder->StartUsing();
 							}
 							// derive and save the product and run the loop again
-							RadarData* radarData = productHolder->product->deriveVolume(depencyData);
+							RadarData* radarData = productHolder->product->deriveVolume(dependencyData);
 							if(!canceled && initialUid == radarHolder->uid){
 								if(productHolder->radarData != NULL){
 									delete productHolder->radarData;
@@ -117,10 +117,11 @@ public:
 							}else{
 								delete radarData;
 							}
-							for(auto &depencyHolder : depencyDataHolders){
+							for(auto &dependencyHolder : dependencyDataHolders){
 								// release dependencies
-								depencyHolder->StopUsing();
+								dependencyHolder->StopUsing();
 							}
+							// mark loop to be run again in case something depends on the newly calculated product
 							deriveProducts = true;
 						}
 					}

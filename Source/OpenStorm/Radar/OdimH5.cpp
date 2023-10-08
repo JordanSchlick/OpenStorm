@@ -75,6 +75,7 @@ int64_t getIntAttribute(HighFive::Group object, std::string attributeName){
 	return object.getAttribute(attributeName).read<int64_t>();
 }
 
+// the hdf5 library is not threadsafe so lock this mutex whenever using it
 std::mutex hdf5Lock = {};
 
 #else

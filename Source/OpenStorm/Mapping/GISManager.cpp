@@ -279,6 +279,7 @@ void AGISManager::DisableMap(){
 	for(auto polyline : polylines){
 		polyline.second->Destroy();
 	}
+	polylines.clear();
 	
 	if(loaderTask != NULL){
 		loaderTask->Delete();

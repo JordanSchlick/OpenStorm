@@ -9,6 +9,7 @@ public:
 	bool verbose = false;
 	
 	// load in file
+	// must run UnloadFile if this function returns true to free
 	virtual bool LoadFile(std::string filename) = 0;
 	
 	// load volume into radarData object from loaded file

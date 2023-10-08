@@ -1,6 +1,7 @@
 #include "RadarReader.h"
 #include "Nexrad.h"
 #include "OdimH5.h"
+#include "MiniRad.h"
 #include <algorithm>
 #include <cctype>
 
@@ -20,6 +21,9 @@ RadarReader* RadarReader::GetLoaderForFile(const std::string filename){
 	}
 	if(hasEnding(filenameLower, ".gz") || hasEnding(filenameLower, ".bz2")){
 		return new NexradRadarReader();
+	}
+	if(hasEnding(filenameLower, ".minirad")){
+		return new MiniRadRadarReader();
 	}
 	// TODO: read a small section of the file if the type is not apparent from the name and then analyze it
 	return new NexradRadarReader();
