@@ -5,6 +5,7 @@
 class OdimH5RadarReader : public RadarReader{
 public:
 	class OdimH5Internal;
+	class SweepData;
 	OdimH5Internal* internal = NULL;
 	
 	virtual bool LoadFile(std::string filename);

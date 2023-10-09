@@ -1,6 +1,7 @@
 #include "MapMesh.h"
 #include "ProceduralMeshComponent.h"
 #include "UObject/ConstructorHelpers.h"
+#include "UObject/GarbageCollection.h"
 #include "Engine/Texture2D.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -10,6 +11,7 @@
 
 #include "../Radar/SimpleVector3.h"
 #include "../Radar/AsyncTask.h"
+#include "../Radar/SystemAPI.h"
 #include "../Radar/Globe.h"
 #include "Data/ElevationData.h"
 #include "Data/TileProvider.h"
@@ -78,6 +80,11 @@ public:
 			(InSizeY % GPixelFormats[InFormat].BlockSizeY) != 0)
 		{
 			return nullptr;
+		}
+		
+		while(IsGarbageCollectingAndLockingUObjectHashTables()){
+			// wait for garbage collection to finish because objects can not be created during it
+			SystemAPI::Sleep(0.01);
 		}
 		
 		FName TextureName = MakeUniqueObjectName(GetTransientPackage(), UTexture2D::StaticClass(), BaseName);

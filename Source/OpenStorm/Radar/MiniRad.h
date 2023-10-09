@@ -5,6 +5,8 @@
 class MiniRadRadarReader : public RadarReader{
 public:
 	class MiniRadInternal;
+	class SweepData;
+	class RayData;
 	MiniRadInternal* internal = NULL;
 	
 	virtual bool LoadFile(std::string filename);

@@ -37,7 +37,7 @@ public:
 	}
 };
 
-class SweepData{
+class OdimH5RadarReader::SweepData{
 public:
 	HighFive::DataSet dataset;
 	int datasetSize = 0;
@@ -305,6 +305,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		
 		radarData->stats.volumeType = volumeType;
 		radarData->stats.pixelSize = minPixelSize;
+		// this could be a bad assumption if inner distances vary per sweep
 		radarData->stats.innerDistance = sweeps[0].innerDistance / minPixelSize;
 		if (radarData->sweepBufferCount == 0) {
 			radarData->sweepBufferCount = sweeps.size();
@@ -347,6 +348,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 			}
 		}
 		
+		// buffer to decompress into
 		float* inputData = NULL;
 		int inputDataSize = 0;
 		float minValue = INFINITY;
@@ -483,7 +485,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		}
 		
 		benchTime = SystemAPI::CurrentTime() - benchTime;
-		if(verbose || true){
+		if(verbose){
 			fprintf(stderr, "volume loading code took %fs\n", benchTime);
 		}
 		

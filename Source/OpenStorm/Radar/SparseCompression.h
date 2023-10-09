@@ -16,7 +16,7 @@ namespace SparseCompress{
 	blankSize specifies the amount of blank data that was removed at that spot in the array.
 	dataSize specifies how much data follows in the compressed array until the next two ints.
 	The next blank space can be found at the end of the data size specifed.
-	The last blank space info has a size of zero for both values.
+	The last blank space info has a size of zero for both values to indicate the end.
 	
 	example of compressed buffer:
 	[
