@@ -280,8 +280,14 @@ void ARadarVolumeRender::HandleRadarDataEvent(RadarCollection::RadarUpdateEvent 
 	fprintf(stderr, "%p\n", event.data);
 	if (event.data != NULL) {
 		
+		// double benchTime = SystemAPI::CurrentTime();
+		
 		// copy to local buffer to decompress and retain data
 		radarData->CopyFrom(event.data);
+		
+		// benchTime = SystemAPI::CurrentTime() - benchTime;
+		// fprintf(stderr, "volume decompress time %fs\n", benchTime);
+		
 		InitializeTextures();
 		
 		

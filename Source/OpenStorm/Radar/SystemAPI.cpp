@@ -266,10 +266,10 @@ std::vector<SystemAPI::FileStats> SystemAPI::ReadDirectory(std::string path) {
 	}
 #else
 	struct dirent* entry;
-	DIR* dirFd = opendir(filePath.c_str());
+	DIR* dirFd = opendir(path.c_str());
 	if (dirFd == NULL) {
 		fprintf(stderr, "Directory not found\n");
-		return;
+		return files;
 	}
 	// should probably be optimized like https://stackoverflow.com/questions/58889085/faster-way-to-get-the-total-space-taken-by-the-directory-containing-5-million-fi
 	while ((entry = readdir(dirFd)) != NULL) {

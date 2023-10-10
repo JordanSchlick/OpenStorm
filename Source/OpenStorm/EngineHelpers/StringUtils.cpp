@@ -2,11 +2,11 @@
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"
 
-#ifdef PLATFORM_WINDOWS
-#include "Windows/WindowsPlatformProcess.h"
-#else
-#include "Windows/LinuxPlatformProcess.h"
-#endif
+// #if PLATFORM_WINDOWS
+// #include "Windows/WindowsPlatformProcess.h"
+// #else
+// #include "Linux/LinuxPlatformProcess.h"
+// #endif
 
 #include "GenericPlatform/GenericPlatformProcess.h"
 
@@ -20,7 +20,7 @@ std::string StringUtils::GetRelativePath(FString inString){
 }
 
 std::string StringUtils::GetUserPath(FString inString){
-	FString file =  FPaths::Combine(FPaths::Combine(FPlatformProcess::UserSettingsDir(), TEXT("OpenStorm")), inString);
+	FString file =  FPaths::Combine(FPaths::Combine(FGenericPlatformProcess::UserSettingsDir(), TEXT("OpenStorm")), inString);
 	FString fullFilePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*file);
 	return FStringToSTDString(fullFilePath);
 }
