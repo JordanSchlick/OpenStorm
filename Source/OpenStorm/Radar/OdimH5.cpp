@@ -52,6 +52,7 @@ public:
 	float sourceNoDataValue = -INFINITY;
 	float sourceNoDetectValue = -INFINITY;
 	bool discard = false;
+	int id = -1;
 	std::vector<float> rayAngles = {};
 };
 
@@ -178,6 +179,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 				if(key.substr(0,7) != "dataset" || internal->h5File->getObjectType(key) != HighFive::ObjectType::Group){
 					continue;
 				}
+				int id = std::max(0, std::stoi(key.substr(7)));
 				HighFive::Group sweepGroup = internal->h5File->getGroup(key);
 				if(!sweepGroup.exist("what") || sweepGroup.getObjectType("what") != HighFive::ObjectType::Group){
 					fprintf(stderr, "Warning: sweep is missing what group\n");
@@ -244,6 +246,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					sweepData->elevation = elevationAngle;
 					sweepData->multiplier = getDoubleAttribute(what, "gain");
 					sweepData->offset = getDoubleAttribute(what, "offset");
+					sweepData->id = id;
 					if(sweepHasPerRayAngleAttributes){
 						std::vector<double> startAngles;
 						std::vector<double> stopAngles;
@@ -366,7 +369,8 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 			const SweepData* sweep = &sweeps[index];
 			radarData->sweepInfo[sweepIndex].actualRayCount = sweep->rayCount;
 			radarData->sweepInfo[sweepIndex].elevationAngle = sweep->elevation;
-			radarData->sweepInfo[sweepIndex].id = sweepIndex;
+			radarData->sweepInfo[sweepIndex].id = sweep->id;
+			radarData->sweepInfo[sweepIndex].index = sweepIndex;
 			// fprintf(stderr, "%f %i %i %f %f\n", radarData->sweepInfo[sweepIndex].elevationAngle, sweep->rayCount, sweep->binCount, sweep->multiplier, sweep->offset);
 			int thetaSize = sweep->rayCount;
 			int sweepOffset = sweepIndex * radarData->sweepBufferSize;

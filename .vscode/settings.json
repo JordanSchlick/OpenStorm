@@ -127,7 +127,10 @@
 		"stack": "cpp",
 		"valarray": "cpp",
 		"*.ipp": "cpp",
-		"alignedvector3": "cpp"
+		"alignedvector3": "cpp",
+		"core": "cpp",
+		"*.m": "cpp",
+		"*.mm": "cpp"
 	},
 	"editor.insertSpaces": false,
 	"cSpell.words": [

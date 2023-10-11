@@ -130,8 +130,10 @@ public:
 	public:
 		// elevation from flat in degrees
 		float elevationAngle = 0;
-		// sweep index of sweep, -1 if no sweep exists
+		// sweep position in input file, -1 if no sweep exists
 		int id = -1;
+		// sweep index of sweep, -1 if no sweep exists
+		int index = -1;
 		// number of not interpolated rays in sweep
 		int actualRayCount = 0;
 	};

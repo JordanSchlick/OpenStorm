@@ -210,7 +210,8 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 			break;
 		}
 		Sweep* sweep = pair.second;
-		radarData->sweepInfo[sweepId].id = sweepId;
+		radarData->sweepInfo[sweepId].id = sweep->h.sweep_num;
+		radarData->sweepInfo[sweepId].index = sweepId;
 		radarData->sweepInfo[sweepId].elevationAngle = sweep->h.elev;
 		radarData->sweepInfo[sweepId].actualRayCount = sweep->h.nrays;
 		radarData->stats.innerDistance = (float)sweep->ray[0]->h.range_bin1 / (float)sweep->ray[0]->h.gate_size;

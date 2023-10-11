@@ -41,7 +41,7 @@ bool MiniRadRadarReader::LoadFile(std::string filePath){
 	std::string err;
 	internal->jsonData = json11::Json::parse(buffer.str(), err);
 	
-	if(!internal->jsonData.is_null()){
+	if(internal->jsonData.is_null()){
 		fprintf(stderr, "MiniRad.cpp(MiniRadRadarReader::LoadFile) minirad file has invalid json %s\n", err.c_str());
 		// next if will not find the array and return
 	}
@@ -84,6 +84,7 @@ public:
 	// int binCount = 0;
 	float pixelSize = 0;
 	float innerDistance = 0;
+	int id = -1;
 	std::vector<RayData> rays = {};
 };
 
@@ -157,7 +158,8 @@ bool MiniRadRadarReader::LoadVolume(RadarData* radarData, RadarData::VolumeType 
 	}
 	location += 11;
 	
-	size_t jsonHeaderSize = readVariableUint(fileContents, &location);
+	size_t jsonHeaderSize = *(uint32_t *)(fileContents + location);
+	location += 4;
 	if(jsonHeaderSize > fileSize - location){
 		fprintf(stderr, "MiniRad.cpp(MiniRadRadarReader::LoadVolume) header overrun\n");
 		delete[] fileContents;
@@ -168,7 +170,7 @@ bool MiniRadRadarReader::LoadVolume(RadarData* radarData, RadarData::VolumeType 
 	std::string err;
 	json11::Json header = json11::Json::parse(headerString, err);
 	if(verbose){
-		fprintf(stderr, "Minirad %i %s\n", (int)jsonHeaderSize, header.dump().c_str());
+		fprintf(stderr, "Minirad %i %s %s\n", (int)jsonHeaderSize, header.dump().c_str(), err.c_str());
 	}
 	location += jsonHeaderSize;
 	
@@ -244,8 +246,8 @@ bool MiniRadRadarReader::LoadVolume(RadarData* radarData, RadarData::VolumeType 
 	std::map<float, SweepData> sweepsMap = {};
 	SweepData* currentSweep = NULL;
 	size_t messageCount = 0;
-	int   currentEncodeParamNonValueCount = 3;
-	float currentEncodeParamNonValues[3] = {0,0,0};
+	int   currentEncodeParamNonValueCount = 0;
+	float* currentEncodeParamNonValues = NULL;
 	float currentEncodeParamOffset = 0;
 	float currentEncodeParamScale = 1;
 	// first pass of data to find information
@@ -253,9 +255,11 @@ bool MiniRadRadarReader::LoadVolume(RadarData* radarData, RadarData::VolumeType 
 		size_t messageType = readVariableUint(decompressedBuffer, &location);
 		size_t messageLength = readVariableUint(decompressedBuffer, &location);
 		size_t messageEnd = location + messageLength;
+		// fprintf(stderr, "%i ", (int)messageType);
 		switch(messageType){
 			case 3: { // sweep
 				// fprintf(stderr, "%i ", (int)messageType);
+				int sweepId = (int)readVariableUint(decompressedBuffer, &location);
 				float elevation = *(float*)(decompressedBuffer + location);
 				location += 4;
 				double startTime = *(double*)(decompressedBuffer + location);
@@ -267,11 +271,14 @@ bool MiniRadRadarReader::LoadVolume(RadarData* radarData, RadarData::VolumeType 
 				if(sweepsMap.count(elevation) == 0){
 					sweepsMap[elevation] = SweepData();
 					currentSweep = &sweepsMap[elevation];
+					currentSweep->id = (int)sweepId;
 					currentSweep->elevation = elevation;
 					currentSweep->innerDistance = innerDistance * pixelSize;
 					currentSweep->pixelSize = pixelSize;
 				}else{
-					currentSweep = NULL;
+					if(sweepsMap[elevation].id == sweepId){
+						currentSweep = &sweepsMap[elevation];
+					}
 				}
 				// if(verbose){
 				// 	fprintf(stderr, "Minirad sweep %f\n", elevation);
@@ -287,8 +294,9 @@ bool MiniRadRadarReader::LoadVolume(RadarData* radarData, RadarData::VolumeType 
 					location += 4;
 					currentEncodeParamScale = *(float*)(decompressedBuffer + location);
 					location += 4;
-					currentEncodeParamNonValues[0] = *(float*)(decompressedBuffer + location);
-					location += 4;
+					currentEncodeParamNonValueCount = readVariableUint(decompressedBuffer, &location);
+					currentEncodeParamNonValues = (float*)(decompressedBuffer + location);
+					location += currentEncodeParamNonValueCount * 4;
 				}
 				break;
 			}
@@ -347,8 +355,10 @@ bool MiniRadRadarReader::LoadVolume(RadarData* radarData, RadarData::VolumeType 
 	
 	
 	radarData->stats.pixelSize = minPixelSize;
-	// this could be a bad assumption if inner distances vary per sweep
-	radarData->stats.innerDistance = sweeps[0].innerDistance / minPixelSize;
+	if(sweeps.size() > 0){
+		// this could be a bad assumption if inner distances vary per sweep
+		radarData->stats.innerDistance = sweeps[0].innerDistance / minPixelSize;
+	}
 	if (radarData->sweepBufferCount == 0) {
 		radarData->sweepBufferCount = sweeps.size();
 	}
@@ -403,7 +413,8 @@ bool MiniRadRadarReader::LoadVolume(RadarData* radarData, RadarData::VolumeType 
 		const SweepData* sweep = &sweeps[index];
 		radarData->sweepInfo[sweepIndex].actualRayCount = sweep->rays.size();
 		radarData->sweepInfo[sweepIndex].elevationAngle = sweep->elevation;
-		radarData->sweepInfo[sweepIndex].id = sweepIndex;
+		radarData->sweepInfo[sweepIndex].id = sweep->id;
+		radarData->sweepInfo[sweepIndex].index = sweepIndex;
 		// fprintf(stderr, "%f %i %i %f %f\n", radarData->sweepInfo[sweepIndex].elevationAngle, sweep->rayCount, sweep->binCount, sweep->multiplier, sweep->offset);
 		int thetaSize = sweep->rays.size();
 		int sweepOffset = sweepIndex * radarData->sweepBufferSize;
