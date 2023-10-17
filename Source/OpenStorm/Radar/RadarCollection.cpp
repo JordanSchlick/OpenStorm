@@ -42,19 +42,32 @@ public:
 // task for asynchronously reading file list from disk
 class AsyncPollFilesTask : public AsyncTaskRunner {
 public:
+	class CacheData {
+		public:
+		RadarFile radarFile;
+		// index of file in the vector
+		size_t index = 0;
+		size_t seenOnRunId = 0;
+	};
 	
 	// RadarCollection* collection;
 	std::string filePath;
 	// map used to speed up the reloading large directories
-	std::unordered_map<std::string, RadarFile> radarFilesCache = {};
+	std::unordered_map<std::string, CacheData> radarFilesCache = {};
 	// new array of files
 	std::vector<RadarFile> radarFilesNew = {};
 	// if the new array of files is ready for use
 	bool ready = false;
+	// incremented every run to know when a CacheData is old
+	size_t runId = 1;
+	
 	// AsyncPollFilesTask(RadarCollection* radarCollection){
 	// 	collection = radarCollection;
 	// }
+	
 	void Task(){
+		ready = false;
+		runId++;
 		radarFilesNew.clear();
 		// double benchTime;
 		// benchTime = SystemAPI::CurrentTime();
@@ -71,11 +84,10 @@ public:
 		// benchTime = SystemAPI::CurrentTime();
 		double now = SystemAPI::CurrentTime();
 		//fprintf(stderr, "now: %f\n", now);
-		int fileIndex = -1;
-		int lastFileIndex = files.size() - 1;
-		for (auto file : files) {
+		size_t lastFileIndex = files.size() - 1;
+		for (size_t fileIndex = 0; fileIndex <= lastFileIndex; fileIndex++) {
+			SystemAPI::FileStats file = files[fileIndex];
 			std::string filename = file.name;
-			fileIndex++;
 			//fprintf(stderr, "%s\n", (filePath + filename).c_str());
 			if(file.isDirectory || filename == ".gitkeep"){
 				continue;
@@ -90,19 +102,20 @@ public:
 			}
 			std::string path = filePath + filename;
 			
+			CacheData* cacheData = NULL;
 			if(radarFilesCache.find(filename) != radarFilesCache.end()){
-				RadarFile radarFile = radarFilesCache[filename];
-				if(now - radarFile.mtime < 3600 || fileIndex == lastFileIndex){
+				cacheData = &radarFilesCache[filename];
+				if(now - cacheData->radarFile.mtime < 3600 || fileIndex == lastFileIndex){
 					// only stat files that have been modified in the last hour or is the last one for changes
 					//fprintf(stderr, "file: %f %f\n", now, radarFile.mtime);
 					SystemAPI::FileStats stats = SystemAPI::GetFileStats(path);
 					if(stats.isDirectory){
 						continue;
 					}
-					radarFile.mtime = stats.mtime;
-					radarFile.size = stats.size;
+					cacheData->radarFile.mtime = stats.mtime;
+					cacheData->radarFile.size = stats.size;
 				}
-				radarFilesNew.push_back(radarFile);
+				radarFilesNew.push_back(cacheData->radarFile);
 			}else{
 				RadarFile radarFile = {};
 				radarFile.path = path;
@@ -125,8 +138,12 @@ public:
 					// fprintf(stderr, "used stat for date\n");
 				}
 				radarFilesNew.push_back(radarFile);
-				radarFilesCache[filename] = radarFile;
+				radarFilesCache[filename] = {};
+				cacheData = &radarFilesCache[filename];
+				cacheData->radarFile = radarFile;
 			}
+			cacheData->index = fileIndex;
+			cacheData->seenOnRunId = runId;
 		}
 		// benchTime = SystemAPI::CurrentTime() - benchTime;
 		// fprintf(stderr, "stat time %lf\n", benchTime);
@@ -190,9 +207,7 @@ void RadarCollection::Clear() {
 	cachedAfter = 0;
 	cachedBefore = 0;
 	lastMoveDirection = 1;
-	firstItemTime = -1;
 	firstItemIndex = -1;
-	lastItemTime = -1;
 	lastItemIndex = -1;
 	needToEmit = true;
 }
@@ -478,6 +493,12 @@ void RadarCollection::PollFilesFinalize() {
 		}
 	}
 	
+	// RadarDataHolder* cacheOld = cache;
+	
+	// cache = new RadarDataHolder[cacheSize];
+	
+	// delete[] cacheOld;
+	
 	// benchTime = SystemAPI::CurrentTime() - benchTime;
 	// fprintf(stderr, "move time %lf\n", benchTime);
 	
@@ -533,7 +554,7 @@ void RadarCollection::UnloadOldData() {
 	
 	//LogState();
 	
-	
+	// maximum number that can be loaded in one direction
 	int maxSideSize = (cacheSizeSide + cacheSizeSide - reservedCacheSize);
 	//fprintf(stderr, "remove %i %i %i\n",cachedBefore,cachedAfter,maxSideSize);
 	
@@ -546,7 +567,6 @@ void RadarCollection::UnloadOldData() {
 			firstItemIndex++;
 			cachedBefore--;
 		}
-		firstItemTime = radarFiles[firstItemIndex].time;
 	}
 	
 	
@@ -559,7 +579,6 @@ void RadarCollection::UnloadOldData() {
 			lastItemIndex--;
 			cachedAfter--;
 		}
-		lastItemTime = radarFiles[lastItemIndex].time;
 	}
 	
 	//LogState();
@@ -630,7 +649,6 @@ void RadarCollection::LoadNewData() {
 						holder->Load(file);
 						cachedAfter++;
 						lastItemIndex++;
-						lastItemTime = file.time;
 						availableSlots -= 1;
 					}else if(loopRun <= reservedCacheSize){
 						// reserve for future available files
@@ -656,7 +674,6 @@ void RadarCollection::LoadNewData() {
 						holder->Load(file);
 						cachedBefore++;
 						firstItemIndex--;
-						firstItemTime = file.time;
 						availableSlots -= 1;
 					}else if(loopRun <= reservedCacheSize){
 						// reserve for future available files

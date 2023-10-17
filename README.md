@@ -71,3 +71,6 @@ In general just try to be consistent with existing code. The following guideline
 * Class functions are upper case while variables are lower case.
 * Try to keep as few includes as possible in .h files to reduce compile times.
 
+
+## Supporters
+![WXFanatics](https://avatars.githubusercontent.com/u/96398274?s=48)

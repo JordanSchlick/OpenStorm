@@ -69,6 +69,9 @@ public:
 							break;
 						}
 					}
+					if(canceled){
+						break;
+					}
 				}
 			}
 			// RadarData::FreeNexradData(nexradData);

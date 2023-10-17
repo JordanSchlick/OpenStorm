@@ -118,7 +118,7 @@ private:
 	// true if allocate has been called
 	bool allocated = false;
 
-	// holds currently laoded radar data
+	// array that holds currently loaded radar data
 	RadarDataHolder* cache = NULL;
 	
 	// size of cache, expected to be even with one spot for the current data and one empty spot at all times, should be a minimum of 4
@@ -166,10 +166,9 @@ private:
 	// if radar data needs to be emitted to listeners when it is loaded
 	bool needToEmit = true;
 	
-	// info about locations of files in the directory and time
-	float firstItemTime = -1;
+	// index of the first loaded item in the radarFiles array
 	int firstItemIndex = -1;
-	float lastItemTime = -1;
+	// index of the last loaded item in the radarFiles array
 	int lastItemIndex = -1;
 	
 	// next system time to advance
