@@ -603,6 +603,15 @@ void AImGuiUI::Tick(float deltaTime)
 				ImGui::TreePop();
 			}
 			
+			static int fileIndex = 0;
+			ImGui::SetNextItemWidth(200);
+			ImGui::InputInt("Jump pos", &fileIndex);
+			ImGui::SameLine();
+			if (ImGui::Button("Jump")) {
+				size_t fileIndexValue = fileIndex;
+				globalState.EmitEvent("JumpToIndex", "", &fileIndexValue);
+			}
+			
 			#if WITH_EDITOR
 			static std::string assetName = "/Engine/Transient.VolumeTexture1";
 			ImGui::InputText("Asset", &assetName);

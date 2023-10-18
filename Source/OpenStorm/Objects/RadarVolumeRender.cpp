@@ -272,6 +272,12 @@ void ARadarVolumeRender::BeginPlay()
 		RadarData::VolumeType volumeType = *(RadarData::VolumeType*)extraData;
 		radarCollection->ChangeProduct(volumeType);
 	}));
+	callbackIds.push_back(globalState->RegisterEvent("JumpToIndex", [this, globalState](std::string stringData, void* extraData) {
+		if (extraData == NULL) {
+			return;
+		}
+		radarCollection->Jump(*(size_t*)extraData);
+	}));
 	
 	//RandomizeTexture();
 }

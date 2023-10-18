@@ -73,7 +73,11 @@ public:
 	void PollFiles();
 	
 	// reload file at index, -1 for current
-	void ReloadFile(int index);
+	void ReloadFile(int cacheIndex);
+	
+	// jump to index in directory
+	// rebuilds cache while trying to reuse existing cache
+	void Jump(size_t index);
 	
 	// moves the curent position
 	void Move(int delta);
@@ -119,7 +123,9 @@ private:
 	bool allocated = false;
 
 	// array that holds currently loaded radar data
-	RadarDataHolder* cache = NULL;
+	RadarDataHolder** cache = NULL;
+	// array that holds underlying data but out of order
+	RadarDataHolder* cacheItems = NULL;
 	
 	// size of cache, expected to be even with one spot for the current data and one empty spot at all times, should be a minimum of 4
 	int cacheSize = 0;

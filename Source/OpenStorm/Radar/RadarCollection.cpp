@@ -12,11 +12,17 @@ inline int modulo(int i, int n) {
 }
 
 // compares if argument larger is larger than argument smaller within a looped space
-bool moduloCompare(int smaller, int larger, int n) {
+inline bool moduloCompare(int smaller, int larger, int n) {
 	int offset = n/2 - smaller;
 	return modulo(smaller + offset,n) < modulo(larger + offset,n);
 }
 
+inline float clamp(float value, float minValue, float maxValue){
+	return std::min(std::max(value, minValue), maxValue);
+}
+inline uint64_t clamp(uint64_t value, uint64_t minValue, uint64_t maxValue){
+	return std::min(std::max(value, minValue), maxValue);
+}
 
 
 // helper for testing
@@ -176,9 +182,11 @@ void RadarCollection::Allocate(int newCacheSize) {
 	reservedCacheSizeMax = cacheSizeSide;
 	desiredLoadingDistance = reservedCacheSize / 2;
 	currentPosition = cacheSize / 2;
-	cache = new RadarDataHolder[cacheSize];
+	cache = new RadarDataHolder*[cacheSize];
+	cacheItems = new RadarDataHolder[cacheSize];
 	for(int i = 0; i < cacheSize; i++){
-		cache[i].collection = this;
+		cache[i] = &cacheItems[i];
+		cache[i]->collection = this;
 	}
 	allocated = true;
 }
@@ -188,6 +196,11 @@ void RadarCollection::Free() {
 	Clear();
 	if(cache != NULL){
 		delete[] cache;
+		cache = NULL;
+	}
+	if(cacheItems != NULL){
+		delete[] cacheItems;
+		cacheItems = NULL;
 	}
 }
 
@@ -199,7 +212,7 @@ void RadarCollection::Clear() {
 	}
 	if(cache != NULL){
 		for(int i = 0; i < cacheSize; i++){
-			cache[i].Unload();
+			cache[i]->Unload();
 		}
 	}
 	// reset variables
@@ -209,6 +222,137 @@ void RadarCollection::Clear() {
 	lastMoveDirection = 1;
 	firstItemIndex = -1;
 	lastItemIndex = -1;
+	needToEmit = true;
+}
+
+void RadarCollection::Jump(size_t index) {
+	if(!allocated || radarFiles.size() == 0){
+		return;
+	}
+	index = std::min(index, radarFiles.size() - 1);
+	
+	
+	// used holders with a filename
+	std::map<std::string, RadarDataHolder*> usedHolders;
+	// left over unloaded holders
+	std::vector<RadarDataHolder*> unusedHolders;
+	
+	// add to usedHolders and unusedHolders
+	for(int i = 0; i < cacheSize; i++){
+		RadarDataHolder* holder = cache[i];
+		if(holder->state != RadarDataHolder::DataStateUnloaded){
+			std::string filename = holder->fileInfo.name;
+			if(usedHolders.count(filename) > 0){
+				unusedHolders.push_back(holder);
+			}else{
+				usedHolders[filename] = holder;
+			}
+		}else{
+			unusedHolders.push_back(holder);
+		}
+	}
+	
+	
+	
+	// int64_t delta = index - currentPosition;
+	// cachedBefore = clamp(cachedBefore + delta, 0, cacheSizeSide * 2);
+	// cachedAfter = clamp(cachedAfter - delta, 0, cacheSizeSide * 2);
+	// currentPosition = modulo(currentPosition + delta, cacheSize);
+	
+	// check for reusable holders
+	size_t firstTestIndex = std::max((int64_t)index - cacheSize, (int64_t)0);
+	size_t lastTestIndex = std::min((int64_t)index + cacheSize, (int64_t)radarFiles.size());
+	size_t firstReusableIndex = index;
+	size_t lastReusableIndex = index;
+	for(size_t i = firstTestIndex; i < lastTestIndex; i++){
+		if(usedHolders.count(radarFiles[i].name) > 0){
+			firstReusableIndex = std::min(firstReusableIndex, i);
+			lastReusableIndex = std::max(lastReusableIndex, i);
+		}
+	}
+	
+	// recalculate size of sides of cache
+	int targetCachedBefore = index - firstReusableIndex;
+	int targetCachedAfter = lastReusableIndex - index;
+	if(targetCachedBefore + targetCachedAfter > cacheSizeSide * 2){
+		// range is too large and needs to be decreased
+		if(targetCachedBefore < targetCachedAfter){
+			targetCachedBefore = std::min(targetCachedBefore, cacheSizeSide);
+			targetCachedAfter = (cacheSizeSide * 2) - targetCachedBefore;
+		}else{
+			targetCachedAfter = std::min(targetCachedAfter, cacheSizeSide);
+			targetCachedBefore = (cacheSizeSide * 2) - targetCachedAfter;
+		}
+	}
+	
+	// clear cache before rebuilding
+	for(int i = 0; i < cacheSize; i++){
+		cache[i] = NULL;
+	}
+	
+	// move current position
+	int64_t delta = index - (firstItemIndex + cachedBefore);
+	cachedBefore = targetCachedBefore;
+	cachedAfter = targetCachedAfter;
+	firstItemIndex = index - cachedBefore;
+	lastItemIndex = index + targetCachedAfter;
+	currentPosition = modulo(currentPosition + delta, cacheSize);
+	fprintf(stderr, "%i %i %i %i\n", (int)cachedBefore, (int)cachedAfter, (int)firstItemIndex, (int)lastItemIndex);
+	
+	
+	// move used holders back into cache
+	for(int i = 0; i < targetCachedBefore + targetCachedAfter + 1; i++){
+		size_t fileIndex = index - targetCachedBefore + i;
+		size_t cacheIndex = modulo(currentPosition - targetCachedBefore + i, cacheSize);
+		RadarFile* file = &radarFiles[fileIndex];
+		if(usedHolders.count(file->name) > 0){
+			// move into cache
+			cache[cacheIndex] = usedHolders[file->name];
+			usedHolders.erase(file->name);
+		}
+	}
+	
+	// move remaining holders into the unused array
+	for(auto holder : usedHolders){
+		unusedHolders.push_back(holder.second);
+	}
+	
+	// move all unused holders into blank spots in the cache
+	for(int i = 0; i < cacheSize; i++){
+		if(cache[i] == NULL){
+			cache[i] = unusedHolders.back();
+			unusedHolders.pop_back();
+			cache[i]->Unload();
+		}
+	}
+	
+	// load at new current position
+	if(cache[currentPosition]->state == RadarDataHolder::DataStateUnloaded){
+		cache[currentPosition]->Load(radarFiles[index]);
+	}
+	
+	// load all unloaded ones in the range
+	for(int i = 0; i < cacheSize; i++){
+		if(i <= cachedBefore){
+			int cacheIndex = modulo(currentPosition - i, cacheSize);
+			if(cache[cacheIndex]->state == RadarDataHolder::DataStateUnloaded){
+				cache[cacheIndex]->Load(radarFiles[index - i]);
+			}
+		}
+		if(i <= cachedAfter){
+			int cacheIndex = modulo(currentPosition + i, cacheSize);
+			if(cache[cacheIndex]->state == RadarDataHolder::DataStateUnloaded){
+				cache[cacheIndex]->Load(radarFiles[index + i]);
+			}
+		}
+	}
+	
+	
+	
+	// load data outside of the reused range
+	UnloadOldData();
+	LoadNewData();
+	
 	needToEmit = true;
 }
 
@@ -223,10 +367,10 @@ void RadarCollection::Move(int delta) {
 	currentPosition = modulo(currentPosition + delta, cacheSize);
 	UnloadOldData();
 	LoadNewData();
-	if(cache[currentPosition].state == RadarDataHolder::State::DataStateLoading){
+	if(cache[currentPosition]->state == RadarDataHolder::State::DataStateLoading){
 		needToEmit = true;
-	}else if(cache[currentPosition].state == RadarDataHolder::State::DataStateLoaded){
-		Emit(&cache[currentPosition]);
+	}else if(cache[currentPosition]->state == RadarDataHolder::State::DataStateLoaded){
+		Emit(cache[currentPosition]);
 		needToEmit = false;
 	}
 }
@@ -239,13 +383,13 @@ void RadarCollection::MoveManual(int delta) {
 void RadarCollection::ChangeProduct(RadarData::VolumeType volumeType) {
 	radarDataSettings.volumeType = volumeType;
 	if(cache != NULL){
-		cache[currentPosition].Load();
+		cache[currentPosition]->Load();
 		for(int i = 1; i < cacheSize; i++){
 			if(cachedAfter >= i){
-				cache[modulo(currentPosition + i, cacheSize)].Load();
+				cache[modulo(currentPosition + i, cacheSize)]->Load();
 			}
 			if(cachedBefore >= i){
-				cache[modulo(currentPosition - i, cacheSize)].Load();
+				cache[modulo(currentPosition - i, cacheSize)]->Load();
 			}
 		}
 	}
@@ -261,7 +405,7 @@ void RadarCollection::EventLoop() {
 	//if(runs > 5000){
 	//	return;
 	//}
-	RadarDataHolder* holder = &cache[currentPosition];
+	RadarDataHolder* holder = cache[currentPosition];
 	if(needToEmit && holder->state == RadarDataHolder::State::DataStateLoaded){
 		Emit(holder);
 		needToEmit = false;
@@ -297,7 +441,7 @@ void RadarCollection::EventLoop() {
 	}
 	for(int i = -desiredLoadingDistance; i <= desiredLoadingDistance; i++){
 		int checkLocation = modulo(currentPosition + i, cacheSize);
-		if(cache[checkLocation].state == RadarDataHolder::State::DataStateLoading){
+		if(cache[checkLocation]->state == RadarDataHolder::State::DataStateLoading){
 			isDesiredLoadingDistanceClear = false;
 		}
 	}
@@ -324,7 +468,7 @@ void RadarCollection::RegisterListener(std::function<void(RadarUpdateEvent)> cal
 }
 
 RadarDataHolder* RadarCollection::GetCurrentRadarData() {
-	return &cache[currentPosition];
+	return cache[currentPosition];
 }
 
 void RadarCollection::ReadFiles(std::string path) {
@@ -530,17 +674,17 @@ void RadarCollection::PollFiles() {
 	}
 }
 
-void RadarCollection::ReloadFile(int index) {
-	if(index < 0){
-		index = currentPosition;
+void RadarCollection::ReloadFile(int cacheIndex) {
+	if(cacheIndex < 0){
+		cacheIndex = currentPosition;
 	}
-	RadarDataHolder* holder = &cache[index];
+	RadarDataHolder* holder = cache[cacheIndex];
 	if(holder->state != RadarDataHolder::State::DataStateUnloaded){
 		fprintf(stderr, "Reloading file\n");
 		RadarFile info = holder->fileInfo;
 		holder->Unload();
 		holder->Load(info);
-		if(index == currentPosition){
+		if(cacheIndex == currentPosition){
 			needToEmit = true;
 		}
 	}
@@ -560,9 +704,9 @@ void RadarCollection::UnloadOldData() {
 	
 	int amountToRemoveBefore = cachedBefore - maxSideSize;
 	//fprintf(stderr, "amountToRemoveBefore %i\n", amountToRemoveBefore);
-	if(amountToRemoveBefore > 0){
+	if(amountToRemoveBefore > 0 && lastItemIndex + 1 != radarFiles.size()){
 		for(int i = 0; i < amountToRemoveBefore; i++){
-			RadarDataHolder* holder = &cache[modulo(currentPosition - cachedBefore, cacheSize)];
+			RadarDataHolder* holder = cache[modulo(currentPosition - cachedBefore, cacheSize)];
 			holder->Unload();
 			firstItemIndex++;
 			cachedBefore--;
@@ -572,9 +716,9 @@ void RadarCollection::UnloadOldData() {
 	
 	int amountToRemoveAfter = cachedAfter - maxSideSize;
 	//fprintf(stderr, "amountToRemoveAfter %i\n", amountToRemoveAfter);
-	if(amountToRemoveAfter > 0){
+	if(amountToRemoveAfter > 0 && firstItemIndex != 0){
 		for(int i = 0; i < amountToRemoveAfter; i++){
-			RadarDataHolder* holder = &cache[modulo(currentPosition + cachedAfter, cacheSize)];
+			RadarDataHolder* holder = cache[modulo(currentPosition + cachedAfter, cacheSize)];
 			holder->Unload();
 			lastItemIndex--;
 			cachedAfter--;
@@ -599,7 +743,7 @@ void RadarCollection::LoadNewData() {
 	int loadingCount = 0;
 	int loadedCount = 0;
 	for(int i = 0; i < cacheSize; i++){
-		switch(cache[i].state){
+		switch(cache[i]->state){
 			case RadarDataHolder::State::DataStateUnloaded:
 				unloadedCount++;
 				break;
@@ -612,9 +756,9 @@ void RadarCollection::LoadNewData() {
 				break;
 		}
 	}
-	if(cache[currentPosition].state == RadarDataHolder::State::DataStateUnloaded){
+	if(cache[currentPosition]->state == RadarDataHolder::State::DataStateUnloaded){
 		// load current position if not loaded
-		cache[currentPosition].Load(radarFiles[lastItemIndex - cachedAfter]);
+		cache[currentPosition]->Load(radarFiles[lastItemIndex - cachedAfter]);
 	}
 	
 	int maxLoops = cacheSize * 2;
@@ -628,7 +772,7 @@ void RadarCollection::LoadNewData() {
 	while(availableSlots > 0 && maxLoops > 0){
 		//fprintf(stderr,"state %i %i %i\n",cachedBefore,cachedAfter,availableSlots);
 		
-		// this if statement is used to alternate between sides of the curent position so that data closesed to the current position will be scheduled for loading first
+		// this if statement is used to alternate between sides of the curent position so that data closest to the current position will be scheduled for loading first
 		// if you make a change to one section of the if statement you need to make a change the other section
 		if(side == 1){
 			//load forward
@@ -637,7 +781,7 @@ void RadarCollection::LoadNewData() {
 				forwardEnded = true;
 			}
 			if(!forwardEnded){
-				RadarDataHolder* holder = &cache[modulo(currentPosition + loopRun,cacheSize)];
+				RadarDataHolder* holder = cache[modulo(currentPosition + loopRun,cacheSize)];
 				
 				if(holder->state != RadarDataHolder::State::DataStateUnloaded){
 					// already loaded or loading
@@ -663,7 +807,7 @@ void RadarCollection::LoadNewData() {
 				backwardEnded = true;
 			}
 			if(!backwardEnded){
-				RadarDataHolder* holder = &cache[modulo(currentPosition - loopRun,cacheSize)];
+				RadarDataHolder* holder = cache[modulo(currentPosition - loopRun,cacheSize)];
 				if(holder->state != RadarDataHolder::State::DataStateUnloaded){
 					// already loaded or loading
 					availableSlots -= 1;
@@ -727,7 +871,7 @@ void RadarCollection::Emit(RadarDataHolder* holder) {
 std::string RadarCollection::StateString(){
 	std::string state = "Radar Cache: [";
 	for(int i = 0; i < cacheSize; i++){
-		switch(cache[i].state){
+		switch(cache[i]->state){
 			case RadarDataHolder::State::DataStateUnloaded:
 				if(i == currentPosition){
 					state += ",";
@@ -759,7 +903,7 @@ std::string RadarCollection::StateString(){
 std::vector<RadarDataHolder::State> RadarCollection::StateVector() {
 	std::vector<RadarDataHolder::State> stateVector = std::vector<RadarDataHolder::State>(cacheSize);
 	for(int i = 0; i < cacheSize; i++){
-		stateVector[i] = cache[i].state;
+		stateVector[i] = cache[i]->state;
 	}
 	return stateVector;
 }

@@ -6,6 +6,7 @@ GlobalState holds the settings and state of the application. A majority of it wi
 Events are named. They can also have some data associated with them. Extra data is shown in parentheses. The data can either be a string or/and void*. Both are always passed but may not be used. Items with no parentheses accept no extra data at all.
 * `BackwardStep` - Move to the next file backwards in time
 * `ForwardStep` - Move to the next file forwards in time
+* `JumpToIndex(unused, size_t*)` - Change to a file by its index in the directory
 * `UpdateVolumeParameters` - Used after changing settings involving the volume shader that may require expensive operations on the shader to apply
 * `ChangeProduct(unused, RadarData::VolumeType*)` - Change the type of product being displayed
 * `LocationMarkersUpdate` - Update location markers from global state
