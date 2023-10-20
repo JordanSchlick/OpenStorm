@@ -23,7 +23,7 @@ public:
 
 
 bool MiniRadRadarReader::LoadFile(std::string filePath){
-	verbose = true;
+	// verbose = true;
 	internal = new MiniRadInternal;
 	
 	int lastSlash = std::max(std::max((int)filePath.find_last_of('/'), (int)filePath.find_last_of('\\')), -1);

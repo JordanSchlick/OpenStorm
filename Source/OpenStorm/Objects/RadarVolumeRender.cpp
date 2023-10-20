@@ -293,6 +293,7 @@ void ARadarVolumeRender::HandleRadarDataEvent(RadarCollection::RadarUpdateEvent 
 		
 		// benchTime = SystemAPI::CurrentTime() - benchTime;
 		// fprintf(stderr, "volume decompress time %fs\n", benchTime);
+		// fprintf(stderr, "volume bounds %f %f %f\n", radarData->stats.boundLower, radarData->stats.boundUpper, radarData->stats.boundRadius);
 		
 		InitializeTextures();
 		

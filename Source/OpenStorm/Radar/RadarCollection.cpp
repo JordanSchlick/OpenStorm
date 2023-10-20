@@ -37,9 +37,7 @@ public:
 	}
 	void Task(){
 		
-		#ifdef _WIN32
-		_sleep(timeout * 1000);
-		#endif
+		SystemAPI::Sleep(timeout);
 		
 		collection->LogState();
 	}
@@ -54,18 +52,28 @@ public:
 		// index of file in the vector
 		size_t index = 0;
 		size_t seenOnRunId = 0;
+		size_t changedOnRunId = 0;
 	};
 	
 	// RadarCollection* collection;
-	std::string filePath;
+	// location of directory to load from
+	std::string filePath = "";
+	// file to initially start on when loading directory
+	std::string defaultFileName = "";
 	// map used to speed up the reloading large directories
 	std::unordered_map<std::string, CacheData> radarFilesCache = {};
 	// new array of files
 	std::vector<RadarFile> radarFilesNew = {};
 	// if the new array of files is ready for use
 	bool ready = false;
+	// if any files have changed since the last poll
+	bool hasChanged = false;
 	// incremented every run to know when a CacheData is old
 	size_t runId = 1;
+	// size number of files found on the last run
+	size_t fileCount = 0;
+	// index of starting file
+	size_t defaultFileIndex = 0;
 	
 	// AsyncPollFilesTask(RadarCollection* radarCollection){
 	// 	collection = radarCollection;
@@ -73,7 +81,9 @@ public:
 	
 	void Task(){
 		ready = false;
+		hasChanged = false;
 		runId++;
+		defaultFileIndex = (size_t)-1;
 		radarFilesNew.clear();
 		// double benchTime;
 		// benchTime = SystemAPI::CurrentTime();
@@ -91,6 +101,7 @@ public:
 		double now = SystemAPI::CurrentTime();
 		//fprintf(stderr, "now: %f\n", now);
 		size_t lastFileIndex = files.size() - 1;
+		size_t finalFileIndex = 0;
 		for (size_t fileIndex = 0; fileIndex <= lastFileIndex; fileIndex++) {
 			SystemAPI::FileStats file = files[fileIndex];
 			std::string filename = file.name;
@@ -118,8 +129,12 @@ public:
 					if(stats.isDirectory){
 						continue;
 					}
-					cacheData->radarFile.mtime = stats.mtime;
-					cacheData->radarFile.size = stats.size;
+					if(cacheData->radarFile.size != stats.size || cacheData->radarFile.mtime != stats.mtime){
+						cacheData->radarFile.mtime = stats.mtime;
+						cacheData->radarFile.size = stats.size;
+						cacheData->changedOnRunId = runId;
+						hasChanged = true;
+					}
 				}
 				radarFilesNew.push_back(cacheData->radarFile);
 			}else{
@@ -147,9 +162,26 @@ public:
 				radarFilesCache[filename] = {};
 				cacheData = &radarFilesCache[filename];
 				cacheData->radarFile = radarFile;
+				cacheData->changedOnRunId = runId;
+				hasChanged = true;
 			}
-			cacheData->index = fileIndex;
+			if(cacheData->index != finalFileIndex){
+				hasChanged = true;
+			}
+			if(defaultFileName == filename){
+				defaultFileIndex = finalFileIndex;
+			}
+			cacheData->index = finalFileIndex++;
 			cacheData->seenOnRunId = runId;
+		}
+		if(radarFilesNew.size() != fileCount){
+			hasChanged = true;
+		}
+		fileCount = radarFilesNew.size();
+		if(fileCount == 0){
+			defaultFileIndex = 0;
+		}else{
+			defaultFileIndex = std::min(defaultFileIndex, fileCount - 1);
 		}
 		// benchTime = SystemAPI::CurrentTime() - benchTime;
 		// fprintf(stderr, "stat time %lf\n", benchTime);
@@ -225,7 +257,7 @@ void RadarCollection::Clear() {
 	needToEmit = true;
 }
 
-void RadarCollection::Jump(size_t index) {
+void RadarCollection::Jump(size_t index, bool keepCurrentCachePosition) {
 	if(!allocated || radarFiles.size() == 0){
 		return;
 	}
@@ -261,10 +293,10 @@ void RadarCollection::Jump(size_t index) {
 	
 	// check for reusable holders
 	size_t firstTestIndex = std::max((int64_t)index - cacheSize, (int64_t)0);
-	size_t lastTestIndex = std::min((int64_t)index + cacheSize, (int64_t)radarFiles.size());
+	size_t lastTestIndex = std::min((int64_t)index + cacheSize, (int64_t)radarFiles.size() - 1);
 	size_t firstReusableIndex = index;
 	size_t lastReusableIndex = index;
-	for(size_t i = firstTestIndex; i < lastTestIndex; i++){
+	for(size_t i = firstTestIndex; i <= lastTestIndex; i++){
 		if(usedHolders.count(radarFiles[i].name) > 0){
 			firstReusableIndex = std::min(firstReusableIndex, i);
 			lastReusableIndex = std::max(lastReusableIndex, i);
@@ -296,7 +328,9 @@ void RadarCollection::Jump(size_t index) {
 	cachedAfter = targetCachedAfter;
 	firstItemIndex = index - cachedBefore;
 	lastItemIndex = index + targetCachedAfter;
-	currentPosition = modulo(currentPosition + delta, cacheSize);
+	if(!keepCurrentCachePosition){
+		currentPosition = modulo(currentPosition + delta, cacheSize);
+	}
 	fprintf(stderr, "%i %i %i %i\n", (int)cachedBefore, (int)cachedAfter, (int)firstItemIndex, (int)lastItemIndex);
 	
 	
@@ -422,14 +456,17 @@ void RadarCollection::EventLoop() {
 			if(holder->state != RadarDataHolder::State::DataStateLoading && radarFiles.size() > 1){
 				Move(lastMoveDirection);
 			}
-			nextAdvanceTime = now + autoAdvanceInterval;
+			// set next animate time taking into account who late this frame is
+			nextAdvanceTime = now + std::max(0.0, autoAdvanceInterval - (now - nextAdvanceTime));
 		}
 	}else{
 		nextAdvanceTime = 0;
 	}
 	if(pollFilesTask != NULL && pollFilesTask->ready){
 		PollFilesFinalize();
-		pollFilesTask->ready = false;
+		if(pollFilesTask != NULL){
+			pollFilesTask->ready = false;
+		}
 	}
 	if(poll){
 		if(nextPollTime <= now){
@@ -565,94 +602,141 @@ void RadarCollection::PollFilesFinalize() {
 	
 	std::vector<RadarFile>* radarFilesNew = &pollFilesTask->radarFilesNew;
 	
-	if(radarFiles.size() > 0 && firstItemIndex < radarFiles.size() && lastItemIndex < radarFiles.size()){
-		// TODO: implement reloading files by replacing radarFiles and changing firstItemIndex and lastItemIndex to reflect the new vector
-		//fprintf(stderr, "file reloading is not implemented yet\n");
-		//return;
-		// keep current location at the end if it is there before loading new files
-		moveToEnd = lastItemIndex == radarFiles.size() - 1 && cachedAfter == 0;
-		std::string firstItemName = radarFiles[firstItemIndex].name;
-		std::string lastItemName = radarFiles[lastItemIndex].name;
-		int newFirstItemIndex = -1;
-		int newLastItemIndex = -1;
-		int filesCountNew = radarFilesNew->size();
-		int offset = firstItemIndex;
-		for(int i = 0; i < filesCountNew && (newFirstItemIndex == -1 || newLastItemIndex == -1); i++){
-			// start with offset so minimal loops are needed if files are just being added to a large directory
-			int location = (i + offset) % filesCountNew;
-			RadarFile* fileNew = &(*radarFilesNew)[location];
-			if(newFirstItemIndex == -1 && firstItemName == fileNew->name){
-				newFirstItemIndex = location;
-			}
-			if(newLastItemIndex == -1 && lastItemName == fileNew->name){
-				newLastItemIndex = location;
-			}
-		}
-		if(lastItemIndex - firstItemIndex == newLastItemIndex - newFirstItemIndex){
-			// nothing has been added or removed form the loaded range so just update indexes
-			int indexOffset = newLastItemIndex - lastItemIndex;
-			// reload files whose sizes have changed starting from currentPosition and going forward
-			for(int i = 0; i <= cachedAfter; i++){
-				int location = lastItemIndex - cachedAfter + i;
-				if(radarFiles[location].size != (*radarFilesNew)[location + indexOffset].size){
-					ReloadFile((currentPosition + i) % cacheSize);
+	// if(radarFiles.size() > 0 && firstItemIndex < radarFiles.size() && lastItemIndex < radarFiles.size()){
+	// 	// TODO: implement reloading files by replacing radarFiles and changing firstItemIndex and lastItemIndex to reflect the new vector
+	// 	//fprintf(stderr, "file reloading is not implemented yet\n");
+	// 	//return;
+	// 	// keep current location at the end if it is there before loading new files
+	// 	moveToEnd = lastItemIndex == radarFiles.size() - 1 && cachedAfter == 0;
+	// 	std::string firstItemName = radarFiles[firstItemIndex].name;
+	// 	std::string lastItemName = radarFiles[lastItemIndex].name;
+	// 	int newFirstItemIndex = -1;
+	// 	int newLastItemIndex = -1;
+	// 	int filesCountNew = radarFilesNew->size();
+	// 	int offset = firstItemIndex;
+	// 	for(int i = 0; i < filesCountNew && (newFirstItemIndex == -1 || newLastItemIndex == -1); i++){
+	// 		// start with offset so minimal loops are needed if files are just being added to a large directory
+	// 		int location = (i + offset) % filesCountNew;
+	// 		RadarFile* fileNew = &(*radarFilesNew)[location];
+	// 		if(newFirstItemIndex == -1 && firstItemName == fileNew->name){
+	// 			newFirstItemIndex = location;
+	// 		}
+	// 		if(newLastItemIndex == -1 && lastItemName == fileNew->name){
+	// 			newLastItemIndex = location;
+	// 		}
+	// 	}
+	// 	if(lastItemIndex - firstItemIndex == newLastItemIndex - newFirstItemIndex){
+	// 		// nothing has been added or removed form the loaded range so just update indexes
+	// 		int indexOffset = newLastItemIndex - lastItemIndex;
+	// 		// reload files whose sizes have changed starting from currentPosition and going forward
+	// 		for(int i = 0; i <= cachedAfter; i++){
+	// 			int location = lastItemIndex - cachedAfter + i;
+	// 			if(radarFiles[location].size != (*radarFilesNew)[location + indexOffset].size){
+	// 				ReloadFile((currentPosition + i) % cacheSize);
+	// 			}
+	// 		}
+	// 		// reload files whose sizes have changed in the other direction from currentPosition
+	// 		for(int i = 1; i <= cachedBefore; i++){
+	// 			int location = firstItemIndex + cachedBefore - i;
+	// 			if(radarFiles[location].size != (*radarFilesNew)[location + indexOffset].size){
+	// 				ReloadFile((currentPosition - i + cacheSize) % cacheSize);
+	// 			}
+	// 		}
+	// 		lastItemIndex = newLastItemIndex;
+	// 		firstItemIndex = newFirstItemIndex;
+	// 		radarFiles = std::move(*radarFilesNew);
+	// 	}else{
+	// 		// loaded range has been modified on disk and needs to be completely reloaded
+	// 		Clear();
+	// 		radarFiles = std::move(*radarFilesNew);
+	// 		lastItemIndex = radarFiles.size() - 1;
+	// 		firstItemIndex = lastItemIndex;
+	// 	}
+	// }else{
+	// 	radarFiles = std::move(*radarFilesNew);
+	// 	if(lastItemIndex == -1){
+	// 		if(defaultFileName != ""){
+	// 			// start on chosen file
+	// 			int index = 0;
+	// 			for (auto file : radarFiles) {
+	// 				if(file.name == defaultFileName){
+	// 					lastItemIndex = index;
+	// 					firstItemIndex = lastItemIndex;
+	// 					break;
+	// 				}
+	// 				index++;
+	// 			}
+	// 		}
+	// 		if(lastItemIndex == -1){
+	// 			lastItemIndex = radarFiles.size() - 1;
+	// 			firstItemIndex = lastItemIndex;
+	// 		}
+	// 	}
+	// }
+	
+	if(pollFilesTask->hasChanged){
+		if(radarFiles.size() > 0 && radarFilesNew->size() > 0){
+			// incorporate changes into existing cache
+			
+			// check existing file
+			size_t oldIndex = firstItemIndex + cachedBefore;
+			RadarFile oldFile = radarFiles[oldIndex];
+			bool wasLast = oldIndex + 1 == radarFiles.size();
+			
+			// move new file list into radarFiles
+			radarFiles = std::move(*radarFilesNew);
+			
+			// check for new index of file
+			size_t newFileIndex = (size_t)-1;
+			if(!wasLast && pollFilesTask->radarFilesCache.count(oldFile.name) > 0){
+				AsyncPollFilesTask::CacheData cacheData = pollFilesTask->radarFilesCache[oldFile.name];
+				if(cacheData.seenOnRunId == pollFilesTask->runId){
+					newFileIndex = cacheData.index;
 				}
 			}
-			// reload files whose sizes have changed in the other direction from currentPosition
-			for(int i = 1; i <= cachedBefore; i++){
-				int location = firstItemIndex + cachedBefore - i;
-				if(radarFiles[location].size != (*radarFilesNew)[location + indexOffset].size){
-					ReloadFile((currentPosition - i + cacheSize) % cacheSize);
-				}
-			}
-			lastItemIndex = newLastItemIndex;
-			firstItemIndex = newFirstItemIndex;
-			radarFiles = std::move(*radarFilesNew);
-		}else{
-			// loaded range has been modified on disk and needs to be completely reloaded
-			Clear();
-			radarFiles = std::move(*radarFilesNew);
-			lastItemIndex = radarFiles.size() - 1;
-			firstItemIndex = lastItemIndex;
-		}
-	}else{
-		radarFiles = std::move(*radarFilesNew);
-		if(lastItemIndex == -1){
-			if(defaultFileName != ""){
-				// start on chosen file
-				int index = 0;
-				for (auto file : radarFiles) {
-					if(file.name == defaultFileName){
-						lastItemIndex = index;
-						firstItemIndex = lastItemIndex;
-						break;
+			
+			// move to new index and rebuild cache
+			Jump(newFileIndex, newFileIndex < radarFiles.size());
+			
+			
+			// check if any of the loaded items need to be reloaded
+			for(int i = 0; i < cachedBefore + cachedAfter + 1; i++){
+				int index = modulo(currentPosition - cachedBefore + i, cacheSize);
+				if(cache[index]->state != RadarDataHolder::DataStateUnloaded){
+					RadarFile* radarFile = &radarFiles[firstItemIndex + i];
+					if(pollFilesTask->radarFilesCache.count(radarFile->name)){
+						// check if the file was changed
+						if(pollFilesTask->radarFilesCache[radarFile->name].changedOnRunId == pollFilesTask->runId){
+							cache[index]->Unload();
+							cache[index]->Load(*radarFile);
+						}
 					}
-					index++;
 				}
 			}
-			if(lastItemIndex == -1){
-				lastItemIndex = radarFiles.size() - 1;
-				firstItemIndex = lastItemIndex;
-			}
+		}else if(radarFilesNew->size() > 0){
+			// load new data into blank cache
+			radarFiles = std::move(*radarFilesNew);
+			size_t startIndex = pollFilesTask->defaultFileIndex;
+			firstItemIndex = startIndex;
+			lastItemIndex = startIndex;
+			LoadNewData();
+		}else{
+			// unload cache
+			Clear();
 		}
+		
 	}
-	
-	// RadarDataHolder* cacheOld = cache;
-	
-	// cache = new RadarDataHolder[cacheSize];
-	
-	// delete[] cacheOld;
 	
 	// benchTime = SystemAPI::CurrentTime() - benchTime;
 	// fprintf(stderr, "move time %lf\n", benchTime);
 	
 	// benchTime = SystemAPI::CurrentTime();
-	UnloadOldData();
-	LoadNewData();
-	if(moveToEnd && cachedAfter > 0){
-		// a better place for keeping the current position at the end might be in LoadNewData with a global state set on Move
-		Move(cachedAfter);
-	}
+	// UnloadOldData();
+	// LoadNewData();
+	// if(moveToEnd && cachedAfter > 0){
+	// 	// a better place for keeping the current position at the end might be in LoadNewData with a global state set on Move
+	// 	Move(cachedAfter);
+	// }
 	
 	// benchTime = SystemAPI::CurrentTime() - benchTime;
 	// fprintf(stderr, "load time %lf\n", benchTime);
@@ -670,6 +754,7 @@ void RadarCollection::PollFiles() {
 	
 	if(!pollFilesTask->running && !pollFilesTask->ready){
 		pollFilesTask->filePath = filePath;
+		pollFilesTask->defaultFileName = defaultFileName;
 		pollFilesTask->Start();
 	}
 }
@@ -947,9 +1032,7 @@ void RadarCollection::LogState() {
 class AsyncTaskTest : public AsyncTaskRunner{
 	void Task(){
 		fprintf(stderr,"Starting task\n");
-		#ifdef _WIN32
-		_sleep(1000);
-		#endif
+		SystemAPI::Sleep(1);
 		fprintf(stderr,"Ending task\n");
 	}
 };

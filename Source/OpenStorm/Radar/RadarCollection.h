@@ -77,7 +77,7 @@ public:
 	
 	// jump to index in directory
 	// rebuilds cache while trying to reuse existing cache
-	void Jump(size_t index);
+	void Jump(size_t index, bool keepCurrentCachePosition = false);
 	
 	// moves the curent position
 	void Move(int delta);
