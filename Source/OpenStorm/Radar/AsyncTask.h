@@ -4,7 +4,8 @@
 
 class AsyncTaskRunner{
 public:
-	// this represents if the task has been canceled. if it is true the code in Task should not modify outside memory
+	// this represents if the task has been canceled.  
+	// if it is true the code in Task should not modify outside memory and should exit as soon as possible
 	bool canceled = false;
 	
 	// is task finished

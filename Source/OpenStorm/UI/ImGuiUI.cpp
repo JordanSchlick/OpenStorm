@@ -347,6 +347,10 @@ void AImGuiUI::Tick(float deltaTime)
 				if (ImGui::Button("Load Files")) {
 					ChooseFiles();
 				}
+				if (ImGui::TreeNodeEx("Download", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+					ImGui::Checkbox("Download data", &globalState.downloadData);
+					ImGui::TreePop();
+				}
 				ImGui::TreePop();
 			}
 			ImGui::Separator();

@@ -61,6 +61,7 @@ void AsyncTaskRunner::Start(bool autoDeleteTask) {
 	}
 	running = true;
 	finished = false;
+	canceled = false;
 	this->autoDelete = autoDeleteTask;
 	if(0){
 		std::future<void> future = std::async(std::launch::async, [this] {

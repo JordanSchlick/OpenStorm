@@ -144,6 +144,7 @@ public:
 				radarFile.time = RadarCollection::ParseFileNameDate(filename);
 				radarFile.size = file.size;
 				if(file.mtime > 0){
+					// this mtime does not seem to perfectly line up with the file stat time which can cause files to be reloaded upon next poll
 					radarFile.mtime = file.mtime;
 				}if(radarFile.time > 0){
 					radarFile.mtime = radarFile.time;

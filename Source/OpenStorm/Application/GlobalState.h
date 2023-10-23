@@ -80,6 +80,10 @@ public:
 	float sliceVerticalRotation = 0; // rotation of vertical slice
 	bool sliceVolumetric = false; // if the slice should be volumetric instead of flat
 	
+	bool downloadData = false; // if realtime data downloading is enabled
+	std::string downloadSiteId = "KMKX";
+	float downloadPollInterval = 60;
+	
 	std::vector<Waypoint> locationMarkers = {};
 	
 	// globe that is lined up with radar data

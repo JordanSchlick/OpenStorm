@@ -13,7 +13,7 @@ public class OpenStorm : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "RenderCore", "Engine",  "Slate", "SlateCore"});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "InputCore", "ImGui", "AudioCaptureCore", "ProceduralMeshComponent", "ImageWrapper", "RHI", "Json"});
+		PrivateDependencyModuleNames.AddRange(new string[] { "InputCore", "ImGui", "AudioCaptureCore", "ProceduralMeshComponent", "ImageWrapper", "RHI", "Json", "HTTP"});
 		
 		bEnableExceptions = true;
 		
@@ -27,6 +27,8 @@ public class OpenStorm : ModuleRules
 		if(Directory.Exists(Path.Combine(ModuleDirectory, "Radar/Deps/hdf5"))){
 			PublicDefinitions.Add("HDF5=1");
 		}
+		
+		PublicDefinitions.Add("_CRT_SECURE_NO_WARNINGS");
 		
 		if (Target.bBuildEditor)
 		{
