@@ -11,6 +11,7 @@
 #include "Components/TextRenderComponent.h"
 #include "Camera/CameraComponent.h"
 #include "../EngineHelpers/StringUtils.h"
+#include "RadarGameStateBase.h"
 
 ALocationMarker::ALocationMarker()
 {
@@ -71,3 +72,14 @@ void ALocationMarker::EnableCollision() {
 	collisionComponent->SetActive(true);
 }
 
+void ALocationMarker::OnClick(){
+	if(markerType == MarkerTypeRadarSite){
+		ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
+		if(gameMode != NULL){
+			GlobalState* globalState = &gameMode->globalState;
+			fprintf(stderr, "Set radar site to %s\n", data.c_str());
+			globalState->downloadSiteId = data;
+			globalState->openDownloadDropdown = true;
+		}
+	}
+}

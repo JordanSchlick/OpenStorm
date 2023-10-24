@@ -28,6 +28,11 @@ public:
 	pfd::public_open_file* fileChooser = NULL;
 	std::vector<uint64_t> callbackIds = {};
 	
+	// if the left click is down and it has not been locked yet
+	bool isLeftClicking = false;
+	// actor selected by click that may be acted upon by further input
+	AActor* selectedActor = NULL;
+	
 	// called when left clicking outside of UI
 	void LeftClick();
 	void LockMouse();

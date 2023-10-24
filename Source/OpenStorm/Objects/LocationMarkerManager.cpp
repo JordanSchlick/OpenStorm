@@ -43,6 +43,7 @@ void ALocationMarkerManager::EndPlay(const EEndPlayReason::Type endPlayReason) {
 }
 
 void ALocationMarkerManager::Tick(float DeltaTime) {
+	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	auto camera = Cast<UCameraComponent>(GetWorld()->GetFirstPlayerController()->GetPawn()->GetComponentByClass(UCameraComponent::StaticClass()));
 	if (camera != NULL) {
 		FRotator rotation = camera->GetComponentRotation();
@@ -63,6 +64,10 @@ void ALocationMarkerManager::Tick(float DeltaTime) {
 				}
 			}
 			
+			if(!globalState->enableSiteMarkers && iterator->second->markerType == ALocationMarker::MarkerTypeRadarSite){
+				doDelete = true;
+			}
+			
 			if(doDelete){
 				iterator->second->Destroy();
 				locationMarkerObjects.erase(iterator++);
@@ -70,15 +75,17 @@ void ALocationMarkerManager::Tick(float DeltaTime) {
 				iterator++;
 			}
 		}
+		if(globalState->enableSiteMarkers){
+			AddSiteMarkers();
+		}
 	}
-	AddSiteMarkers();
 }
 
 void ALocationMarkerManager::UpdateWaypointMarkers() {
 	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	// loop over map and remove waypoints
 	for (auto iterator = locationMarkerObjects.cbegin(); iterator != locationMarkerObjects.cend();){
-		if(iterator->second->markerType == ALocationMarker::TYPE_WAYPOINT){
+		if(iterator->second->markerType == ALocationMarker::MarkerTypeWaypoint){
 			iterator->second->Destroy();
 			locationMarkerObjects.erase(iterator++);
 		}else{
@@ -90,7 +97,7 @@ void ALocationMarkerManager::UpdateWaypointMarkers() {
 		GlobalState::Waypoint* waypoint = &globalState->locationMarkers[i];
 		if (waypoint->enabled) {
 			ALocationMarker* marker = GetWorld()->SpawnActor<ALocationMarker>(ALocationMarker::StaticClass());
-			marker->markerType = ALocationMarker::TYPE_WAYPOINT;
+			marker->markerType = ALocationMarker::MarkerTypeWaypoint;
 			marker->latitude = waypoint->latitude;
 			marker->longitude = waypoint->longitude;
 			marker->altitude = waypoint->altitude;
@@ -116,7 +123,8 @@ void ALocationMarkerManager::AddSiteMarkers() {
 			// if close enough to camera add to world
 			if(maxSiteMarkerDistance > FVector::Distance(vectorF, camPos) && locationMarkerObjects.count(name) == 0){
 				ALocationMarker* marker = GetWorld()->SpawnActor<ALocationMarker>(ALocationMarker::StaticClass());
-				marker->markerType = ALocationMarker::TYPE_RADAR_SITE;
+				marker->markerType = ALocationMarker::MarkerTypeRadarSite;
+				marker->data = site->name;
 				marker->maxDistance = maxSiteMarkerDistance;
 				marker->latitude = site->latitude;
 				marker->longitude = site->longitude;

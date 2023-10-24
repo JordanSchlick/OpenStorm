@@ -9,7 +9,8 @@
 #include "../Objects/RadarGameStateBase.h"
 #include "../Objects/RadarViewPawn.h"
 #include "../EngineHelpers/StringUtils.h"
-#include "portable-file-dialogs.h"
+#include "./portable-file-dialogs.h"
+#include "./ClickableInterface.h"
 
 #include <vector>
 
@@ -395,6 +396,10 @@ void AImGuiUI::Tick(float deltaTime)
 				if (ImGui::Button("Load Files")) {
 					ChooseFiles();
 				}
+				if(globalState.openDownloadDropdown){
+					ImGui::SetNextItemOpen(true);
+					globalState.openDownloadDropdown = false;
+				}
 				if (ImGui::TreeNodeEx("Download", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 					ImGui::Text("Download data:");
 					if(globalState.downloadData){
@@ -472,6 +477,7 @@ void AImGuiUI::Tick(float deltaTime)
 				ImGui::Checkbox("Show Tiles", &globalState.enableMapTiles);
 				ImGui::Checkbox("Show GIS info", &globalState.enableMapGIS);
 				CustomFloatInput("GIS Brightness", 0.01, 1.5, &globalState.mapBrightnessGIS, &globalState.defaults->mapBrightnessGIS);
+				ImGui::Checkbox("Show Radar Sites", &globalState.enableSiteMarkers);
 				if (ImGui::TreeNodeEx("Waypoints", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 					char idChr[3] = {};
 					bool markersChanged = false;
@@ -790,9 +796,8 @@ void AImGuiUI::Tick(float deltaTime)
 	}
 	
 	
-	if(!io.WantCaptureMouse){
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)){
-			globalState.isMouseCaptured = true;
+	if(!io.WantCaptureMouse || isLeftClicking){
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || isLeftClicking){
 			LeftClick();
 		}
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)){
@@ -800,7 +805,6 @@ void AImGuiUI::Tick(float deltaTime)
 			//io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
 			//io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
 			//fprintf(stderr, "Capture mouse here\n");
-			globalState.isMouseCaptured = true;
 			LockMouse();
 		}
 	}
@@ -829,23 +833,49 @@ void AImGuiUI::Tick(float deltaTime)
 
 
 void AImGuiUI::LeftClick() {
-	ImVec2 mousePos = ImGui::GetMousePos();
-	FVector clickWorldLocation;
-	FVector clickWorldDirection;
-	GetWorld()->GetFirstPlayerController()->DeprojectScreenPositionToWorld(mousePos.x, mousePos.y, clickWorldLocation, clickWorldDirection);
-	fprintf(stderr, "(%f %f %f) (%f %f %f)\n",clickWorldLocation.X,clickWorldLocation.Y,clickWorldLocation.Z,clickWorldDirection.X,clickWorldDirection.Y,clickWorldDirection.Z);
-	
-	FVector traceEndLocation = clickWorldLocation + clickWorldDirection * 100000;
-	FCollisionQueryParams queryParams;
-	FHitResult hit;
-	ECollisionChannel channel = ECC_Camera;
-	GetWorld()->LineTraceSingleByChannel(hit, clickWorldLocation, traceEndLocation, channel, queryParams);
-	AActor* hitActor = hit.GetActor();
-	if(hitActor != NULL){
-		fprintf(stderr, "%s\n", StringUtils::FStringToSTDString(hitActor->GetName()).c_str());
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)){
+		isLeftClicking = true;
+		
+		// cast ray to find out what was clicked on
+		ImVec2 mousePos = ImGui::GetMousePos();
+		FVector clickWorldLocation;
+		FVector clickWorldDirection;
+		GetWorld()->GetFirstPlayerController()->DeprojectScreenPositionToWorld(mousePos.x, mousePos.y, clickWorldLocation, clickWorldDirection);
+		// fprintf(stderr, "(%f %f %f) (%f %f %f)\n",clickWorldLocation.X,clickWorldLocation.Y,clickWorldLocation.Z,clickWorldDirection.X,clickWorldDirection.Y,clickWorldDirection.Z);
+		FVector traceEndLocation = clickWorldLocation + clickWorldDirection * 100000;
+		FCollisionQueryParams queryParams;
+		FHitResult hit;
+		ECollisionChannel channel = ECC_Camera;
+		GetWorld()->LineTraceSingleByChannel(hit, clickWorldLocation, traceEndLocation, channel, queryParams);
+		AActor* hitActor = hit.GetActor();
+		if(hitActor != NULL){
+			selectedActor = hitActor;
+			// fprintf(stderr, "%s\n", StringUtils::FStringToSTDString(hitActor->GetName()).c_str());
+			if(dynamic_cast<IClickableInterface*>(hitActor) != NULL){
+				
+			}
+		}else{
+			selectedActor = NULL;
+		}
 	}
 	
-	LockMouse();
+	// lock if the mouse is moved
+	if(ImGui::IsMouseDragging(ImGuiMouseButton_Left, 2)){
+		isLeftClicking = false;
+		LockMouse();
+	}
+	
+	// the mouse was never locked before release
+	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)){
+		isLeftClicking = false;
+		if(selectedActor != NULL){
+			fprintf(stderr, "Clicking on actor %s\n", StringUtils::FStringToSTDString(selectedActor->GetName()).c_str());
+			IClickableInterface* clickable = dynamic_cast<IClickableInterface*>(selectedActor);
+			if(clickable != NULL){
+				clickable->OnClick();
+			}
+		}
+	}
 }
 
 
@@ -856,6 +886,11 @@ void AImGuiUI::LockMouse() {
 	GetWorld()->GetGameViewport()->Viewport->CaptureMouse(true);
 	GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeGameOnly());
 	//ImGuiIO& io = ImGui::GetIO();
+	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
+	if(gameMode != NULL){
+		GlobalState* globalState = &gameMode->globalState;
+		globalState->isMouseCaptured = true;
+	}
 }
 
 void AImGuiUI::UnlockMouse() {
@@ -874,6 +909,11 @@ void AImGuiUI::UnlockMouse() {
 	//io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
 	//GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeGameOnly());
 	GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeGameAndUI());
+	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
+	if(gameMode != NULL){
+		GlobalState* globalState = &gameMode->globalState;
+		globalState->isMouseCaptured = false;
+	}
 }
 
 void AImGuiUI::ligma(bool Value)

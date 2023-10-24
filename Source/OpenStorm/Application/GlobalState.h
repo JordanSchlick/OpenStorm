@@ -68,6 +68,7 @@ public:
 	bool enableMapGIS = true; // if GIS objects should be shown
 	float mapBrightness = 0.2f; // brightness of map texture
 	float mapBrightnessGIS = 0.5f; // GIS brightness relative to map brightness
+	bool enableSiteMarkers = true; // if the markers for radar sites should be shown
 	
 	int volumeType = 1; // type of radar product RadarData::VolumeType, defaults to 1 which is reflectivity
 	
@@ -81,9 +82,10 @@ public:
 	bool sliceVolumetric = false; // if the slice should be volumetric instead of flat
 	
 	bool downloadData = false; // if realtime data downloading is enabled
-	std::string downloadSiteId = "KMKX";
-	std::string downloadUrl = "https://nomads.ncep.noaa.gov/pub/data/nccf/radar/nexrad_level2/";
-	float downloadPollInterval = 60;
+	std::string downloadSiteId = "KMKX"; // the radar site to download from
+	std::string downloadUrl = "https://nomads.ncep.noaa.gov/pub/data/nccf/radar/nexrad_level2/"; // the http path where the data is located
+	float downloadPollInterval = 60; // how often a check is done for new files
+	bool openDownloadDropdown = false; // when set to true the download dropdown will be opened to alert the user to its presence
 	
 	std::vector<Waypoint> locationMarkers = {};
 	
