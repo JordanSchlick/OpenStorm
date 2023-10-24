@@ -8,6 +8,7 @@
 #include "../Radar/NexradSites/NexradSites.h"
 #include "../Objects/RadarGameStateBase.h"
 #include "../Objects/RadarViewPawn.h"
+#include "../EngineHelpers/StringUtils.h"
 #include "portable-file-dialogs.h"
 
 #include <vector>
@@ -790,7 +791,11 @@ void AImGuiUI::Tick(float deltaTime)
 	
 	
 	if(!io.WantCaptureMouse){
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)){
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)){
+			globalState.isMouseCaptured = true;
+			LeftClick();
+		}
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)){
 			// mouse release will not be received
 			//io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
 			//io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
@@ -823,7 +828,25 @@ void AImGuiUI::Tick(float deltaTime)
 }
 
 
-
+void AImGuiUI::LeftClick() {
+	ImVec2 mousePos = ImGui::GetMousePos();
+	FVector clickWorldLocation;
+	FVector clickWorldDirection;
+	GetWorld()->GetFirstPlayerController()->DeprojectScreenPositionToWorld(mousePos.x, mousePos.y, clickWorldLocation, clickWorldDirection);
+	fprintf(stderr, "(%f %f %f) (%f %f %f)\n",clickWorldLocation.X,clickWorldLocation.Y,clickWorldLocation.Z,clickWorldDirection.X,clickWorldDirection.Y,clickWorldDirection.Z);
+	
+	FVector traceEndLocation = clickWorldLocation + clickWorldDirection * 100000;
+	FCollisionQueryParams queryParams;
+	FHitResult hit;
+	ECollisionChannel channel = ECC_Camera;
+	GetWorld()->LineTraceSingleByChannel(hit, clickWorldLocation, traceEndLocation, channel, queryParams);
+	AActor* hitActor = hit.GetActor();
+	if(hitActor != NULL){
+		fprintf(stderr, "%s\n", StringUtils::FStringToSTDString(hitActor->GetName()).c_str());
+	}
+	
+	LockMouse();
+}
 
 
 void AImGuiUI::LockMouse() {

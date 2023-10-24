@@ -29,31 +29,45 @@ ALocationMarker::ALocationMarker()
 	textComponent->SetHorizontalAlignment(EHTA_Center);
 	textComponent->SetWorldSize(20);
 	textComponent->SetRelativeRotation(FRotator(0, 180, 0));
+	
+	
+	collisionComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Text Collision"));
+	collisionComponent->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+	collisionComponent->SetActive(false);
+	collisionComponent->SetBoxExtent(FVector(0, 0, 0));
 
 	textComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	meshComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	collisionComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 
 	
 }
 
 
 void ALocationMarker::BeginPlay() {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	Super::BeginPlay();
 }
 
 void ALocationMarker::Tick(float DeltaTime) {
-	auto camera = Cast<UCameraComponent>(GetWorld()->GetFirstPlayerController()->GetPawn()->GetComponentByClass(UCameraComponent::StaticClass()));
-	if (camera != NULL) {
-		//FVector playerLocation = camera->GetComponentLocation();
-		//FVector selfLocation = GetActorLocation();
-		//FRotator rotation = FRotationMatrix::MakeFromX(playerLocation - selfLocation).Rotator();
-		//SetActorRotation(rotation);
-		SetActorRotation(camera->GetComponentRotation());
-	}
+	// auto camera = Cast<UCameraComponent>(GetWorld()->GetFirstPlayerController()->GetPawn()->GetComponentByClass(UCameraComponent::StaticClass()));
+	// if (camera != NULL) {
+	// 	//FVector playerLocation = camera->GetComponentLocation();
+	// 	//FVector selfLocation = GetActorLocation();
+	// 	//FRotator rotation = FRotationMatrix::MakeFromX(playerLocation - selfLocation).Rotator();
+	// 	//SetActorRotation(rotation);
+	// 	SetActorRotation(camera->GetComponentRotation());
+	// }
+	
 }
 
 void ALocationMarker::SetText(std::string text) {
 	textComponent->SetText(FText::FromString(StringUtils::STDStringToFString(text)));
+}
+void ALocationMarker::EnableCollision() {
+	FBoxSphereBounds textBounds = textComponent->GetLocalBounds();
+	collisionComponent->SetBoxExtent(textBounds.BoxExtent + 0);
+	collisionComponent->SetRelativeLocation(-textBounds.Origin);
+	collisionComponent->SetActive(true);
 }
 

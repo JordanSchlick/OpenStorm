@@ -47,7 +47,6 @@ void ASettingsSaver::EndPlay(const EEndPlayReason::Type endPlayReason) {
 			globalState->UnregisterEvent(id);
 		}
 		SaveSettings();
-		SaveLocationMarkers();
 	}
 	Super::EndPlay(endPlayReason);
 }
@@ -387,11 +386,11 @@ void ASettingsSaver::SaveLocationMarkers() {
 		// fprintf(stderr, "Saving waypoints\n");
 		TSharedPtr<FJsonObject> jsonObject = LoadJson(locationMarkersFile);
 		TArray<TSharedPtr<FJsonValue>> markers;
-		// get existing markers to avoid accidently clearing everything
-		const TArray<TSharedPtr<FJsonValue>>* markersOldPtr;
-		if(jsonObject->TryGetArrayField(TEXT("markers"), markersOldPtr)){
-			markers.Append(*markersOldPtr);
-		}
+		// // get existing markers to avoid accidentally clearing everything
+		// const TArray<TSharedPtr<FJsonValue>>* markersOldPtr;
+		// if(jsonObject->TryGetArrayField(TEXT("markers"), markersOldPtr)){
+		// 	markers.Append(*markersOldPtr);
+		// }
 		for (int id = 0; id < globalState->locationMarkers.size(); id++) {
 			GlobalState::Waypoint& waypoint = globalState->locationMarkers[id];
 			TSharedPtr<FJsonObject> markerObject = MakeShared<FJsonObject>();

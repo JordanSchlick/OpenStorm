@@ -28,6 +28,8 @@ public:
 	pfd::public_open_file* fileChooser = NULL;
 	std::vector<uint64_t> callbackIds = {};
 	
+	// called when left clicking outside of UI
+	void LeftClick();
 	void LockMouse();
 	void UnlockMouse();
 	void InitializeConsole();

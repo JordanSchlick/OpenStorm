@@ -250,7 +250,7 @@ public:
 					if(existingSize < file->size || (alwaysDownloadLastFile && i == files.size() - 1)){
 						if(i != files.size() - 1){
 							// throttle downloading of past data
-							SystemAPI::Sleep(5);
+							SystemAPI::Sleep(3);
 						}
 						// download file
 						HTTPDownloader fileDownloader;
