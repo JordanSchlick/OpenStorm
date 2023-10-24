@@ -40,6 +40,7 @@ void AsyncTaskRunner::Start(bool autoDeleteTask) {
 	}
 	running = true;
 	finished = false;
+	canceled = false;
 	this->autoDelete = autoDeleteTask;
 	FAutoDeleteAsyncTask<FUnrealAsyncTask>* task = new FAutoDeleteAsyncTask<FUnrealAsyncTask>([this] {
 		InternalTask();

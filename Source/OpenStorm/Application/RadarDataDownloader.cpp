@@ -188,23 +188,31 @@ public:
 	std::string httpPath;
 	
 	void Init(){
+		std::string httpServerPathWithTrailingSlash;
+		if(httpServerPath.size() > 0 && httpServerPath[httpServerPath.size()-1] != '/'){
+			httpServerPathWithTrailingSlash = httpServerPath + "/";
+		}else{
+			httpServerPathWithTrailingSlash = httpServerPath;
+		}
 		outputPath = StringUtils::GetUserPath("Data/Realtime/" + siteId + "/");
-		httpPath = httpServerPath + siteId + "/";
+		httpPath = httpServerPathWithTrailingSlash + siteId + "/";
 	}
 	
 	void Task(){
 		Init();
 		// httpPath = "http://localhost:54808/pub/data/nccf/radar/nexrad_level2/" + siteId + "/";
 		
+		std::string httpPathLocal = httpPath;
+		std::string outputPathLocal = outputPath;
 		
 		//fprintf(stderr, "%s\n", outputPath.c_str());
-		SystemAPI::CreateDirectory(outputPath);
+		SystemAPI::CreateDirectory(outputPathLocal);
 		
 		HTTPDownloader dirListDownloader;
 		//dirListDownloader.outputFile = "/tmp/list";
 		while(!canceled){
 			bool trueBool = true;
-			dirListDownloader.MakeRequest(httpPath + listFile, &canceled);
+			dirListDownloader.MakeRequest(httpPathLocal + listFile, &canceled);
 			fprintf(stderr, "List request complete %i %s\n", dirListDownloader.success, dirListDownloader.error.c_str());
 			lastPollTime = SystemAPI::CurrentTime();
 			if(dirListDownloader.success && dirListDownloader.bufferSize > 10){
@@ -236,7 +244,7 @@ public:
 				int errorCount = 0;
 				for(int64_t i = files.size() - 1; i >= 0; i--){
 					FileSizePair* file = &files[i];
-					std::string filePath = outputPath + file->filename;
+					std::string filePath = outputPathLocal + file->filename;
 					size_t existingSize = SystemAPI::GetFileStats(filePath).size;
 					
 					if(existingSize < file->size || (alwaysDownloadLastFile && i == files.size() - 1)){
@@ -249,7 +257,7 @@ public:
 						fileDownloader.outputFile = filePath;
 						fileDownloader.firstByte = existingSize;
 						fileDownloader.timeout = std::min(pollInterval, 600.0f);
-						fileDownloader.MakeRequest(httpPath + file->filename, &canceled);
+						fileDownloader.MakeRequest(httpPathLocal + file->filename, &canceled);
 						fprintf(stderr, "Download request complete %i %s\n", fileDownloader.success, fileDownloader.error.c_str());
 						if(!fileDownloader.success){
 							errorCount++;
@@ -269,8 +277,11 @@ public:
 				if(canceled){
 					break;
 				}
-				// failed to download list so wait
-				SystemAPI::Sleep(30);
+				// failed to download list so wait 20 seconds
+				for(int i = 0; i < 20 && !canceled; i++){
+					SystemAPI::Sleep(1);
+				}
+				
 			}
 			
 			
@@ -278,11 +289,12 @@ public:
 				break;
 			}
 			// wait for next poll interval
-			SystemAPI::Sleep(std::max(0.0, lastPollTime + pollInterval - SystemAPI::CurrentTime()));
-			
-			if(canceled){
-				break;
+			while(lastPollTime + pollInterval >= SystemAPI::CurrentTime() && !canceled){
+				SystemAPI::Sleep(1);
 			}
+			// SystemAPI::Sleep(std::max(0.0, lastPollTime + pollInterval - SystemAPI::CurrentTime()));
+			
+			
 			// prevent an error from launching a denial of service attack
 			// this should never actually be needed but is here just in case I screw up
 			SystemAPI::Sleep(1);
@@ -332,13 +344,20 @@ void ARadarDataDownloader::Tick(float DeltaTime)
 			if(downloaderTask == NULL){
 				downloaderTask = new RadarDownloaderTask();
 			}
-			if(downloaderTask->siteId != globalState->downloadSiteId){
+			if(downloaderTask->siteId != globalState->downloadSiteId || downloaderTask->httpServerPath != globalState->downloadUrl){
 				downloaderTask->siteId = globalState->downloadSiteId;
+				downloaderTask->httpServerPath = globalState->downloadUrl;
+				// cancel and restart downloader
 				downloaderTask->Cancel();
+				fprintf(stderr, "Canceled downloader\n");
 			}
-			downloaderTask->pollInterval = globalState->downloadPollInterval;
+			downloaderTask->pollInterval = std::max(10.0f, globalState->downloadPollInterval);
 			if(!downloaderTask->running){
+				downloaderTask->Init();
 				downloaderTask->Start();
+				fprintf(stderr, "Starting downloader %i %i %i\n", downloaderTask->canceled, downloaderTask->running, downloaderTask->finished);
+				// open directory in viewer
+				globalState->EmitEvent("LoadDirectory", downloaderTask->outputPath, NULL);
 			}
 		}
 		if(globalState->downloadData == false && downloaderTask != NULL){

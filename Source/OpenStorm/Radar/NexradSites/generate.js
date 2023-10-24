@@ -62,6 +62,15 @@ var csv = {
 
 
 var sites = csv.decode(fs.readFileSync("stations.csv").toString())
+sites.sort((a, b) => {
+	if(a.STATION_ID < b.STATION_ID){
+		return -1
+	}else if(a.STATION_ID > b.STATION_ID){
+		return 1
+	}else{
+		return 0
+	}
+})
 var out = `
 #include "NexradSites.h"
 
@@ -73,7 +82,7 @@ function stringOption(value){
 	return '"' + value + '",'
 }
 function numberOption(value){
-	return value + ','
+	return Math.round(value * 100000) / 100000 + ','
 }
 
 var siteCount = 0

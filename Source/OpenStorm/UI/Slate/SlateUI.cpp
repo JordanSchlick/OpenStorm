@@ -69,7 +69,9 @@ void ASlateUI::Tick(float DeltaTime){
 	if (scaleWidget.IsValid()) {
 		SWindow* swindow = GetWorld()->GetGameViewport()->GetWindow().Get();
 		//float nativeScale = swindow->GetDPIScaleFactor();
-		scaleWidget->SetDPIScale(resources->globalState->guiScale);
+		if(resources->globalState->guiScale > 0){
+			scaleWidget->SetDPIScale(resources->globalState->guiScale);
+		}
 	}
 	
 	if(cacheState.IsValid()){

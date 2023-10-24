@@ -5,6 +5,7 @@
 #include "../Radar/SystemAPI.h"
 #include "../Radar/Products/RadarProduct.h"
 #include "../Radar/Globe.h"
+#include "../Radar/NexradSites/NexradSites.h"
 #include "../Objects/RadarGameStateBase.h"
 #include "../Objects/RadarViewPawn.h"
 #include "portable-file-dialogs.h"
@@ -29,13 +30,14 @@
 
 static bool inlineLabel = false;
 
-typedef int CustomFloatInputFlags;
-enum CustomFloatInputFlags_{
-	CustomFloatInput_SliderOnly = 1, // Only show the slider. Only use this if values outside of the slider value do absolutely nothing
+typedef int CustomInputFlags;
+enum CustomInputFlags_{
+	CustomInput_SliderOnly = 1, // Only show the slider. Only use this if values outside of the slider value do absolutely nothing
+	CustomInput_Short = 2 // make it shorter
 };
 
 // intput for a float value
-bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float* value, float* defaultValue = NULL, CustomFloatInputFlags flags = 0){
+bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float* value, float* defaultValue = NULL, CustomInputFlags flags = 0){
 	bool changed = false;
 	float fontSize = ImGui::GetFontSize();
 	ImGuiStyle &style = ImGui::GetStyle();
@@ -45,13 +47,13 @@ bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 		ImGui::LabelText(label, "");
 		ImGui::PopItemWidth();
 	}
-	if(!(flags & CustomFloatInput_SliderOnly)){
+	if(!(flags & CustomInput_SliderOnly)){
 		ImGui::PushItemWidth(8 * fontSize);
 		changed |= ImGui::InputFloat("##floatInput", value, 0.1f, 1.0f, "%.2f");
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 	}
-	float sliderWidth = (flags & CustomFloatInput_SliderOnly) ? 20 * fontSize + style.ItemSpacing.x : 12 * fontSize;
+	float sliderWidth = (flags & CustomInput_SliderOnly && (flags & CustomInput_Short) == 0) ? 20 * fontSize + style.ItemSpacing.x : 12 * fontSize;
 	if(defaultValue != NULL){
 		float frameHeight = ImGui::GetFrameHeight();
 		ImGui::PushItemWidth(sliderWidth - frameHeight - style.ItemSpacing.x);
@@ -65,6 +67,51 @@ bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 	}else{
 		ImGui::PushItemWidth(sliderWidth);
 		changed |= ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
+		ImGui::PopItemWidth();
+	}
+	
+	if(inlineLabel){
+		ImGui::SameLine();
+	
+		/*const char* labelEnd = ImGui::FindRenderedTextEnd(label);
+		if (label != labelEnd)
+		{
+			ImGui::TextEx(label, labelEnd);
+		}*/
+		//ImGui::TextUnformatted(label);
+		ImGui::PushItemWidth(0.01);
+		ImGui::LabelText(label, "");
+		ImGui::PopItemWidth();
+	}
+	ImGui::PopID();
+	return changed;
+}
+
+bool CustomTextInput(const char* label, std::string* value, std::string* defaultValue = NULL, CustomInputFlags flags = 0){
+	bool changed = false;
+	float fontSize = ImGui::GetFontSize();
+	ImGuiStyle &style = ImGui::GetStyle();
+	ImGui::PushID(label);
+	if(!inlineLabel){
+		ImGui::PushItemWidth(0.01);
+		ImGui::LabelText(label, "");
+		ImGui::PopItemWidth();
+	}
+	float itemWidth = ((flags & CustomInput_Short) == 0) ? 20 * fontSize : 12 * fontSize;
+	itemWidth += style.ItemSpacing.x;
+	if(defaultValue != NULL){
+		float frameHeight = ImGui::GetFrameHeight();
+		ImGui::PushItemWidth(itemWidth - frameHeight - style.ItemSpacing.x);
+		changed |= ImGui::InputText("##text", value);
+		ImGui::PopItemWidth();
+		ImGui::SameLine();
+		if(ImGui::Button(ICON_FA_DELETE_LEFT ,ImVec2(frameHeight, frameHeight))){
+			*value = *defaultValue;
+			changed = true;
+		}
+	}else{
+		ImGui::PushItemWidth(itemWidth);
+		changed |= ImGui::InputText("##text", value);
 		ImGui::PopItemWidth();
 	}
 	
@@ -261,7 +308,7 @@ void AImGuiUI::Tick(float deltaTime)
 					ImGui::EndCombo();
 				}
 				
-				CustomFloatInput("Cutoff", 0, 1, &globalState.cutoff, &globalState.defaults->cutoff, CustomFloatInput_SliderOnly);
+				CustomFloatInput("Cutoff", 0, 1, &globalState.cutoff, &globalState.defaults->cutoff, CustomInput_SliderOnly);
 				CustomFloatInput("Opacity", 0.2, 4, &globalState.opacityMultiplier, &globalState.defaults->opacityMultiplier);
 				CustomFloatInput("Height Exaggeration", 1, 4, &globalState.verticalScale, &globalState.defaults->verticalScale);
 				
@@ -311,9 +358,9 @@ void AImGuiUI::Tick(float deltaTime)
 						CustomFloatInput("Slice Angle (degrees)", 0.5, 19.5, &globalState.sliceAngle, &globalState.defaults->sliceAngle);
 					}
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_VERTICAL){
-						CustomFloatInput("Slice Rotation", 0, 180, &globalState.sliceVerticalRotation, &globalState.defaults->sliceVerticalRotation, CustomFloatInput_SliderOnly);
-						CustomFloatInput("Slice X location", -1, 1, &globalState.sliceVerticalLocationX, &globalState.defaults->sliceVerticalLocationX, CustomFloatInput_SliderOnly);
-						CustomFloatInput("Slice Y location", -1, 1, &globalState.sliceVerticalLocationY, &globalState.defaults->sliceVerticalLocationY, CustomFloatInput_SliderOnly);
+						CustomFloatInput("Slice Rotation", 0, 180, &globalState.sliceVerticalRotation, &globalState.defaults->sliceVerticalRotation, CustomInput_SliderOnly);
+						CustomFloatInput("Slice X location", -1, 1, &globalState.sliceVerticalLocationX, &globalState.defaults->sliceVerticalLocationX, CustomInput_SliderOnly);
+						CustomFloatInput("Slice Y location", -1, 1, &globalState.sliceVerticalLocationY, &globalState.defaults->sliceVerticalLocationY, CustomInput_SliderOnly);
 					}
 					ImGui::Checkbox("Volumetric Slice", &globalState.sliceVolumetric);
 				}
@@ -348,7 +395,71 @@ void AImGuiUI::Tick(float deltaTime)
 					ChooseFiles();
 				}
 				if (ImGui::TreeNodeEx("Download", ImGuiTreeNodeFlags_SpanAvailWidth)) {
-					ImGui::Checkbox("Download data", &globalState.downloadData);
+					ImGui::Text("Download data:");
+					if(globalState.downloadData){
+						ImGui::BeginDisabled();
+					}
+					if(ImGui::Button("Start")){
+						globalState.downloadData = true;
+					}
+					if(globalState.downloadData){
+						ImGui::EndDisabled();
+					}
+					ImGui::SameLine();
+					if(!globalState.downloadData){
+						ImGui::BeginDisabled();
+					}
+					if(ImGui::Button("Stop")){
+						globalState.downloadData = false;
+					}
+					if(!globalState.downloadData){
+						ImGui::EndDisabled();
+					}
+					CustomFloatInput("Download interval (seconds)", 30, 300, &globalState.downloadPollInterval, &globalState.defaults->downloadPollInterval, CustomInput_SliderOnly | CustomInput_Short);
+					
+					static std::string siteIdSelection = "";
+					
+					ImGui::PushID("site_button");
+					ImGui::Text("Select Site:");
+					if (ImGui::Button(globalState.downloadSiteId.c_str())){
+						siteIdSelection = globalState.downloadSiteId;
+						ImGui::OpenPopup("Select Site");
+					}
+					
+					if (ImGui::BeginPopup("Select Site", NULL))
+					{
+						ImGui::Text("Select a site to download from. \nAlternatively you can select a site by left clicking on the site name in the world.\n\n");
+						ImGui::Separator();
+						ImGui::InputText("Custom Site ID", &siteIdSelection);
+						ImGui::Separator();
+						for(size_t i = 0; i < NexradSites::numberOfSites; i++){
+							NexradSites::Site* site = &NexradSites::sites[i];
+							bool selected = site->name == siteIdSelection;
+							if(ToggleButton(site->name, selected)){
+								siteIdSelection = site->name;
+							}
+							if(i % 15 != 14){
+								ImGui::SameLine();
+							}
+						}
+						ImGui::Separator();
+						if (ImGui::Button("OK", ImVec2(120,0))) {
+							ImGui::CloseCurrentPopup();
+							globalState.downloadSiteId = siteIdSelection;
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Cancel", ImVec2(120,0))) {
+							ImGui::CloseCurrentPopup();
+						}
+						ImGui::EndPopup();
+					}
+					ImGui::PopID();
+					
+					if (ImGui::TreeNodeEx("Advanced", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+						CustomTextInput("Data URL", &globalState.downloadUrl, &globalState.defaults->downloadUrl);
+						ImGui::TreePop();
+					}
+					
 					ImGui::TreePop();
 				}
 				ImGui::TreePop();

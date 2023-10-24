@@ -82,6 +82,7 @@ public:
 	
 	bool downloadData = false; // if realtime data downloading is enabled
 	std::string downloadSiteId = "KMKX";
+	std::string downloadUrl = "https://nomads.ncep.noaa.gov/pub/data/nccf/radar/nexrad_level2/";
 	float downloadPollInterval = 60;
 	
 	std::vector<Waypoint> locationMarkers = {};

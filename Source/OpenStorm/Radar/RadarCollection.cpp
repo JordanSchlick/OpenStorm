@@ -286,12 +286,6 @@ void RadarCollection::Jump(size_t index, bool keepCurrentCachePosition) {
 	}
 	
 	
-	
-	// int64_t delta = index - currentPosition;
-	// cachedBefore = clamp(cachedBefore + delta, 0, cacheSizeSide * 2);
-	// cachedAfter = clamp(cachedAfter - delta, 0, cacheSizeSide * 2);
-	// currentPosition = modulo(currentPosition + delta, cacheSize);
-	
 	// check for reusable holders
 	size_t firstTestIndex = std::max((int64_t)index - cacheSize, (int64_t)0);
 	size_t lastTestIndex = std::min((int64_t)index + cacheSize, (int64_t)radarFiles.size() - 1);
@@ -695,21 +689,30 @@ void RadarCollection::PollFilesFinalize() {
 					newFileIndex = cacheData.index;
 				}
 			}
+			newFileIndex = std::min(newFileIndex, radarFiles.size() - 1);
+			
 			
 			// move to new index and rebuild cache
-			Jump(newFileIndex, newFileIndex < radarFiles.size());
+			Jump(newFileIndex, newFileIndex < radarFiles.size() - 1);
+			if(oldFile.name == radarFiles[newFileIndex].name){
+				// unset needToEmit if the current file did not actually change
+				needToEmit = false;
+			}
 			
 			
 			// check if any of the loaded items need to be reloaded
 			for(int i = 0; i < cachedBefore + cachedAfter + 1; i++){
-				int index = modulo(currentPosition - cachedBefore + i, cacheSize);
-				if(cache[index]->state != RadarDataHolder::DataStateUnloaded){
+				int cachePosition = modulo(currentPosition - cachedBefore + i, cacheSize);
+				if(cache[cachePosition]->state != RadarDataHolder::DataStateUnloaded){
 					RadarFile* radarFile = &radarFiles[firstItemIndex + i];
 					if(pollFilesTask->radarFilesCache.count(radarFile->name)){
 						// check if the file was changed
 						if(pollFilesTask->radarFilesCache[radarFile->name].changedOnRunId == pollFilesTask->runId){
-							cache[index]->Unload();
-							cache[index]->Load(*radarFile);
+							cache[cachePosition]->Unload();
+							cache[cachePosition]->Load(*radarFile);
+							if(cachePosition == currentPosition){
+								needToEmit = true;
+							}
 						}
 					}
 				}
