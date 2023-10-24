@@ -32,9 +32,19 @@ public:
 		SLICE_MODE_CONSTANT_ALTITUDE = 1,
 		SLICE_MODE_VERTICAL = 2,
 	};
+	
+	enum LoopMode {
+		LOOP_MODE_DEFAULT = 0, // loop to beginning of cache once end is reached
+		LOOP_MODE_CACHE = 1, // loop over loaded cache only
+		LOOP_MODE_ALL = 2, // loop to beginning of data
+		LOOP_MODE_BOUNCE = 3, // reverse directions when reaching end
+		LOOP_MODE_CACHE_BOUNCE = 4, // bounce over loaded cache only
+		LOOP_MODE_NONE = 5, // stop at end of data
+	};
 
 	bool animate = false; // animate the scene
 	bool animateCutoff = false; // animate the cutoff
+	LoopMode animateLoopMode = LOOP_MODE_DEFAULT; // how to loop when reaching end of data
 	bool temporalInterpolation = true; // interpolate data over time when animating
 	bool spatialInterpolation = true; // interpolate data over time when animating
 	bool isMouseCaptured = false; // true if mouse is currently captured

@@ -134,6 +134,44 @@ bool CustomTextInput(const char* label, std::string* value, std::string* default
 	return changed;
 }
 
+// create a combo element
+template <typename T>
+bool EnumSelectable(char* label, T* setting, T value){
+	bool isSelected = *setting == value;
+	if (ImGui::Selectable(label, isSelected)) {
+		if (!isSelected) {
+			*setting = value;
+			return true;
+		}
+	}
+	if (isSelected) {
+		ImGui::SetItemDefaultFocus();
+	}
+	return false;
+}
+
+/**
+ * create combo for setting based on array of values
+ * valueLabels is an array of names for items in dropdown
+ * values is an array of values for items in dropdown
+ * count is the length of valueLabels and values
+*/
+template <typename T>
+void EnumCombo(char* label, T* setting, char** valueLabels, T* values, int count){
+	char* comboPreviewValue = "Invalid";
+	for(int i = 0; i < count; i++){
+		if(values[i] == *setting){
+			comboPreviewValue = valueLabels[i];
+		}
+	}
+	if (ImGui::BeginCombo(label, comboPreviewValue)){
+		for(int i = 0; i < count; i++){
+			EnumSelectable(valueLabels[i], setting, values[i]);
+		}
+		ImGui::EndCombo();
+	}
+}
+
 bool ToggleButton(const char* label, bool active, const ImVec2 &size = ImVec2(0, 0)) {
 	if (active) {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
@@ -383,10 +421,13 @@ void AImGuiUI::Tick(float deltaTime)
 			
 			if (ImGui::TreeNodeEx("Animation", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				ImGui::Checkbox("Time", &GS->globalState.animate);
-				ImGui::Checkbox("Cuttoff", &GS->globalState.animateCutoff);
+				char* comboNames[] = {"Default", "Loop Loaded", "Loop All", "Bounce", "Bounce Loaded", "None"};
+				GlobalState::LoopMode comboValues[] = {GlobalState::LOOP_MODE_DEFAULT, GlobalState::LOOP_MODE_CACHE, GlobalState::LOOP_MODE_ALL, GlobalState::LOOP_MODE_BOUNCE, GlobalState::LOOP_MODE_CACHE_BOUNCE, GlobalState::LOOP_MODE_NONE};
+				EnumCombo("Loop Mode", &globalState.animateLoopMode, comboNames, comboValues, sizeof(comboNames)/sizeof(comboNames[0]));
 				//ImGui::Text("Animation Speed:");
 				//ImGui::SliderFloat("##1", &GS->globalState.animateSpeed, 0.0f, 5.0f);
 				CustomFloatInput("Time Animation Speed", 1, 15, &globalState.animateSpeed, &globalState.defaults->animateSpeed);
+				ImGui::Checkbox("Cuttoff", &GS->globalState.animateCutoff);
 				CustomFloatInput("Cutoff Animation Speed", 0.1, 2, &globalState.animateCutoffSpeed, &globalState.defaults->animateCutoffSpeed);
 				ImGui::TreePop();
 			}

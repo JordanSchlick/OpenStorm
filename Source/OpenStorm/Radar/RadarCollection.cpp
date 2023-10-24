@@ -442,16 +442,58 @@ void RadarCollection::EventLoop() {
 	double now = SystemAPI::CurrentTime();
 	if(automaticallyAdvance){
 		if(nextAdvanceTime <= now){
-			if(lastItemIndex == radarFiles.size() - 1 && cachedAfter == 0){
-				lastMoveDirection = -1;
+			// if(lastItemIndex == radarFiles.size() - 1 && cachedAfter == 0){
+			// 	lastMoveDirection = -1;
+			// }
+			// if(firstItemIndex == 0 && cachedBefore == 0){
+			// 	lastMoveDirection = 1;
+			// }
+			bool reachedEnd = (lastItemIndex == radarFiles.size() - 1 && cachedAfter == 0);
+			bool reachedEndOther = (firstItemIndex == 0 && cachedBefore == 0);
+			if(autoAdvanceCacheOnly){
+				reachedEnd = cachedAfter == 0;
+				reachedEndOther = cachedBefore == 0;
 			}
-			if(firstItemIndex == 0 && cachedBefore == 0){
-				lastMoveDirection = 1;
+			if(lastMoveDirection == -1){
+				bool tmp = reachedEndOther;
+				reachedEndOther = reachedEnd;
+				reachedEnd = tmp;
 			}
-			if(holder->state != RadarDataHolder::State::DataStateLoading && radarFiles.size() > 1){
+			bool doMove = true;
+			switch(autoAdvanceEndOption){
+				case AnimationEndBounce:
+					if(reachedEnd){
+						lastMoveDirection = -lastMoveDirection;
+					}
+					break;
+				case AnimationEndJumpAll:
+					if(reachedEnd){
+						if(lastMoveDirection == 1){
+							Jump(0);
+						}else{
+							Jump(radarFiles.size() - 1);
+						}
+						doMove = false;
+					}
+					break;
+				case AnimationEndJumpCache:
+					if(reachedEnd){
+						if(lastMoveDirection == 1){
+							Move(-cachedBefore);
+						}else{
+							Move(cachedAfter);
+						}
+						doMove = false;
+					}
+					break;
+				case AnimationEndStop:
+					// just keep trying to go the same direction
+					break;
+			}
+			if(doMove && holder->state != RadarDataHolder::State::DataStateLoading && radarFiles.size() > 1){
 				Move(lastMoveDirection);
 			}
-			// set next animate time taking into account who late this frame is
+			// set next animate time taking into account how late this frame is
 			nextAdvanceTime = now + std::max(0.0, autoAdvanceInterval - (now - nextAdvanceTime));
 		}
 	}else{
@@ -792,6 +834,10 @@ void RadarCollection::UnloadOldData() {
 	//fprintf(stderr, "remove %i %i %i\n",cachedBefore,cachedAfter,maxSideSize);
 	
 	int amountToRemoveBefore = cachedBefore - maxSideSize;
+	if(automaticallyAdvance && (autoAdvanceCacheOnly || (lastMoveDirection == -1 && autoAdvanceEndOption == AnimationEndJumpCache))){
+		// don't remove because the animation will reuse the data
+		amountToRemoveBefore = 0;
+	}
 	//fprintf(stderr, "amountToRemoveBefore %i\n", amountToRemoveBefore);
 	if(amountToRemoveBefore > 0 && lastItemIndex + 1 != radarFiles.size()){
 		for(int i = 0; i < amountToRemoveBefore; i++){
@@ -804,6 +850,10 @@ void RadarCollection::UnloadOldData() {
 	
 	
 	int amountToRemoveAfter = cachedAfter - maxSideSize;
+	if(automaticallyAdvance && (autoAdvanceCacheOnly || (lastMoveDirection == 1 && autoAdvanceEndOption == AnimationEndJumpCache))){
+		// don't remove because the animation will reuse the data
+		amountToRemoveAfter = 0;
+	}
 	//fprintf(stderr, "amountToRemoveAfter %i\n", amountToRemoveAfter);
 	if(amountToRemoveAfter > 0 && firstItemIndex != 0){
 		for(int i = 0; i < amountToRemoveAfter; i++){

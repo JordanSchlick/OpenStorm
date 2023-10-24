@@ -14,6 +14,12 @@ class AsyncPollFilesTask;
 class RadarCollection{
 public:
 	
+	enum AnimationEndOptions{
+		AnimationEndBounce, // reverse direction at end and go the other direction
+		AnimationEndJumpAll, // jump to opposite end of data and continue in the same direction
+		AnimationEndJumpCache, // jump to opposite end of cache and continue in the same direction
+		AnimationEndStop, // stop at the end
+	};
 	
 	// event emitted when new current data is available
 	class RadarUpdateEvent{
@@ -40,6 +46,12 @@ public:
 	
 	// time between automatic advances
 	float autoAdvanceInterval = 1;
+	
+	// what should be done when the end is reached while auto advancing
+	AnimationEndOptions autoAdvanceEndOption = AnimationEndJumpCache;
+	
+	// if auto advance should stay within the loaded cache
+	bool autoAdvanceCacheOnly = false;
 	
 	// should the data be polled for changes
 	bool poll = true;

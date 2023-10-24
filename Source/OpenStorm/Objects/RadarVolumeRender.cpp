@@ -477,6 +477,32 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 	radarCollection->automaticallyAdvance = globalState->animate;
 	radarCollection->autoAdvanceInterval = 1.0f / globalState->animateSpeed;
 	radarCollection->poll = globalState->pollData;
+	switch(globalState->animateLoopMode){
+		case GlobalState::LOOP_MODE_DEFAULT:
+			radarCollection->autoAdvanceEndOption = RadarCollection::AnimationEndJumpCache;
+			radarCollection->autoAdvanceCacheOnly = false;
+			break;
+		case GlobalState::LOOP_MODE_CACHE:
+			radarCollection->autoAdvanceEndOption = RadarCollection::AnimationEndJumpCache;
+			radarCollection->autoAdvanceCacheOnly = true;
+			break;
+		case GlobalState::LOOP_MODE_ALL:
+			radarCollection->autoAdvanceEndOption = RadarCollection::AnimationEndJumpAll;
+			radarCollection->autoAdvanceCacheOnly = false;
+			break;
+		case GlobalState::LOOP_MODE_BOUNCE:
+			radarCollection->autoAdvanceEndOption = RadarCollection::AnimationEndBounce;
+			radarCollection->autoAdvanceCacheOnly = false;
+			break;
+		case GlobalState::LOOP_MODE_CACHE_BOUNCE:
+			radarCollection->autoAdvanceEndOption = RadarCollection::AnimationEndBounce;
+			radarCollection->autoAdvanceCacheOnly = true;
+			break;
+		case GlobalState::LOOP_MODE_NONE:
+			radarCollection->autoAdvanceEndOption = RadarCollection::AnimationEndStop;
+			radarCollection->autoAdvanceCacheOnly = false;
+			break;
+	}
 	if(globalState->temporalInterpolation != doTimeInterpolation){
 		doTimeInterpolation = globalState->temporalInterpolation;
 		InitializeTextures();
