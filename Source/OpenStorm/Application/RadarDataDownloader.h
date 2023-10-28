@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "RadarDataDownloader.generated.h"

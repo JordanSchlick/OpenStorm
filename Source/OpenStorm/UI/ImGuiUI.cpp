@@ -38,6 +38,17 @@ enum CustomInputFlags_{
 	CustomInput_Short = 2 // make it shorter
 };
 
+template <typename T>
+bool ResetButton(T* value, T* defaultValue = NULL){
+	float frameHeight = ImGui::GetFrameHeight();
+	if(ImGui::Button(ICON_FA_DELETE_LEFT ,ImVec2(frameHeight, frameHeight))){
+		*value = *defaultValue;
+		return true;
+	}
+	return false;
+}
+	
+
 // intput for a float value
 bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float* value, float* defaultValue = NULL, CustomInputFlags flags = 0){
 	bool changed = false;
@@ -62,10 +73,7 @@ bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 		changed |= ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
-		if(ImGui::Button(ICON_FA_DELETE_LEFT ,ImVec2(frameHeight, frameHeight))){
-			*value = *defaultValue;
-			changed = true;
-		}
+		ResetButton(value, defaultValue);
 	}else{
 		ImGui::PushItemWidth(sliderWidth);
 		changed |= ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
@@ -423,7 +431,9 @@ void AImGuiUI::Tick(float deltaTime)
 				ImGui::Checkbox("Time", &GS->globalState.animate);
 				char* comboNames[] = {"Default", "Loop Loaded", "Loop All", "Bounce", "Bounce Loaded", "None"};
 				GlobalState::LoopMode comboValues[] = {GlobalState::LOOP_MODE_DEFAULT, GlobalState::LOOP_MODE_CACHE, GlobalState::LOOP_MODE_ALL, GlobalState::LOOP_MODE_BOUNCE, GlobalState::LOOP_MODE_CACHE_BOUNCE, GlobalState::LOOP_MODE_NONE};
+				ImGui::PushItemWidth(12 * fontSize);
 				EnumCombo("Loop Mode", &globalState.animateLoopMode, comboNames, comboValues, sizeof(comboNames)/sizeof(comboNames[0]));
+				ImGui::PopItemWidth();
 				//ImGui::Text("Animation Speed:");
 				//ImGui::SliderFloat("##1", &GS->globalState.animateSpeed, 0.0f, 5.0f);
 				CustomFloatInput("Time Animation Speed", 1, 15, &globalState.animateSpeed, &globalState.defaults->animateSpeed);
@@ -448,6 +458,7 @@ void AImGuiUI::Tick(float deltaTime)
 					}
 					if(ImGui::Button("Start")){
 						globalState.downloadData = true;
+						globalState.pollData = true;
 					}
 					if(globalState.downloadData){
 						ImGui::EndDisabled();
@@ -464,8 +475,14 @@ void AImGuiUI::Tick(float deltaTime)
 					}
 					CustomFloatInput("Download interval (seconds)", 30, 300, &globalState.downloadPollInterval, &globalState.defaults->downloadPollInterval, CustomInput_SliderOnly | CustomInput_Short);
 					
+					ImGui::PushItemWidth(10 * fontSize + ImGui::GetStyle().ItemSpacing.x);
+					ImGui::Text("Download Previous File Count");
+					ImGui::InputInt("##previousFileCount", &globalState.downloadPreviousCount);
+					ImGui::SameLine();
+					ResetButton(&globalState.downloadPreviousCount, &globalState.defaults->downloadPreviousCount);
+					ImGui::PopItemWidth();
+										
 					static std::string siteIdSelection = "";
-					
 					ImGui::PushID("site_button");
 					ImGui::Text("Select Site:");
 					if (ImGui::Button(globalState.downloadSiteId.c_str())){

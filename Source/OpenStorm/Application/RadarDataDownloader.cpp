@@ -183,6 +183,8 @@ public:
 	float pollInterval = 30;
 	// last time poling was initiated
 	double lastPollTime = 0;
+	// maximum number of files that will be downloaded before the current one
+	size_t maxPerviousFilesToDownload = 10;
 	
 	std::string outputPath;
 	std::string httpPath;
@@ -242,7 +244,7 @@ public:
 				}
 				
 				int errorCount = 0;
-				for(int64_t i = files.size() - 1; i >= 0; i--){
+				for(int64_t i = files.size() - 1; i >= std::max(0i64, (int64_t)files.size() - 1 - (int64_t)maxPerviousFilesToDownload); i--){
 					FileSizePair* file = &files[i];
 					std::string filePath = outputPathLocal + file->filename;
 					size_t existingSize = SystemAPI::GetFileStats(filePath).size;
@@ -351,7 +353,9 @@ void ARadarDataDownloader::Tick(float DeltaTime)
 				downloaderTask->Cancel();
 				fprintf(stderr, "Canceled downloader\n");
 			}
+			// limit to 10 or more seconds between requests
 			downloaderTask->pollInterval = std::max(10.0f, globalState->downloadPollInterval);
+			downloaderTask->maxPerviousFilesToDownload = (size_t)globalState->downloadPreviousCount;
 			if(!downloaderTask->running){
 				downloaderTask->Init();
 				downloaderTask->Start();

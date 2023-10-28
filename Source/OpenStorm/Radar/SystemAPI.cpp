@@ -256,7 +256,10 @@ std::vector<SystemAPI::FileStats> SystemAPI::ReadDirectory(std::string path) {
 			stats.size = ul.QuadPart;
 			#define TICKS_PER_SECOND 10000000
 			#define EPOCH_DIFFERENCE 11644473600LL
-			stats.mtime = (*(long long*)&findFileData.ftLastWriteTime) / TICKS_PER_SECOND - EPOCH_DIFFERENCE;
+			ul.HighPart = findFileData.ftLastWriteTime.dwHighDateTime;
+			ul.LowPart = findFileData.ftLastWriteTime.dwLowDateTime;
+			stats.mtime = ((double)ul.QuadPart) / (double)TICKS_PER_SECOND - (double)EPOCH_DIFFERENCE;
+			// stats.mtime = ((double)*(long long*)&findFileData.ftLastWriteTime) / (double)TICKS_PER_SECOND - (double)EPOCH_DIFFERENCE;
 			stats.isDirectory = (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 			files.push_back(stats);
 		} while (FindNextFileW(hFind, &findFileData));

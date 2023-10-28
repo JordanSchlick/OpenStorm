@@ -96,6 +96,7 @@ public:
 	std::string downloadUrl = "https://nomads.ncep.noaa.gov/pub/data/nccf/radar/nexrad_level2/"; // the http path where the data is located
 	float downloadPollInterval = 60; // how often a check is done for new files
 	bool openDownloadDropdown = false; // when set to true the download dropdown will be opened to alert the user to its presence
+	int downloadPreviousCount = 10; // how many previous files to get before the current one
 	
 	std::vector<Waypoint> locationMarkers = {};
 	

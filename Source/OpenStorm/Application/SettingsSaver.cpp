@@ -221,8 +221,14 @@ void ASettingsSaver::SaveSettings() {
 		// Settings
 		SAVE_MACRO_FLOAT(maxFPS);
 		SAVE_MACRO_BOOL(vsync);
-		SAVE_MACRO_FLOAT(quality);
-		SAVE_MACRO_FLOAT(qualityCustomStepSize);
+		if(globalState->quality != 3){
+			// only save if not on gpu melter
+			SAVE_MACRO_FLOAT(quality);
+		}
+		if(globalState->qualityCustomStepSize >= 0.3){
+			// don't alow saving the equivelent of gpu melter
+			SAVE_MACRO_FLOAT(qualityCustomStepSize);
+		}
 		SAVE_MACRO_BOOL(enableFuzz);
 		SAVE_MACRO_BOOL(temporalAntiAliasing);
 

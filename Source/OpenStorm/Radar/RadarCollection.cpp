@@ -122,14 +122,15 @@ public:
 			CacheData* cacheData = NULL;
 			if(radarFilesCache.find(filename) != radarFilesCache.end()){
 				cacheData = &radarFilesCache[filename];
-				if(now - cacheData->radarFile.mtime < 3600 || fileIndex == lastFileIndex){
-					// only stat files that have been modified in the last hour or is the last one for changes
+				if(now - cacheData->radarFile.mtime < 3600 * 4 || fileIndex == lastFileIndex){
+					// only stat files that have been modified in the last 4 hours or is the last one for changes
 					//fprintf(stderr, "file: %f %f\n", now, radarFile.mtime);
 					SystemAPI::FileStats stats = SystemAPI::GetFileStats(path);
 					if(stats.isDirectory){
 						continue;
 					}
 					if(cacheData->radarFile.size != stats.size || cacheData->radarFile.mtime != stats.mtime){
+						//fprintf(stderr, "times %f %f\n", cacheData->radarFile.mtime, stats.mtime);
 						cacheData->radarFile.mtime = stats.mtime;
 						cacheData->radarFile.size = stats.size;
 						cacheData->changedOnRunId = runId;
@@ -144,13 +145,16 @@ public:
 				radarFile.time = RadarCollection::ParseFileNameDate(filename);
 				radarFile.size = file.size;
 				if(file.mtime > 0){
-					// this mtime does not seem to perfectly line up with the file stat time which can cause files to be reloaded upon next poll
+					// this is not available on linux currently
 					radarFile.mtime = file.mtime;
-				}if(radarFile.time > 0){
+					// fprintf(stderr, "dir list time %f\n", radarFile.mtime);
+				}else if(radarFile.time > 0){
+					// use date parsed from filename
 					radarFile.mtime = radarFile.time;
 					// fprintf(stderr, "used parsed date %lf\n", radarFile.mtime);
-				}else{
-					// only stat if time was not parsed correctly
+				}
+				if(radarFile.mtime == 0 || now - radarFile.mtime < 3600 * 4){
+					// if all else fails or the file is recent, stat the file for time
 					SystemAPI::FileStats stats = SystemAPI::GetFileStats(path);
 					if(stats.isDirectory){
 						continue;
@@ -610,19 +614,19 @@ double RadarCollection::ParseFileNameDate(std::string filename) {
 	t.tm_mon = std::stoi(datePart.substr(4, 2)) - 1;
 	t.tm_mday = std::stoi(datePart.substr(6, 2));
 	if(timePart.length() == 4){
-		t.tm_hour = std::stoi(datePart.substr(0, 2));
-		t.tm_min = std::stoi(datePart.substr(2, 2));
+		t.tm_hour = std::stoi(timePart.substr(0, 2));
+		t.tm_min = std::stoi(timePart.substr(2, 2));
 	}else{
-		t.tm_hour = std::stoi(datePart.substr(0, 2));
-		t.tm_min = std::stoi(datePart.substr(2, 2));
-		t.tm_sec = std::stoi(datePart.substr(4, 2));
+		t.tm_hour = std::stoi(timePart.substr(0, 2));
+		t.tm_min = std::stoi(timePart.substr(2, 2));
+		t.tm_sec = std::stoi(timePart.substr(4, 2));
 	}
 	
 	
 	
 	#ifdef _WIN32
 	time_t timeSinceEpoch = _mkgmtime(&t);
-	// fprintf(stderr, "%i %i %i %i %i %i %lli\n", t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, timeSinceEpoch);
+	//fprintf(stderr, "date %i %i %i %i %i %i %lli\n", t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, timeSinceEpoch);
 	#else
 	time_t timeSinceEpoch = timegm(&t);
 	#endif
