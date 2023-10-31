@@ -151,6 +151,13 @@ public:
     const Json & operator[](size_t i) const;
     // Return a reference to obj[key] if this is an object, Json() otherwise.
     const Json & operator[](const std::string &key) const;
+    
+    // set property of object
+    // mutates data unlike other operations
+    void set(const std::string &key, const Json & value);
+    // set value at index i of array
+    // mutates data unlike other operations
+    void set(size_t i, const Json & value);
 
     // Serialize.
     void dump(std::string &out) const;
@@ -208,6 +215,16 @@ private:
     std::shared_ptr<JsonValue> m_ptr;
 };
 
+// create a new empty Json object
+inline Json CreateJsonObject(){
+   return Json(Json::object());
+}
+
+// create a new empty Json array
+inline Json CreateJsonArray(){
+   return Json(Json::array());
+}
+
 // Internal class hierarchy - JsonValue objects are not exposed to users of this API.
 class JsonValue {
 protected:
@@ -224,8 +241,10 @@ protected:
     virtual const std::string &string_value() const;
     virtual const Json::array &array_items() const;
     virtual const Json &operator[](size_t i) const;
+    virtual void set(size_t i, const Json & value);
     virtual const Json::object &object_items() const;
     virtual const Json &operator[](const std::string &key) const;
+    virtual void set(const std::string &key, const Json & value);
     virtual ~JsonValue() {}
 };
 

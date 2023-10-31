@@ -14,7 +14,7 @@
 - [ ] Find and order by radar dates
 - [X] Allow multiple products
 - [X] Allow computed products
-- [ ] Pull data from http server
+- [X] Pull data from http server
 - [ ] Add designated thread pools to AsyncTask and multi-thread radar decompression
 - [X] Add linux support to ImGUI and get linux working for everything
 - [X] Support gzip nexrad archives
@@ -23,10 +23,12 @@
 - [X] Save settings to disk
 - [X] Implement map data
 - [X] Pseudo-2D single sweep view
-- [ ] Add GIS boundaries and roads
+- [X] Add GIS boundaries and roads
+- [ ] Record videos and screenshots
+- [ ] Display warning polygons
 
 ## Future:
 - [ ] Mobile Support
-- [ ] Combining radar data from multiple stations
+- [ ] Combining radar data from multiple  stations
 - [ ] Change radar decoder to one that is more performant and uses less memory
 - [ ] Display real time lightning

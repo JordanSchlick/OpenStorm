@@ -98,6 +98,8 @@ public:
 	bool openDownloadDropdown = false; // when set to true the download dropdown will be opened to alert the user to its presence
 	int downloadPreviousCount = 10; // how many previous files to get before the current one
 	
+	bool discordPresence = true;
+	
 	std::vector<Waypoint> locationMarkers = {};
 	
 	// globe that is lined up with radar data

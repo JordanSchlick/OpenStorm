@@ -679,6 +679,11 @@ void AImGuiUI::Tick(float deltaTime)
 				ImGui::TreePop();
 			}
 			
+			if (ImGui::TreeNodeEx("Integration", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+				ImGui::Checkbox("Discord presence", &globalState.discordPresence);
+				ImGui::TreePop();
+			}
+			
 			if (ImGui::TreeNodeEx("Reset", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				if(ImGui::Button("Reset Basic Settings")) {
 					globalState.EmitEvent("ResetBasicSettings");

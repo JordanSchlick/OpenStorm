@@ -166,7 +166,7 @@ protected:
         return m_value < static_cast<const Value<tag, T> *>(other)->m_value;
     }
 
-    const T m_value;
+    T m_value;
     void dump(string &out) const override { json11::dump(m_value, out); }
 };
 
@@ -204,6 +204,7 @@ public:
 class JsonArray final : public Value<Json::ARRAY, Json::array> {
     const Json::array &array_items() const override { return m_value; }
     const Json & operator[](size_t i) const override;
+    void set(size_t i, const Json & value) override;
 public:
     explicit JsonArray(const Json::array &value) : Value(value) {}
     explicit JsonArray(Json::array &&value)      : Value(std::move(value)) {}
@@ -212,6 +213,7 @@ public:
 class JsonObject final : public Value<Json::OBJECT, Json::object> {
     const Json::object &object_items() const override { return m_value; }
     const Json & operator[](const string &key) const override;
+    void set(const std::string &key, const Json & value) override;
 public:
     explicit JsonObject(const Json::object &value) : Value(value) {}
     explicit JsonObject(Json::object &&value)      : Value(std::move(value)) {}
@@ -277,6 +279,9 @@ const map<string, Json> & Json::object_items()    const { return m_ptr->object_i
 const Json & Json::operator[] (size_t i)          const { return (*m_ptr)[i];           }
 const Json & Json::operator[] (const string &key) const { return (*m_ptr)[key];         }
 
+void Json::set(const std::string &key, const Json & value) { m_ptr->set(key, value); }
+void Json::set(size_t i, const Json & value)               { m_ptr->set(i, value);   }
+
 double                    JsonValue::number_value()              const { return 0; }
 int                       JsonValue::int_value()                 const { return 0; }
 bool                      JsonValue::bool_value()                const { return false; }
@@ -286,6 +291,9 @@ const map<string, Json> & JsonValue::object_items()              const { return 
 const Json &              JsonValue::operator[] (size_t)         const { return static_null(); }
 const Json &              JsonValue::operator[] (const string &) const { return static_null(); }
 
+void JsonValue::set(const std::string &key, const Json & value) {  }
+void JsonValue::set(size_t i, const Json & value)               {  }
+
 const Json & JsonObject::operator[] (const string &key) const {
     auto iter = m_value.find(key);
     return (iter == m_value.end()) ? static_null() : iter->second;
@@ -293,6 +301,24 @@ const Json & JsonObject::operator[] (const string &key) const {
 const Json & JsonArray::operator[] (size_t i) const {
     if (i >= m_value.size()) return static_null();
     else return m_value[i];
+}
+
+void JsonObject::set (const std::string &key, const Json & value) {
+    m_value.insert_or_assign(key, value);
+}
+void JsonArray::set (size_t i, const Json & value)  {
+    size_t currentSize = m_value.size();
+    if (i < currentSize){
+        // overwrite
+        m_value[i] = value;
+    }else if(i == m_value.size()){
+        // append
+        m_value.push_back(value);
+    }else{
+        // extend and place
+        m_value.resize(i + 1);
+        m_value[i] = value;
+    }
 }
 
 /* * * * * * * * * * * * * * * * * * * *
