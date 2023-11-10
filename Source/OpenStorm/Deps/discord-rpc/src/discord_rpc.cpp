@@ -310,7 +310,7 @@ extern "C" DISCORD_EXPORT void Discord_Initialize(const char* applicationId,
 
 	Connection = RpcConnection::Create(applicationId);
 	Connection->onConnect = [](json11::Json& readyMessage) {
-		fprintf(stderr, "> %s\n", readyMessage.dump().c_str());
+		// fprintf(stderr, "> %s\n", readyMessage.dump().c_str());
 		Discord_UpdateHandlers(&QueuedHandlers);
 		if (QueuedPresence.length > 0) {
 			UpdatePresence.exchange(true);

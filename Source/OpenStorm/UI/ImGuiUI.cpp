@@ -312,6 +312,8 @@ void AImGuiUI::Tick(float deltaTime)
 		
 		if (ImGui::CollapsingHeader("Basic", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::PushButtonRepeat(true);
+			float oldRepeatRate = io.KeyRepeatRate;
+			io.KeyRepeatRate = 0.0001f;
 			if(ImGui::Button(ICON_FA_BACKWARD_STEP, squareButtonSize)){
 				globalState.EmitEvent("BackwardStep");
 			}
@@ -323,6 +325,7 @@ void AImGuiUI::Tick(float deltaTime)
 			if(ImGui::Button(ICON_FA_FORWARD_STEP, squareButtonSize)){
 				globalState.EmitEvent("ForwardStep");
 			}
+			io.KeyRepeatRate = oldRepeatRate;
 			ImGui::PopButtonRepeat();
 		}
 		if (ImGui::CollapsingHeader("Main", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -436,7 +439,7 @@ void AImGuiUI::Tick(float deltaTime)
 				ImGui::PopItemWidth();
 				//ImGui::Text("Animation Speed:");
 				//ImGui::SliderFloat("##1", &GS->globalState.animateSpeed, 0.0f, 5.0f);
-				CustomFloatInput("Time Animation Speed", 1, 15, &globalState.animateSpeed, &globalState.defaults->animateSpeed);
+				CustomFloatInput("Time Animation Speed", 1, 20, &globalState.animateSpeed, &globalState.defaults->animateSpeed);
 				ImGui::Checkbox("Cuttoff", &GS->globalState.animateCutoff);
 				CustomFloatInput("Cutoff Animation Speed", 0.1, 2, &globalState.animateCutoffSpeed, &globalState.defaults->animateCutoffSpeed);
 				ImGui::TreePop();

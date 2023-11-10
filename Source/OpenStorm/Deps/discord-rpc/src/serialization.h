@@ -213,7 +213,7 @@ public:
 		
 		
 		std::string jsonData = root.dump();
-		fprintf(stderr, "%s\n", jsonData.c_str());
+		// fprintf(stderr, "%s\n", jsonData.c_str());
 		if(maxLen > 0){
 			size_t outputLength = std::min(maxLen - 1, jsonData.size());
 			if(outputLength < jsonData.size()){
