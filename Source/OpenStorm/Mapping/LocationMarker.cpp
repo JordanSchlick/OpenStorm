@@ -11,7 +11,7 @@
 #include "Components/TextRenderComponent.h"
 #include "Camera/CameraComponent.h"
 #include "../EngineHelpers/StringUtils.h"
-#include "RadarGameStateBase.h"
+#include "../Objects/RadarGameStateBase.h"
 
 ALocationMarker::ALocationMarker()
 {
