@@ -484,7 +484,47 @@ void AImGuiUI::Tick(float deltaTime)
 					ImGui::SameLine();
 					ResetButton(&globalState.downloadPreviousCount, &globalState.defaults->downloadPreviousCount);
 					ImGui::PopItemWidth();
-										
+					
+					
+					// delete dropdown
+					static float downloadDeleteAfterLocal = globalState.downloadDeleteAfter;
+					static bool deletePopupOpen = false;
+					char* comboNames[] =  {"Never", "2 Hours", "6 Hours", "12 Hours", "1 Day",  "2 Days", "7 Days",  "30 Days",  "100 Days"};
+					float comboValues[] = {0,       2*3600,     6*3600,    12*3600,    24*3600, 2*24*3600,  7*24*3600, 30*24*3600, 100*24*3600};
+					ImGui::Text("Delete files after");
+					ImGui::PushItemWidth(12 * fontSize);
+					EnumCombo("##deleteFilesAfter", &downloadDeleteAfterLocal, comboNames, comboValues, sizeof(comboNames)/sizeof(comboNames[0]));
+					ImGui::PopItemWidth();
+					if(downloadDeleteAfterLocal > 0 && (globalState.downloadDeleteAfter <= 0 || globalState.downloadDeleteAfter > downloadDeleteAfterLocal) && !deletePopupOpen){
+						// prompt user before possibly deleting files
+						ImGui::OpenPopup("Confirm Delete");
+						deletePopupOpen = true;
+					}else if(downloadDeleteAfterLocal <= 0 || (downloadDeleteAfterLocal > globalState.downloadDeleteAfter && globalState.downloadDeleteAfter > 0)){
+						// already enabled and increasing time so just set the new value
+						globalState.downloadDeleteAfter = downloadDeleteAfterLocal;
+					}
+					if (ImGui::BeginPopup("Confirm Delete", NULL)){
+						ImGui::Text("Enabling this will delete downloaded radar files older than the selected time.");
+						ImGui::Separator();
+						ImGui::Text("Are you sure?");
+						if (ImGui::Button("Delete Files", ImVec2(120,0))) {
+							ImGui::CloseCurrentPopup();
+							globalState.downloadDeleteAfter = downloadDeleteAfterLocal;
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Cancel", ImVec2(120,0))) {
+							ImGui::CloseCurrentPopup();
+						}
+						ImGui::EndPopup();
+					}else if(deletePopupOpen){
+						// popup was closed
+						deletePopupOpen = false;
+						downloadDeleteAfterLocal = globalState.downloadDeleteAfter;
+					}
+					
+					// ImGui::InputFloat("downloadDeleteAfter", &globalState.downloadDeleteAfter);
+					
+					
 					static std::string siteIdSelection = "";
 					ImGui::PushID("site_button");
 					ImGui::Text("Select Site:");
@@ -493,8 +533,7 @@ void AImGuiUI::Tick(float deltaTime)
 						ImGui::OpenPopup("Select Site");
 					}
 					
-					if (ImGui::BeginPopup("Select Site", NULL))
-					{
+					if (ImGui::BeginPopup("Select Site", NULL)){
 						ImGui::Text("Select a site to download from. \nAlternatively you can select a site by left clicking on the site name in the world.\n\n");
 						ImGui::Separator();
 						ImGui::InputText("Custom Site ID", &siteIdSelection);
@@ -935,7 +974,7 @@ void AImGuiUI::LeftClick() {
 	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)){
 		isLeftClicking = false;
 		if(selectedActor != NULL){
-			fprintf(stderr, "Clicking on actor %s\n", StringUtils::FStringToSTDString(selectedActor->GetName()).c_str());
+			//fprintf(stderr, "Clicking on actor %s\n", StringUtils::FStringToSTDString(selectedActor->GetName()).c_str());
 			IClickableInterface* clickable = dynamic_cast<IClickableInterface*>(selectedActor);
 			if(clickable != NULL){
 				clickable->OnClick();

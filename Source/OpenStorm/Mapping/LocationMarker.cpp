@@ -67,7 +67,7 @@ void ALocationMarker::SetText(std::string text) {
 }
 void ALocationMarker::EnableCollision() {
 	FBoxSphereBounds textBounds = textComponent->GetLocalBounds();
-	collisionComponent->SetBoxExtent(textBounds.BoxExtent + 0);
+	collisionComponent->SetBoxExtent(textBounds.BoxExtent + 20);
 	collisionComponent->SetRelativeLocation(-textBounds.Origin);
 	collisionComponent->SetActive(true);
 }
@@ -79,7 +79,9 @@ void ALocationMarker::OnClick(){
 			GlobalState* globalState = &gameMode->globalState;
 			fprintf(stderr, "Set radar site to %s\n", data.c_str());
 			globalState->downloadSiteId = data;
-			globalState->openDownloadDropdown = true;
+			if(!globalState->downloadData){
+				globalState->openDownloadDropdown = true;
+			}
 		}
 	}
 }

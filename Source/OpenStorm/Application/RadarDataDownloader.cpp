@@ -2,6 +2,7 @@
 
 #include "../Radar/AsyncTask.h"
 #include "../Radar/SystemAPI.h"
+#include "../Radar/RadarDataHolder.h"
 #include "../Objects/RadarGameStateBase.h"
 #include "../EngineHelpers/StringUtils.h"
 
@@ -183,6 +184,8 @@ public:
 	float pollInterval = 30;
 	// last time poling was initiated
 	double lastPollTime = 0;
+	// number of seconds to keep files after they are downloaded
+	double deleteAfter = 0;
 	// maximum number of files that will be downloaded before the current one
 	size_t maxPerviousFilesToDownload = 10;
 	
@@ -204,6 +207,7 @@ public:
 		Init();
 		// httpPath = "http://localhost:54808/pub/data/nccf/radar/nexrad_level2/" + siteId + "/";
 		
+		// pull values into local scope to prevent race conditions
 		std::string httpPathLocal = httpPath;
 		std::string outputPathLocal = outputPath;
 		
@@ -213,6 +217,19 @@ public:
 		HTTPDownloader dirListDownloader;
 		//dirListDownloader.outputFile = "/tmp/list";
 		while(!canceled){
+			
+			if(deleteAfter > 0){
+				std::vector<SystemAPI::FileStats> existingFiles = SystemAPI::ReadDirectory(outputPathLocal);
+				for(SystemAPI::FileStats &file : existingFiles){
+					double fileDate = RadarFile::ParseFileNameDate(file.name);
+					if(fileDate > 0 && SystemAPI::CurrentTime() - fileDate > deleteAfter){
+						std::string filePath = outputPathLocal + file.name;
+						fprintf(stderr, "Deleting %s\n", filePath.c_str());
+						unlink(filePath.c_str());
+					}
+				}
+			}
+			
 			bool trueBool = true;
 			dirListDownloader.MakeRequest(httpPathLocal + listFile, &canceled);
 			fprintf(stderr, "List request complete %i %s\n", dirListDownloader.success, dirListDownloader.error.c_str());
@@ -238,7 +255,14 @@ public:
 						std::string part1 = lineString.substr(0, splitPos);
 						std::string part2 = lineString.substr(splitPos + 1, endPos);
 						// fprintf(stderr, "%s | %s\n", part2.c_str(), part1.c_str());
-						files.push_back(FileSizePair(part2, (size_t)std::stoll(part1)));
+						if(deleteAfter > 0){
+							// only download files that wont be immediately deleted
+							if(SystemAPI::CurrentTime() - RadarFile::ParseFileNameDate(part2) < deleteAfter){
+								files.push_back(FileSizePair(part2, (size_t)std::stoll(part1)));
+							}
+						}else{
+							files.push_back(FileSizePair(part2, (size_t)std::stoll(part1)));
+						}
 					}
 					line = strtok(NULL, "\n");
 				}
@@ -356,6 +380,7 @@ void ARadarDataDownloader::Tick(float DeltaTime)
 			// limit to 10 or more seconds between requests
 			downloaderTask->pollInterval = std::max(10.0f, globalState->downloadPollInterval);
 			downloaderTask->maxPerviousFilesToDownload = (size_t)globalState->downloadPreviousCount;
+			downloaderTask->deleteAfter = globalState->downloadDeleteAfter;
 			if(!downloaderTask->running){
 				downloaderTask->Init();
 				downloaderTask->Start();

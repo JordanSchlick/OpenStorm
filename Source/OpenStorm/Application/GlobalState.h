@@ -66,7 +66,7 @@ public:
 	float cutoff = 0.0f; // how much of the radar intensity range to hide starting at the lowest
 	float opacityMultiplier = 1.0f; // how opaque the radar volume is
 	float fadeSpeed = 0.0f; // speed of fade
-	float moveSpeed = 300.0f; // speed of movement
+	float moveSpeed = 500.0f; // speed of movement
 	float rotateSpeed = 200.0f; // speed of rotation
 	float guiScale = 1.0f; // scale of gui for high dpi displays
 	float quality = 0.0f; // a float representing quality with 0 being normal
@@ -97,9 +97,11 @@ public:
 	float downloadPollInterval = 60; // how often a check is done for new files
 	bool openDownloadDropdown = false; // when set to true the download dropdown will be opened to alert the user to its presence
 	int downloadPreviousCount = 10; // how many previous files to get before the current one
+	float downloadDeleteAfter = 0; // if more than zero then files older than this many seconds will be deleted
 	
-	bool discordPresence = true;
+	bool discordPresence = true; // if discord presence is enabled
 	
+	// user defined waypoints for the globe
 	std::vector<Waypoint> locationMarkers = {};
 	
 	// globe that is lined up with radar data

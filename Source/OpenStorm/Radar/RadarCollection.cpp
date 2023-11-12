@@ -142,7 +142,7 @@ public:
 				RadarFile radarFile = {};
 				radarFile.path = path;
 				radarFile.name = filename;
-				radarFile.time = RadarCollection::ParseFileNameDate(filename);
+				radarFile.time = RadarFile::ParseFileNameDate(filename);
 				radarFile.size = file.size;
 				if(file.mtime > 0){
 					// this is not available on linux currently
@@ -564,74 +564,7 @@ void RadarCollection::ReadFiles(std::string path) {
 	PollFiles();
 }
 
-double RadarCollection::ParseFileNameDate(std::string filename) {
-	std::string datePart = "";
-	std::string timePart = "";
-	int numberPartStartIndex = 0;
-	int filenameLength = filename.length();
-	for(int i = 0; i <= filenameLength; i++){
-		bool notPart = i == filenameLength;
-		if(!notPart){
-			char character = filename[i];
-			notPart = !('0' <= character && character <= '9');
-		}
-		if(notPart){
-			int partSize = i - numberPartStartIndex;
-			if(partSize > 0){
-				std::string part = filename.substr(numberPartStartIndex, partSize);
-				if(partSize == 8){
-					int beginNumber = std::stoi(part.substr(0, 4));
-					if(beginNumber > 1900 && beginNumber < 2999){
-						datePart = part;
-					}
-				}
-				if(partSize == 6){
-					timePart = part;
-				}
-				if(partSize == 14){
-					int beginNumber = std::stoi(part.substr(0, 4));
-					if(beginNumber > 1900 && beginNumber < 2999){
-						datePart = part.substr(0, 8);
-						timePart = part.substr(8, 6);
-					}
-				}
-				if(partSize == 12){
-					int beginNumber = std::stoi(part.substr(0, 4));
-					if(beginNumber > 1900 && beginNumber < 2999){
-						datePart = part.substr(0, 8);
-						timePart = part.substr(8, 6);
-					}
-				}
-			}
-			numberPartStartIndex = i + 1;
-		}
-	}
-	if(datePart == "" || timePart == ""){
-		return 0;
-	}
-	struct tm t = {0};
-	t.tm_year = std::stoi(datePart.substr(0, 4)) - 1900; 
-	t.tm_mon = std::stoi(datePart.substr(4, 2)) - 1;
-	t.tm_mday = std::stoi(datePart.substr(6, 2));
-	if(timePart.length() == 4){
-		t.tm_hour = std::stoi(timePart.substr(0, 2));
-		t.tm_min = std::stoi(timePart.substr(2, 2));
-	}else{
-		t.tm_hour = std::stoi(timePart.substr(0, 2));
-		t.tm_min = std::stoi(timePart.substr(2, 2));
-		t.tm_sec = std::stoi(timePart.substr(4, 2));
-	}
-	
-	
-	
-	#ifdef _WIN32
-	time_t timeSinceEpoch = _mkgmtime(&t);
-	//fprintf(stderr, "date %i %i %i %i %i %i %lli\n", t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, timeSinceEpoch);
-	#else
-	time_t timeSinceEpoch = timegm(&t);
-	#endif
-	return (double)timeSinceEpoch;
-}
+
 
 
 

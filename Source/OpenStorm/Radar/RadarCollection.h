@@ -78,9 +78,6 @@ public:
 	// read file info from a directory
 	void ReadFiles(std::string path);
 	
-	// get unix timestamp from the name of a file
-	static double ParseFileNameDate(std::string filename);
-	
 	// poll current directory for updates
 	void PollFiles();
 	

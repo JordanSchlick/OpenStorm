@@ -23,6 +23,9 @@ public:
 	std::string path = "";
 	// name of file
 	std::string name = "";
+	
+	// get unix timestamp from the name of a file
+	static double ParseFileNameDate(std::string filename);
 };
 
 // settings for radar data that is read in
