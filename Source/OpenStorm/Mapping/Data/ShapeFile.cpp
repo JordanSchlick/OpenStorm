@@ -70,7 +70,7 @@ bool ReadShapeFile(std::string fileName, std::vector<GISObject>* output, uint8_t
 		return false;
 	}
 	size_t fileSize = std::min((size_t)fileHeader.fileLength * 2, stats.size);
-	fprintf(stderr, "Shapefile info %i %i %f %f\n", fileHeader.fileLength * 2, (int)stats.size, (float)fileHeader.minX, (float)fileHeader.maxX);
+	// fprintf(stderr, "Shapefile info %i %i %f %f\n", fileHeader.fileLength * 2, (int)stats.size, (float)fileHeader.minX, (float)fileHeader.maxX);
 	
 	// exclude header size
 	fileSize -= 100;

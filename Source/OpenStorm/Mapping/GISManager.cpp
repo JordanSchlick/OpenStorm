@@ -29,7 +29,7 @@ static bool endsWith(const std::string& str, const std::string& suffix)
     return str.size() >= suffix.size() && 0 == str.compare(str.size()-suffix.size(), suffix.size(), suffix);
 }
 
-
+// loads shapefiles and determines which objects to show
 class GISLoaderTask : public AsyncTaskRunner{
 public:
 	// camera location in radians
@@ -70,7 +70,7 @@ public:
 			for(SystemAPI::FileStats file : files){
 				// find config files
 				if(endsWith(file.name, ".cnf")){
-					fprintf(stderr, "Found GIS config %s\n", file.name.c_str());
+					// fprintf(stderr, "Found GIS config %s\n", file.name.c_str());
 					std::string filename = dataPath + file.name.substr(0, file.name.size() - 4);
 					SimpleConfig configFile = SimpleConfig(filename + ".cnf");
 					GISGroup gisGroup = GISGroup();
@@ -207,6 +207,7 @@ void AGISManager::Tick(float DeltaTime){
 		std::vector<uint64_t> objectsToAdd;
 		std::vector<uint64_t> objectsToRemove;
 		loaderTask->changeQueueLock.lock();
+		// move lists to main thread
 		objectsToAdd.swap(loaderTask->objectsToAdd);
 		objectsToRemove.swap(loaderTask->objectsToRemove);
 		loaderTask->changeQueueLock.unlock();
@@ -215,7 +216,7 @@ void AGISManager::Tick(float DeltaTime){
 			polylines.erase(id);
 		}
 		if(objectsToAdd.size() > 0){
-			fprintf(stderr, "%i ", (int)objectsToAdd.size());
+			// fprintf(stderr, "%i ", (int)objectsToAdd.size());
 		}
 		for(uint64_t id : objectsToAdd){
 			AGISPolyline* polyline = world->SpawnActor<AGISPolyline>(AGISPolyline::StaticClass());

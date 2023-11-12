@@ -413,7 +413,7 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 	}
 	
 	benchTime = SystemAPI::CurrentTime() - benchTime;
-	if(verbose || true){
+	if(verbose){
 		fprintf(stderr, "volume loading code took %fs\n", benchTime);
 	}
 

@@ -330,7 +330,7 @@ void RadarCollection::Jump(size_t index, bool keepCurrentCachePosition) {
 	if(!keepCurrentCachePosition){
 		currentPosition = modulo(currentPosition + delta, cacheSize);
 	}
-	fprintf(stderr, "%i %i %i %i\n", (int)cachedBefore, (int)cachedAfter, (int)firstItemIndex, (int)lastItemIndex);
+	// fprintf(stderr, "%i %i %i %i\n", (int)cachedBefore, (int)cachedAfter, (int)firstItemIndex, (int)lastItemIndex);
 	
 	
 	// move used holders back into cache
