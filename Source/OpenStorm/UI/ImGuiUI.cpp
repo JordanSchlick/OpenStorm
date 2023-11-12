@@ -1,13 +1,13 @@
 #include "ImGuiUI.h"
 #include "Font.h"
 #include "Native.h"
-#include "UiWindow.h"
 #include "../Radar/SystemAPI.h"
 #include "../Radar/Products/RadarProduct.h"
 #include "../Radar/Globe.h"
 #include "../Radar/NexradSites/NexradSites.h"
 #include "../Objects/RadarGameStateBase.h"
 #include "../Objects/RadarViewPawn.h"
+#include "ImGuiController.h"
 #include "../EngineHelpers/StringUtils.h"
 #include "./portable-file-dialogs.h"
 #include "./ClickableInterface.h"
@@ -18,13 +18,8 @@
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "ImGuiModule.h"
-#include "Widgets/SWindow.h"
-#include "Kismet/GameplayStatics.h"
-#include "Engine/Console.h"
-#include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
-#include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h"
+
 #include "HAL/FileManager.h"
-#include "UnrealClient.h"
 
 #if WITH_EDITOR
 //#include "Toolkits/AssetEditorManager.h"
@@ -194,104 +189,23 @@ bool ToggleButton(const char* label, bool active, const ImVec2 &size = ImVec2(0,
 
 
 // Sets default values
-AImGuiUI::AImGuiUI()
-{
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+ImGuiUI::ImGuiUI(){
+	
 }
-AImGuiUI::~AImGuiUI(){
-	delete uiWindow;
+ImGuiUI::~ImGuiUI(){
+	
 }
 
-// Called when the game starts or when spawned
-void AImGuiUI::BeginPlay()
-{
-	Super::BeginPlay();
-	
-	LoadFonts();
-	unsafeFrames = 10;
-	//FImGuiModule::Get().RebuildFontAtlas();
-	
-	ImGuiStyle &style = ImGui::GetStyle();
-	style.DisplaySafeAreaPadding = ImVec2(0, 0);
-	
-	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
-		GlobalState* globalState = &gameState->globalState;
-		callbackIds.push_back(globalState->RegisterEvent("UpdateEngineSettings", [this](std::string stringData, void* extraData) {
-			UpdateEngineSettings();
-		}));
-	}
-	
-	InitializeConsole();
-	
-	UpdateEngineSettings();
-	
-	UnlockMouse();
-}
-
-void AImGuiUI::EndPlay(const EEndPlayReason::Type endPlayReason) {
-	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
-		GlobalState* globalState = &gameState->globalState;
-		// unregister all events
-		for(auto id : callbackIds){
-			globalState->UnregisterEvent(id);
-		}
-	}
-	Super::EndPlay(endPlayReason);
-}
 
 //const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
 
 // Called every frame
-void AImGuiUI::Tick(float deltaTime)
+void ImGuiUI::MainUI()
 {
-	Super::Tick(deltaTime);
-
-	GlobalState &globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
-	if (unsafeFrames > 0) {
-		unsafeFrames--;
-		globalState.devShowImGui = false;
-		return;
-	}
-	globalState.devShowImGui = true;
-	
+	GlobalState &globalState = *imGuiController->GetGlobalState();
 	double now = SystemAPI::CurrentTime();
-
-	ARadarGameStateBase* GS = GetWorld()->GetGameState<ARadarGameStateBase>();
-
-	ImGuiStyle &style = ImGui::GetStyle();
-	style.DisplaySafeAreaPadding = ImVec2(0, 0);
-	
-	// FViewport* veiwport = GetWorld()->GetGameViewport()->Viewport;
-	// FIntPoint viewportSize = veiwport->GetSizeXY();
 	ImGuiIO& io = ImGui::GetIO();
-	SWindow* swindow = GetWorld()->GetGameViewport()->GetWindow().Get();
 	
-	float nativeScale = 1;
-	// ImVec2 maxSize = ImVec2(viewportSize.X / 2, viewportSize.Y);
-	ImVec2 maxSize = ImVec2(io.DisplaySize.x / 2, io.DisplaySize.y);
-	if (uiWindow != NULL && uiWindow->isOpen) {
-		// FVector2D viewportSize2 = uiWindow->window.Get()->GetViewportSize();
-		// maxSize = ImVec2(viewportSize2.X, viewportSize2.Y);
-		nativeScale = uiWindow->window.Get()->GetDPIScaleFactor();
-		maxSize = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
-	}else{
-		nativeScale = swindow->GetDPIScaleFactor();
-	}
-	if(nativeScale != globalState.defaults->guiScale){
-		if(globalState.defaults->guiScale == globalState.guiScale){
-			globalState.guiScale = nativeScale;
-		}
-		globalState.defaults->guiScale = nativeScale;
-	}
-
-	float fontScale = globalState.guiScale;
-	ImGui::SetNextWindowBgAlpha(0.3);
-	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), 0, ImVec2(0.0f, 0.0f));
-	//ImGui::SetNextWindowSize(ImVec2(400.0f, 300.0f), 0);
-	
-	io.FontGlobalScale = fontScale;
-	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, 100.0f), maxSize);
 	if(ImGui::Begin("OpenStorm", NULL, ImGuiWindowFlags_NoMove | /*ImGuiWindowFlags_NoBackground |*/ ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar)){
 		if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1)){
 			//auto rect = ImGui::GetCurrentWindow()->TitleBarRect();
@@ -369,7 +283,7 @@ void AImGuiUI::Tick(float deltaTime)
 					globalState.EmitEvent("UpdateVolumeParameters");
 				}
 				
-				ImGui::Checkbox("Temporal Interpolation", &GS->globalState.temporalInterpolation);
+				ImGui::Checkbox("Temporal Interpolation", &globalState.temporalInterpolation);
 				
 				// ImGui::PushItemWidth(10 * fontSize);
 				// if (ImGui::BeginCombo("View Mode", globalState.viewMode == GlobalState::VIEW_MODE_VOLUMETRIC ? "3D Volume" : "2D Slice", 0)){
@@ -423,24 +337,20 @@ void AImGuiUI::Tick(float deltaTime)
 			if (ImGui::TreeNodeEx("Movement", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				CustomFloatInput("Movement Speed", 10, 1500, &globalState.moveSpeed, &globalState.defaults->moveSpeed);
 				
-				
 				CustomFloatInput("Rotation Speed", 0.0f, 300.0f, &globalState.rotateSpeed, &globalState.defaults->rotateSpeed);
 				ImGui::TreePop();
-				//ImGui::Text("MovementSpeed: %f", GS->globalState.moveSpeed);
 			}
 			ImGui::Separator();
 			
 			if (ImGui::TreeNodeEx("Animation", ImGuiTreeNodeFlags_SpanAvailWidth)) {
-				ImGui::Checkbox("Time", &GS->globalState.animate);
+				ImGui::Checkbox("Time", &globalState.animate);
 				char* comboNames[] = {"Default", "Loop Loaded", "Loop All", "Bounce", "Bounce Loaded", "None"};
 				GlobalState::LoopMode comboValues[] = {GlobalState::LOOP_MODE_DEFAULT, GlobalState::LOOP_MODE_CACHE, GlobalState::LOOP_MODE_ALL, GlobalState::LOOP_MODE_BOUNCE, GlobalState::LOOP_MODE_CACHE_BOUNCE, GlobalState::LOOP_MODE_NONE};
 				ImGui::PushItemWidth(12 * fontSize);
 				EnumCombo("Loop Mode", &globalState.animateLoopMode, comboNames, comboValues, sizeof(comboNames)/sizeof(comboNames[0]));
 				ImGui::PopItemWidth();
-				//ImGui::Text("Animation Speed:");
-				//ImGui::SliderFloat("##1", &GS->globalState.animateSpeed, 0.0f, 5.0f);
 				CustomFloatInput("Time Animation Speed", 1, 20, &globalState.animateSpeed, &globalState.defaults->animateSpeed);
-				ImGui::Checkbox("Cuttoff", &GS->globalState.animateCutoff);
+				ImGui::Checkbox("Cuttoff", &globalState.animateCutoff);
 				CustomFloatInput("Cutoff Animation Speed", 0.1, 2, &globalState.animateCutoffSpeed, &globalState.defaults->animateCutoffSpeed);
 				ImGui::TreePop();
 			}
@@ -489,8 +399,8 @@ void AImGuiUI::Tick(float deltaTime)
 					// delete dropdown
 					static float downloadDeleteAfterLocal = globalState.downloadDeleteAfter;
 					static bool deletePopupOpen = false;
-					char* comboNames[] =  {"Never", "2 Hours", "6 Hours", "12 Hours", "1 Day",  "2 Days", "7 Days",  "30 Days",  "100 Days"};
-					float comboValues[] = {0,       2*3600,     6*3600,    12*3600,    24*3600, 2*24*3600,  7*24*3600, 30*24*3600, 100*24*3600};
+					char* comboNames[] =  {"Never", "2 Hours", "6 Hours", "12 Hours", "1 Day",  "2 Days",  "7 Days",  "30 Days",  "100 Days",  "1 Year"};
+					float comboValues[] = {0,       2*3600,     6*3600,    12*3600,    24*3600, 2*24*3600, 7*24*3600, 30*24*3600, 100*24*3600, 365*24*3600};
 					ImGui::Text("Delete files after");
 					ImGui::PushItemWidth(12 * fontSize);
 					EnumCombo("##deleteFilesAfter", &downloadDeleteAfterLocal, comboNames, comboValues, sizeof(comboNames)/sizeof(comboNames[0]));
@@ -653,10 +563,10 @@ void AImGuiUI::Tick(float deltaTime)
 		if (ImGui::CollapsingHeader("Settings")) {
 			if (ImGui::TreeNodeEx("Display", ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen)) {
 				if(CustomFloatInput("Max FPS", 20, 120, &globalState.maxFPS, &globalState.defaults->maxFPS)){
-					UpdateEngineSettings();
+					globalState.EmitEvent("UpdateEngineSettings");
 				}
 				if(ImGui::Checkbox("VSync", &globalState.vsync)){
-					UpdateEngineSettings();
+					globalState.EmitEvent("UpdateEngineSettings");
 				}
 				
 				ImGuiComboFlags flags = 0;
@@ -700,23 +610,23 @@ void AImGuiUI::Tick(float deltaTime)
 				ImGui::Checkbox("Enable TAA", &globalState.temporalAntiAliasing);
 				
 				if (ImGui::Button("External Settings Window")) {
-					if(uiWindow != NULL && !globalState.vrMode){
-						InternalWindow();
+					if(imGuiController->uiWindow != NULL && !globalState.vrMode){
+						imGuiController->InternalWindow();
 					}else{
-						ExternalWindow();
+						imGuiController->ExternalWindow();
 					}
 				}
 				ImGui::SameLine();
 				if (ToggleButton("VR " ICON_FA_VR_CARDBOARD, globalState.vrMode)) {
 					globalState.vrMode = !globalState.vrMode;
 					if(globalState.vrMode){
-						GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 1"));
+						GEngine->Exec(imGuiController->GetWorld(), TEXT("vr.bEnableStereo 1"));
 					}else{
-						GEngine->Exec(GetWorld(), TEXT("vr.bEnableStereo 0"));
+						GEngine->Exec(imGuiController->GetWorld(), TEXT("vr.bEnableStereo 0"));
 					}
-					UpdateEngineSettings();
+					globalState.EmitEvent("UpdateEngineSettings");
 					//ImGui::SetWindowCollapsed(true);
-					ExternalWindow();
+					imGuiController->ExternalWindow();
 				}
 				ImGui::TreePop();
 			}
@@ -780,25 +690,25 @@ void AImGuiUI::Tick(float deltaTime)
 			ImGui::SameLine();
 			if (ImGui::Button("Load Font")) {
 				LoadFonts();
-				unsafeFrames = 10;
+				imGuiController->unsafeFrames = 10;
 				return;
 			}
 
 			if (ImGui::Button("External win")) {
-				ExternalWindow();
+				imGuiController->ExternalWindow();
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Internal win")) {
 				// this was thought to be impossible
-				InternalWindow();
+				imGuiController->InternalWindow();
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Unlock")) {
-				UnlockMouse();
+				imGuiController->UnlockMouse();
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Lock")) {
-				LockMouse();
+				imGuiController->LockMouse();
 			}
 
 			if (ImGui::Button("Reload File")) {
@@ -887,7 +797,7 @@ void AImGuiUI::Tick(float deltaTime)
 			
 			ImGui::Checkbox("Scalability Test", &scalabilityTest);
 			if (ImGui::Button("Test")) {
-				ligma(GS->globalState.testBool);
+				ligma(globalState.testBool);
 			}
 		}
 		
@@ -901,130 +811,14 @@ void AImGuiUI::Tick(float deltaTime)
 	}
 	
 	
-	if(!io.WantCaptureMouse || isLeftClicking){
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || isLeftClicking){
-			LeftClick();
-		}
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)){
-			// mouse release will not be received
-			//io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
-			//io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
-			//fprintf(stderr, "Capture mouse here\n");
-			LockMouse();
-		}
-	}
-	
-	if(io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_L)){
-		globalState.developmentMode = !globalState.developmentMode;
-	}
-	
-	if (uiWindow != NULL) {
-		uiWindow->Tick();
-	}
-	
-	if(fileChooser != NULL){
-		// check if user has taken action on file dialog
-		if(fileChooser->ready()){
-			std::vector<std::string> files = fileChooser->result();
-			if(files.size() > 0){
-				globalState.EmitEvent("LoadDirectory", files[0], NULL);
-			}
-			delete fileChooser;
-			fileChooser = NULL;
-		}
-	}
-	
 }
 
 
-void AImGuiUI::LeftClick() {
-	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)){
-		isLeftClicking = true;
-		
-		// cast ray to find out what was clicked on
-		ImVec2 mousePos = ImGui::GetMousePos();
-		FVector clickWorldLocation;
-		FVector clickWorldDirection;
-		GetWorld()->GetFirstPlayerController()->DeprojectScreenPositionToWorld(mousePos.x, mousePos.y, clickWorldLocation, clickWorldDirection);
-		// fprintf(stderr, "(%f %f %f) (%f %f %f)\n",clickWorldLocation.X,clickWorldLocation.Y,clickWorldLocation.Z,clickWorldDirection.X,clickWorldDirection.Y,clickWorldDirection.Z);
-		FVector traceEndLocation = clickWorldLocation + clickWorldDirection * 100000;
-		FCollisionQueryParams queryParams;
-		FHitResult hit;
-		ECollisionChannel channel = ECC_Camera;
-		GetWorld()->LineTraceSingleByChannel(hit, clickWorldLocation, traceEndLocation, channel, queryParams);
-		AActor* hitActor = hit.GetActor();
-		if(hitActor != NULL){
-			selectedActor = hitActor;
-			// fprintf(stderr, "%s\n", StringUtils::FStringToSTDString(hitActor->GetName()).c_str());
-			if(dynamic_cast<IClickableInterface*>(hitActor) != NULL){
-				
-			}
-		}else{
-			selectedActor = NULL;
-		}
-	}
-	
-	// lock if the mouse is moved
-	if(ImGui::IsMouseDragging(ImGuiMouseButton_Left, 2)){
-		isLeftClicking = false;
-		LockMouse();
-	}
-	
-	// the mouse was never locked before release
-	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)){
-		isLeftClicking = false;
-		if(selectedActor != NULL){
-			//fprintf(stderr, "Clicking on actor %s\n", StringUtils::FStringToSTDString(selectedActor->GetName()).c_str());
-			IClickableInterface* clickable = dynamic_cast<IClickableInterface*>(selectedActor);
-			if(clickable != NULL){
-				clickable->OnClick();
-			}
-		}
-	}
-}
 
-
-void AImGuiUI::LockMouse() {
-	fprintf(stderr, "Locking mouse\n");
-	FImGuiModule::Get().GetProperties().SetInputEnabled(false);
-	//GetWorld()->GetGameViewport()->Viewport->;
-	GetWorld()->GetGameViewport()->Viewport->CaptureMouse(true);
-	GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeGameOnly());
-	//ImGuiIO& io = ImGui::GetIO();
-	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
-	if(gameMode != NULL){
-		GlobalState* globalState = &gameMode->globalState;
-		globalState->isMouseCaptured = true;
-	}
-}
-
-void AImGuiUI::UnlockMouse() {
-	fprintf(stderr, "Unlocking mouse\n");
-	FImGuiModule::Get().GetProperties().SetInputEnabled(true);
-	FImGuiModule::Get().GetProperties().SetGamepadNavigationEnabled(false);
-	FImGuiModule::Get().GetProperties().SetMouseInputShared(false);
-	FImGuiModule::Get().GetProperties().SetGamepadInputShared(true);
-	ImGui::SetWindowFocus();
-	//GetWorld()->GetGameViewport()->Viewport->SetUserFocus(true);
-	//FImGuiModule::Get().SetInputMode
-	//ImGuiIO& io = ImGui::GetIO();
-	//io.ClearInputKeys();
-	//io.ClearInputCharacters();
-	//io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
-	//io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
-	//GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeGameOnly());
-	GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeGameAndUI());
-	ARadarGameStateBase* gameMode = GetWorld()->GetGameState<ARadarGameStateBase>();
-	if(gameMode != NULL){
-		GlobalState* globalState = &gameMode->globalState;
-		globalState->isMouseCaptured = false;
-	}
-}
-
-void AImGuiUI::ligma(bool Value)
+void ImGuiUI::ligma(bool Value)
 {
 	//FImGuiModule::Get().GetProperties().SetInputEnabled(Value);
-	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
+	GlobalState* globalState = imGuiController->GetGlobalState();
 	fprintf(stderr,"Test\n");
 	globalState->EmitEvent("Test");
 	globalState->EmitEvent("TestUnregistered");
@@ -1033,44 +827,9 @@ void AImGuiUI::ligma(bool Value)
 	#endif
 }
 
-void AImGuiUI::InitializeConsole()
-{
-    UWorld* World = GetWorld();
-    if (!ensure(World != nullptr)) return;
-    auto* Viewport = World->GetGameViewport();
-    if (!ensure(Viewport != nullptr)) return;
 
-    if (!Viewport->ViewportConsole)
-    {
-        Viewport->ViewportConsole = static_cast<UConsole*>(UGameplayStatics::SpawnObject(UConsole::StaticClass(), GetWorld()->GetGameViewport()));
-    }
-}
 
-// send controls to an external window
-void AImGuiUI::ExternalWindow() {
-	if (uiWindow != NULL) {
-		if (!uiWindow->isOpen) {
-			// already closed
-			delete uiWindow;
-			uiWindow = NULL;
-		}
-	}
-	if(uiWindow == NULL){
-		GEngine->Exec(GetWorld(), TEXT("Slate.bAllowThrottling 0"));
-		uiWindow = new UIWindow(GetWorld()->GetGameViewport());
-	}
-}
-
-// close external settings window and move controls to main viewport
-void AImGuiUI::InternalWindow() {
-	if(uiWindow != NULL){
-		uiWindow->Close();
-		delete uiWindow;
-		uiWindow = NULL;
-	}
-}
-
-void AImGuiUI::ChooseFiles() {
+void ImGuiUI::ChooseFiles() {
 	/*
 	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	std::vector<std::string> files = {};
@@ -1100,10 +859,4 @@ void AImGuiUI::ChooseFiles() {
 		// const char* radarDirLocaition = StringCast<ANSICHAR>(*fullradarDir).Get();
 		fileChooser = new pfd::public_open_file("Open Radar Files", "", { "All Files", "*" }, pfd::opt::multiselect);
 	}
-}
-void AImGuiUI::UpdateEngineSettings() {
-	GlobalState& globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
-	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("r.VSync %i"), globalState.vsync && !globalState.vrMode));
-	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("r.VSyncEditor %i"), globalState.vsync && !globalState.vrMode));
-	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("t.MaxFPS %f"), (globalState.maxFPS == 0 || globalState.vrMode) ? 0 : std::max(1.0f,globalState.maxFPS)));
 }

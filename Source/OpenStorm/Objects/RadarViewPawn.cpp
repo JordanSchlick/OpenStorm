@@ -9,7 +9,7 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "../Radar/SimpleVector3.h"
-#include "../UI/ImGuiUI.h"
+#include "../UI/ImGuiController.h"
 #include "../UI/Slate/SlateUI.h"
 
 
@@ -48,7 +48,7 @@ void ARadarViewPawn::BeginPlay()
 	meshComponent->SetRelativeScale3D(FVector3d(0.25, 2, 2));
 	//mainVolumeRender = ARadarVolumeRender::instance;
 	mainVolumeRender = FindActor<ARadarVolumeRender>();
-	gui = FindActor<AImGuiUI>();
+	gui = FindActor<AImGuiController>();
 	hud = FindActor<ASlateUI>();
 	//hud = new HUD(GetWorld()->GetGameViewport());
 	//hud = NewObject<class ASlateUI>(this);

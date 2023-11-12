@@ -9,7 +9,7 @@
 #include "RadarViewPawn.generated.h"
 
 class ASlateUI;
-class AImGuiUI;
+class AImGuiController;
 
 UCLASS()
 class OPENSTORM_API ARadarViewPawn : public APawn
@@ -77,7 +77,7 @@ public:
 		ARadarVolumeRender* mainVolumeRender = NULL;
 
 	UPROPERTY(EditAnywhere)
-		AImGuiUI* gui = NULL;
+		AImGuiController* gui = NULL;
 	
 	UPROPERTY(EditAnywhere)
 		UMaterialInstanceDynamic* radarMaterialInstance = NULL;

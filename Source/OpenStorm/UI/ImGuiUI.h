@@ -2,59 +2,35 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include <vector>
-#include "ImGuiUI.generated.h"
 
-class UIWindow;
+#include <vector>
+
+class AImGuiController;
 namespace pfd{
 	class public_open_file;
 }
 
-UCLASS()
-class OPENSTORM_API AImGuiUI : public AActor
+class ImGuiUI
 {
-	GENERATED_BODY()
 
 public:
 	// Sets default values for this actor's properties
-	AImGuiUI();
-	~AImGuiUI();
+	ImGuiUI();
+	~ImGuiUI();
+	
 	bool showDemoWindow = false;
 	bool scalabilityTest = false;
-	int unsafeFrames = 0;
-	UIWindow* uiWindow = NULL;
+	AImGuiController* imGuiController = NULL;
+	
 	pfd::public_open_file* fileChooser = NULL;
-	std::vector<uint64_t> callbackIds = {};
 	
-	// if the left click is down and it has not been locked yet
-	bool isLeftClicking = false;
-	// actor selected by click that may be acted upon by further input
-	AActor* selectedActor = NULL;
-	
-	// called when left clicking outside of UI
-	void LeftClick();
-	void LockMouse();
-	void UnlockMouse();
-	void InitializeConsole();
-	// move gui to external window
-	void ExternalWindow();
-	// move gui to main viewport
-	void InternalWindow();
-	// choose a dierectory or specific files
+	// choose a directory or specific files
 	void ChooseFiles();
-	// set engine settings from global state
-	void UpdateEngineSettings();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type endPlayReason) override;
 
 public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	// main settings UI
+	void MainUI();
 
 	void ligma(bool Value);
 };
