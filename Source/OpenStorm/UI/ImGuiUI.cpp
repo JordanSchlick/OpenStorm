@@ -611,9 +611,13 @@ void ImGuiUI::MainUI()
 						idChr[1] = id / 255 + 1;
 						ImGui::PushID(idChr);
 						markersChanged |= ImGui::InputText("Name", &marker.name);
+						CustomTooltipForPrevious("Name of the marker displayed on the map");
 						markersChanged |= ImGui::InputDouble("Latitude", &marker.latitude);
+						CustomTooltipForPrevious("Latitude of the marker in degrees");
 						markersChanged |= ImGui::InputDouble("Longitude", &marker.longitude);
+						CustomTooltipForPrevious("Longitude of the marker in degrees");
 						markersChanged |= ImGui::InputDouble("Altitude", &marker.altitude);
+						CustomTooltipForPrevious("Altitude of the marker in meters");
 						markersChanged |= ImGui::Checkbox("", &marker.enabled);
 						CustomTooltipForPrevious("Show the marker on the map");
 						ImGui::SameLine();

@@ -118,6 +118,10 @@ bool ASettingsSaver::SaveJson(FString filename, TSharedPtr<FJsonObject> jsonObje
 	globalState->NAME = tmpBool; \
 }
 
+#define LOAD_MACRO_STRING(NAME) if(jsonObject->TryGetStringField(TEXT(QUOTE(NAME)), tmpString)){ \
+	globalState->NAME = StringUtils::FStringToSTDString(tmpString); \
+}
+
 void ASettingsSaver::LoadSettings() {
 	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
 		GlobalState* globalState = &gameState->globalState;
@@ -125,11 +129,9 @@ void ASettingsSaver::LoadSettings() {
 		TSharedPtr<FJsonObject> jsonObject = LoadJson(settingsFile);
 		float tmpFloat;
 		bool tmpBool;
+		FString tmpString;
 		// Main
 		// --Radar--
-		if (jsonObject->TryGetNumberField(TEXT(""), tmpFloat)) {
-			globalState->animateSpeed = tmpFloat;
-		}
 		LOAD_MACRO_FLOAT(cutoff);
 		LOAD_MACRO_FLOAT(opacityMultiplier);
 		LOAD_MACRO_FLOAT(verticalScale);
@@ -148,12 +150,22 @@ void ASettingsSaver::LoadSettings() {
 		LOAD_MACRO_FLOAT(rotateSpeed);
 		// --Animation--
 		LOAD_MACRO_FLOAT(animateSpeed);
+		LOAD_MACRO_FLOAT(animateLoopMode);
 		LOAD_MACRO_FLOAT(animateCutoffSpeed);
 		// --Data--
 		LOAD_MACRO_BOOL(pollData);
+		LOAD_MACRO_FLOAT(downloadPollInterval);
+		LOAD_MACRO_FLOAT(downloadPreviousCount);
+		LOAD_MACRO_FLOAT(downloadDeleteAfter);
+		LOAD_MACRO_STRING(downloadSiteId);
+		LOAD_MACRO_STRING(downloadUrl);
 		// --Map--
 		LOAD_MACRO_BOOL(enableMap);
+		LOAD_MACRO_BOOL(enableMapTiles);
+		LOAD_MACRO_BOOL(enableMapGIS);
 		LOAD_MACRO_FLOAT(mapBrightness);
+		LOAD_MACRO_FLOAT(mapBrightnessGIS);
+		LOAD_MACRO_BOOL(enableSiteMarkers);
 		// Settings
 		LOAD_MACRO_FLOAT(maxFPS);
 		LOAD_MACRO_BOOL(vsync);
@@ -161,10 +173,13 @@ void ASettingsSaver::LoadSettings() {
 		LOAD_MACRO_FLOAT(qualityCustomStepSize);
 		LOAD_MACRO_BOOL(enableFuzz);
 		LOAD_MACRO_BOOL(temporalAntiAliasing);
+		LOAD_MACRO_BOOL(discordPresence);
 		
 		globalState->EmitEvent("UpdateVolumeParameters");
 	}
 }
+
+// these macros only save a value if it is not the default to allow changing default values for all installations
 
 #define SAVE_MACRO_FLOAT(NAME) if(globalState->NAME != globalState->defaults->NAME){ \
 	jsonObject->SetNumberField(TEXT(QUOTE(NAME)), (double)globalState->NAME); \
@@ -174,6 +189,12 @@ void ASettingsSaver::LoadSettings() {
 
 #define SAVE_MACRO_BOOL(NAME) if(globalState->NAME != globalState->defaults->NAME){ \
 	jsonObject->SetBoolField(TEXT(QUOTE(NAME)), globalState->NAME); \
+} else { \
+	jsonObject->RemoveField(TEXT(QUOTE(NAME))); \
+}
+
+#define SAVE_MACRO_STRING(NAME) if(globalState->NAME != globalState->defaults->NAME){ \
+	jsonObject->SetStringField(TEXT(QUOTE(NAME)), StringUtils::STDStringToFString(globalState->NAME)); \
 } else { \
 	jsonObject->RemoveField(TEXT(QUOTE(NAME))); \
 }
@@ -212,12 +233,22 @@ void ASettingsSaver::SaveSettings() {
 		SAVE_MACRO_FLOAT(rotateSpeed);
 		// --Animation--
 		SAVE_MACRO_FLOAT(animateSpeed);
+		SAVE_MACRO_FLOAT(animateLoopMode);
 		SAVE_MACRO_FLOAT(animateCutoffSpeed);
 		// --Data--
 		SAVE_MACRO_BOOL(pollData);
+		SAVE_MACRO_FLOAT(downloadPollInterval);
+		SAVE_MACRO_FLOAT(downloadPreviousCount);
+		SAVE_MACRO_FLOAT(downloadDeleteAfter);
+		SAVE_MACRO_STRING(downloadSiteId);
+		SAVE_MACRO_STRING(downloadUrl);
 		// --Map--
 		SAVE_MACRO_BOOL(enableMap);
+		SAVE_MACRO_BOOL(enableMapTiles);
+		SAVE_MACRO_BOOL(enableMapGIS);
 		SAVE_MACRO_FLOAT(mapBrightness);
+		SAVE_MACRO_FLOAT(mapBrightnessGIS);
+		SAVE_MACRO_BOOL(enableSiteMarkers);
 		// Settings
 		SAVE_MACRO_FLOAT(maxFPS);
 		SAVE_MACRO_BOOL(vsync);
@@ -231,6 +262,7 @@ void ASettingsSaver::SaveSettings() {
 		}
 		SAVE_MACRO_BOOL(enableFuzz);
 		SAVE_MACRO_BOOL(temporalAntiAliasing);
+		SAVE_MACRO_BOOL(discordPresence);
 
 
 
@@ -323,14 +355,25 @@ void ASettingsSaver::ResetAllSettings() {
 		RESET_MACRO(rotateSpeed);
 		// --Animation--
 		RESET_MACRO(animate);
+		RESET_MACRO(animateLoopMode);
 		RESET_MACRO(animateCutoff);
 		RESET_MACRO(animateSpeed);
 		RESET_MACRO(animateCutoffSpeed);
 		// --Data--
 		RESET_MACRO(pollData);
+		RESET_MACRO(downloadData);
+		RESET_MACRO(downloadPollInterval);
+		RESET_MACRO(downloadPreviousCount);
+		RESET_MACRO(downloadDeleteAfter);
+		RESET_MACRO(downloadSiteId);
+		RESET_MACRO(downloadUrl);
 		// --Map--
 		RESET_MACRO(enableMap);
+		RESET_MACRO(enableMapTiles);
+		RESET_MACRO(enableMapGIS);
 		RESET_MACRO(mapBrightness);
+		RESET_MACRO(mapBrightnessGIS);
+		RESET_MACRO(enableSiteMarkers);
 		// Settings
 		RESET_MACRO(maxFPS);
 		RESET_MACRO(vsync);
@@ -338,6 +381,7 @@ void ASettingsSaver::ResetAllSettings() {
 		RESET_MACRO(qualityCustomStepSize);
 		RESET_MACRO(enableFuzz);
 		RESET_MACRO(temporalAntiAliasing);
+		RESET_MACRO(discordPresence);
 		// --Joke--
 		RESET_MACRO(audioControlledCutoff);
 		RESET_MACRO(audioControlledHeight);
@@ -373,6 +417,9 @@ void ASettingsSaver::LoadLocationMarkers() {
 				markerObject->TryGetNumberField(TEXT("latitude"), waypoint.latitude);
 				markerObject->TryGetNumberField(TEXT("longitude"), waypoint.longitude);
 				markerObject->TryGetNumberField(TEXT("altitude"), waypoint.altitude);
+				markerObject->TryGetNumberField(TEXT("colorR"), waypoint.colorR);
+				markerObject->TryGetNumberField(TEXT("colorG"), waypoint.colorG);
+				markerObject->TryGetNumberField(TEXT("colorB"), waypoint.colorB);
 				markerObject->TryGetBoolField(TEXT("enabled"), waypoint.enabled);
 				if (id < globalState->locationMarkers.size()) {
 					// overite existing entry
@@ -404,6 +451,9 @@ void ASettingsSaver::SaveLocationMarkers() {
 			markerObject->SetNumberField(TEXT("latitude"), waypoint.latitude);
 			markerObject->SetNumberField(TEXT("longitude"), waypoint.longitude);
 			markerObject->SetNumberField(TEXT("altitude"), waypoint.altitude);
+			markerObject->SetNumberField(TEXT("colorR"), waypoint.colorR);
+			markerObject->SetNumberField(TEXT("colorG"), waypoint.colorG);
+			markerObject->SetNumberField(TEXT("colorB"), waypoint.colorB);
 			markerObject->SetBoolField(TEXT("enabled"), waypoint.enabled);
 			if (id < markers.Num()) {
 				// overite existing entry
