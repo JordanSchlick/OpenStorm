@@ -14,8 +14,8 @@
 
 #include <vector>
 
-//#include "imgui_internal.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_stdlib.h"
 #include "ImGuiModule.h"
 
@@ -33,6 +33,31 @@ enum CustomInputFlags_{
 	CustomInput_Short = 2 // make it shorter
 };
 
+// display a tooltip for the previous element
+void CustomTooltipForPrevious(char* tooltipText){
+	static double hoverStart = 0;
+	static ImGuiID lastId = 0;
+	static ImVec2 lastMousePos;
+	ImGuiID itemId = ImGui::GetHoveredID();
+	// fprintf(stderr, "%i\n", itemId);
+	if (ImGui::IsItemHovered(/*ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay*/)){
+		double now = SystemAPI::CurrentTime();
+		// fprintf(stderr, "%i %i %f\n", itemId, lastId, hoverStart);
+		if(itemId != lastId || hoverStart == 0){
+			hoverStart = now;
+			lastId = itemId;
+		}
+		if(now - hoverStart > 0.5){
+			ImGui::SetTooltip(tooltipText);
+		}
+	}
+	ImVec2 mousePos = ImGui::GetMousePos();
+	if(itemId != lastId || lastMousePos.x != mousePos.x || lastMousePos.y != mousePos.y){
+		lastMousePos = mousePos;
+		hoverStart = 0;
+	}
+}
+
 template <typename T>
 bool ResetButton(T* value, T* defaultValue = NULL){
 	float frameHeight = ImGui::GetFrameHeight();
@@ -40,9 +65,16 @@ bool ResetButton(T* value, T* defaultValue = NULL){
 		*value = *defaultValue;
 		return true;
 	}
+	CustomTooltipForPrevious("Reset value");
 	return false;
 }
-	
+
+static char* customInputToolTipText = NULL;
+
+// set the tooltip text for the next custom input
+void SetCustomInputTooltip(char* tooltipText){
+	customInputToolTipText = tooltipText;
+}
 
 // intput for a float value
 bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float* value, float* defaultValue = NULL, CustomInputFlags flags = 0){
@@ -54,11 +86,17 @@ bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 		ImGui::PushItemWidth(0.01);
 		ImGui::LabelText(label, "");
 		ImGui::PopItemWidth();
+		if(customInputToolTipText){
+			CustomTooltipForPrevious(customInputToolTipText);
+		}
 	}
 	if(!(flags & CustomInput_SliderOnly)){
 		ImGui::PushItemWidth(8 * fontSize);
 		changed |= ImGui::InputFloat("##floatInput", value, 0.1f, 1.0f, "%.2f");
 		ImGui::PopItemWidth();
+		if(customInputToolTipText){
+			CustomTooltipForPrevious(customInputToolTipText);
+		}
 		ImGui::SameLine();
 	}
 	float sliderWidth = (flags & CustomInput_SliderOnly && (flags & CustomInput_Short) == 0) ? 20 * fontSize + style.ItemSpacing.x : 12 * fontSize;
@@ -67,12 +105,18 @@ bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 		ImGui::PushItemWidth(sliderWidth - frameHeight - style.ItemSpacing.x);
 		changed |= ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
 		ImGui::PopItemWidth();
+		if(customInputToolTipText){
+			CustomTooltipForPrevious(customInputToolTipText);
+		}
 		ImGui::SameLine();
 		ResetButton(value, defaultValue);
 	}else{
 		ImGui::PushItemWidth(sliderWidth);
 		changed |= ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
 		ImGui::PopItemWidth();
+		if(customInputToolTipText){
+			CustomTooltipForPrevious(customInputToolTipText);
+		}
 	}
 	
 	if(inlineLabel){
@@ -87,8 +131,12 @@ bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 		ImGui::PushItemWidth(0.01);
 		ImGui::LabelText(label, "");
 		ImGui::PopItemWidth();
+		if(customInputToolTipText){
+			CustomTooltipForPrevious(customInputToolTipText);
+		}
 	}
 	ImGui::PopID();
+	customInputToolTipText = NULL;
 	return changed;
 }
 
@@ -101,6 +149,9 @@ bool CustomTextInput(const char* label, std::string* value, std::string* default
 		ImGui::PushItemWidth(0.01);
 		ImGui::LabelText(label, "");
 		ImGui::PopItemWidth();
+		if(customInputToolTipText){
+			CustomTooltipForPrevious(customInputToolTipText);
+		}
 	}
 	float itemWidth = ((flags & CustomInput_Short) == 0) ? 20 * fontSize : 12 * fontSize;
 	itemWidth += style.ItemSpacing.x;
@@ -108,6 +159,9 @@ bool CustomTextInput(const char* label, std::string* value, std::string* default
 		float frameHeight = ImGui::GetFrameHeight();
 		ImGui::PushItemWidth(itemWidth - frameHeight - style.ItemSpacing.x);
 		changed |= ImGui::InputText("##text", value);
+		if(customInputToolTipText){
+			CustomTooltipForPrevious(customInputToolTipText);
+		}
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 		if(ImGui::Button(ICON_FA_DELETE_LEFT ,ImVec2(frameHeight, frameHeight))){
@@ -117,6 +171,9 @@ bool CustomTextInput(const char* label, std::string* value, std::string* default
 	}else{
 		ImGui::PushItemWidth(itemWidth);
 		changed |= ImGui::InputText("##text", value);
+		if(customInputToolTipText){
+			CustomTooltipForPrevious(customInputToolTipText);
+		}
 		ImGui::PopItemWidth();
 	}
 	
@@ -132,14 +189,18 @@ bool CustomTextInput(const char* label, std::string* value, std::string* default
 		ImGui::PushItemWidth(0.01);
 		ImGui::LabelText(label, "");
 		ImGui::PopItemWidth();
+		if(customInputToolTipText){
+			CustomTooltipForPrevious(customInputToolTipText);
+		}
 	}
 	ImGui::PopID();
+	customInputToolTipText = NULL;
 	return changed;
 }
 
 // create a combo element
 template <typename T>
-bool EnumSelectable(char* label, T* setting, T value){
+bool EnumSelectable(const char* label, T* setting, const T value){
 	bool isSelected = *setting == value;
 	if (ImGui::Selectable(label, isSelected)) {
 		if (!isSelected) {
@@ -160,8 +221,9 @@ bool EnumSelectable(char* label, T* setting, T value){
  * count is the length of valueLabels and values
 */
 template <typename T>
-void EnumCombo(char* label, T* setting, char** valueLabels, T* values, int count){
+bool EnumCombo(char* label, T* setting, char** valueLabels, T* values, int count){
 	char* comboPreviewValue = "Invalid";
+	bool changed = false;
 	for(int i = 0; i < count; i++){
 		if(values[i] == *setting){
 			comboPreviewValue = valueLabels[i];
@@ -169,10 +231,11 @@ void EnumCombo(char* label, T* setting, char** valueLabels, T* values, int count
 	}
 	if (ImGui::BeginCombo(label, comboPreviewValue)){
 		for(int i = 0; i < count; i++){
-			EnumSelectable(valueLabels[i], setting, values[i]);
+			changed |= EnumSelectable(valueLabels[i], setting, values[i]);
 		}
 		ImGui::EndCombo();
 	}
+	return changed;
 }
 
 bool ToggleButton(const char* label, bool active, const ImVec2 &size = ImVec2(0, 0)) {
@@ -186,6 +249,9 @@ bool ToggleButton(const char* label, bool active, const ImVec2 &size = ImVec2(0,
 	}
 	return pressed;
 }
+
+
+
 
 
 // Sets default values
@@ -272,18 +338,24 @@ void ImGuiUI::MainUI()
 					}
 					ImGui::EndCombo();
 				}
+				CustomTooltipForPrevious("Which radar product to display");
 				
+				SetCustomInputTooltip("Limits the minimum value that will be displayed in the radar volume");
 				CustomFloatInput("Cutoff", 0, 1, &globalState.cutoff, &globalState.defaults->cutoff, CustomInput_SliderOnly);
+				SetCustomInputTooltip("How transparent the radar volume is with larger volumes being more opaque");
 				CustomFloatInput("Opacity", 0.2, 4, &globalState.opacityMultiplier, &globalState.defaults->opacityMultiplier);
+				SetCustomInputTooltip("Multiplies the height of the radar volume");
 				CustomFloatInput("Height Exaggeration", 1, 4, &globalState.verticalScale, &globalState.defaults->verticalScale);
 				
 				bool spatialInterpolationOldValue = globalState.spatialInterpolation;
 				ImGui::Checkbox("Spatial Interpolation", &globalState.spatialInterpolation);
+				CustomTooltipForPrevious("If the pixels in the volume should be smoothed together");
 				if(spatialInterpolationOldValue != globalState.spatialInterpolation){
 					globalState.EmitEvent("UpdateVolumeParameters");
 				}
 				
 				ImGui::Checkbox("Temporal Interpolation", &globalState.temporalInterpolation);
+				CustomTooltipForPrevious("If the time in between the volumes should be smoothed together");
 				
 				// ImGui::PushItemWidth(10 * fontSize);
 				// if (ImGui::BeginCombo("View Mode", globalState.viewMode == GlobalState::VIEW_MODE_VOLUMETRIC ? "3D Volume" : "2D Slice", 0)){
@@ -310,24 +382,32 @@ void ImGuiUI::MainUI()
 				ImGui::PushItemWidth(15 * fontSize);
 				ImGui::SliderInt("View Mode", (int*)&globalState.viewMode, 0, 1, viewModes[std::clamp(globalState.viewMode + 1, 0, 3)]);
 				ImGui::PopItemWidth();
+				CustomTooltipForPrevious("Select if the view is 3D or 2D by dragging");
 				
 				if(globalState.viewMode == GlobalState::VIEW_MODE_SLICE){
 					const char* sliceModes[] = {"Invalid", "Sweep Angle", "Constant Altitude", "Vertical", "Invalid"};
 					ImGui::PushItemWidth(15 * fontSize);
 					ImGui::SliderInt("Slice Mode", (int*)&globalState.sliceMode, 0, 2, sliceModes[std::clamp(globalState.sliceMode + 1, 0, 4)]);
 					ImGui::PopItemWidth();
+					CustomTooltipForPrevious("Select how the radar volume is sliced");
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_CONSTANT_ALTITUDE){
+						SetCustomInputTooltip("The altitude of the slice in meters");
 						CustomFloatInput("Slice Altitude (meters)", 0, 25000, &globalState.sliceAltitude, &globalState.defaults->sliceAltitude);
 					}
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_SWEEP_ANGLE){
+						SetCustomInputTooltip("The angle of the slice in meters");
 						CustomFloatInput("Slice Angle (degrees)", 0.5, 19.5, &globalState.sliceAngle, &globalState.defaults->sliceAngle);
 					}
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_VERTICAL){
+						SetCustomInputTooltip("The rotation of the slice in degrees");
 						CustomFloatInput("Slice Rotation", 0, 180, &globalState.sliceVerticalRotation, &globalState.defaults->sliceVerticalRotation, CustomInput_SliderOnly);
+						SetCustomInputTooltip("The location of the slice where positive is east");
 						CustomFloatInput("Slice X location", -1, 1, &globalState.sliceVerticalLocationX, &globalState.defaults->sliceVerticalLocationX, CustomInput_SliderOnly);
+						SetCustomInputTooltip("The location of the slice where positive is north");
 						CustomFloatInput("Slice Y location", -1, 1, &globalState.sliceVerticalLocationY, &globalState.defaults->sliceVerticalLocationY, CustomInput_SliderOnly);
 					}
 					ImGui::Checkbox("Volumetric Slice", &globalState.sliceVolumetric);
+					CustomTooltipForPrevious("If the slice should be rendered as a volumetric slice instead of 2D");
 				}
 				
 				ImGui::TreePop();
@@ -335,8 +415,10 @@ void ImGuiUI::MainUI()
 			ImGui::Separator();
 			
 			if (ImGui::TreeNodeEx("Movement", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+				SetCustomInputTooltip("How fast you move around, holding down shift will multiply this by 4");
 				CustomFloatInput("Movement Speed", 10, 1500, &globalState.moveSpeed, &globalState.defaults->moveSpeed);
 				
+				SetCustomInputTooltip("How sensitive the mouse or controller is to rotation");
 				CustomFloatInput("Rotation Speed", 0.0f, 300.0f, &globalState.rotateSpeed, &globalState.defaults->rotateSpeed);
 				ImGui::TreePop();
 			}
@@ -344,28 +426,36 @@ void ImGuiUI::MainUI()
 			
 			if (ImGui::TreeNodeEx("Animation", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				ImGui::Checkbox("Time", &globalState.animate);
+				CustomTooltipForPrevious("Will play through volumes when checked, same as play button");
 				char* comboNames[] = {"Default", "Loop Loaded", "Loop All", "Bounce", "Bounce Loaded", "None"};
 				GlobalState::LoopMode comboValues[] = {GlobalState::LOOP_MODE_DEFAULT, GlobalState::LOOP_MODE_CACHE, GlobalState::LOOP_MODE_ALL, GlobalState::LOOP_MODE_BOUNCE, GlobalState::LOOP_MODE_CACHE_BOUNCE, GlobalState::LOOP_MODE_NONE};
 				ImGui::PushItemWidth(12 * fontSize);
 				EnumCombo("Loop Mode", &globalState.animateLoopMode, comboNames, comboValues, sizeof(comboNames)/sizeof(comboNames[0]));
+				CustomTooltipForPrevious("Changes how it behaves when the end of the data is reached while animating");
 				ImGui::PopItemWidth();
+				SetCustomInputTooltip("How many volumes per second to play through");
 				CustomFloatInput("Time Animation Speed", 1, 20, &globalState.animateSpeed, &globalState.defaults->animateSpeed);
 				ImGui::Checkbox("Cuttoff", &globalState.animateCutoff);
+				CustomTooltipForPrevious("Will animate between a cutoff of zero and the value currently set for cutoff");
+				SetCustomInputTooltip("How fast to animate the cutoff value");
 				CustomFloatInput("Cutoff Animation Speed", 0.1, 2, &globalState.animateCutoffSpeed, &globalState.defaults->animateCutoffSpeed);
 				ImGui::TreePop();
 			}
 			ImGui::Separator();
 			if (ImGui::TreeNodeEx("Data", ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen)) {
 				ImGui::Checkbox("Poll Data", &globalState.pollData);
+				CustomTooltipForPrevious("If new data should be automatically loaded from the selected data");
 				if (ImGui::Button("Load Files")) {
 					ChooseFiles();
 				}
+				CustomTooltipForPrevious("Load a directory of radar files");
 				if(globalState.openDownloadDropdown){
 					ImGui::SetNextItemOpen(true);
 					globalState.openDownloadDropdown = false;
 				}
 				if (ImGui::TreeNodeEx("Download", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 					ImGui::Text("Download data:");
+					CustomTooltipForPrevious("Download data off of the internet");
 					if(globalState.downloadData){
 						ImGui::BeginDisabled();
 					}
@@ -373,6 +463,7 @@ void ImGuiUI::MainUI()
 						globalState.downloadData = true;
 						globalState.pollData = true;
 					}
+					CustomTooltipForPrevious("Start downloading data");
 					if(globalState.downloadData){
 						ImGui::EndDisabled();
 					}
@@ -383,14 +474,19 @@ void ImGuiUI::MainUI()
 					if(ImGui::Button("Stop")){
 						globalState.downloadData = false;
 					}
+					CustomTooltipForPrevious("Stop downloading data");
 					if(!globalState.downloadData){
 						ImGui::EndDisabled();
 					}
+					
+					SetCustomInputTooltip("How often to check for updated radar files on the internet");
 					CustomFloatInput("Download interval (seconds)", 30, 300, &globalState.downloadPollInterval, &globalState.defaults->downloadPollInterval, CustomInput_SliderOnly | CustomInput_Short);
 					
 					ImGui::PushItemWidth(10 * fontSize + ImGui::GetStyle().ItemSpacing.x);
 					ImGui::Text("Download Previous File Count");
+					CustomTooltipForPrevious("Number of files before the current one to download off the internet");
 					ImGui::InputInt("##previousFileCount", &globalState.downloadPreviousCount);
+					CustomTooltipForPrevious("Number of files before the current one to download off the internet");
 					ImGui::SameLine();
 					ResetButton(&globalState.downloadPreviousCount, &globalState.defaults->downloadPreviousCount);
 					ImGui::PopItemWidth();
@@ -404,6 +500,7 @@ void ImGuiUI::MainUI()
 					ImGui::Text("Delete files after");
 					ImGui::PushItemWidth(12 * fontSize);
 					EnumCombo("##deleteFilesAfter", &downloadDeleteAfterLocal, comboNames, comboValues, sizeof(comboNames)/sizeof(comboNames[0]));
+					CustomTooltipForPrevious("Automatically delete downloaded radar files when they are older than this amount of time");
 					ImGui::PopItemWidth();
 					if(downloadDeleteAfterLocal > 0 && (globalState.downloadDeleteAfter <= 0 || globalState.downloadDeleteAfter > downloadDeleteAfterLocal) && !deletePopupOpen){
 						// prompt user before possibly deleting files
@@ -442,6 +539,7 @@ void ImGuiUI::MainUI()
 						siteIdSelection = globalState.downloadSiteId;
 						ImGui::OpenPopup("Select Site");
 					}
+					CustomTooltipForPrevious("Select the site to download radar data for");
 					
 					if (ImGui::BeginPopup("Select Site", NULL)){
 						ImGui::Text("Select a site to download from. \nAlternatively you can select a site by left clicking on the site name in the world.\n\n");
@@ -472,6 +570,7 @@ void ImGuiUI::MainUI()
 					ImGui::PopID();
 					
 					if (ImGui::TreeNodeEx("Advanced", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+						SetCustomInputTooltip("What http server to download data from");
 						CustomTextInput("Data URL", &globalState.downloadUrl, &globalState.defaults->downloadUrl);
 						ImGui::TreePop();
 					}
@@ -483,12 +582,19 @@ void ImGuiUI::MainUI()
 			ImGui::Separator();
 			if (ImGui::TreeNodeEx("Map", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				ImGui::Checkbox("Show Map", &globalState.enableMap);
+				CustomTooltipForPrevious("Toggle entire map");
+				SetCustomInputTooltip("How bright the map is, increasing this makes the radar volume less visible");
 				CustomFloatInput("Map Brightness", 0.01, 1.0, &globalState.mapBrightness, &globalState.defaults->mapBrightness);
 				ImGui::Checkbox("Show Tiles", &globalState.enableMapTiles);
+				CustomTooltipForPrevious("Show the satellite imagery");
 				ImGui::Checkbox("Show GIS info", &globalState.enableMapGIS);
+				CustomTooltipForPrevious("Show boundaries and roads");
+				SetCustomInputTooltip("How bright boundaries are compared to the rest of the map");
 				CustomFloatInput("GIS Brightness", 0.01, 1.5, &globalState.mapBrightnessGIS, &globalState.defaults->mapBrightnessGIS);
 				ImGui::Checkbox("Show Radar Sites", &globalState.enableSiteMarkers);
+				CustomTooltipForPrevious("Show the clickable radar site markers");
 				if (ImGui::TreeNodeEx("Waypoints", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+					CustomTooltipForPrevious("Create your own markers");
 					char idChr[3] = {};
 					bool markersChanged = false;
 					ImGui::PushItemWidth(10 * ImGui::GetFontSize());
@@ -504,11 +610,13 @@ void ImGuiUI::MainUI()
 						markersChanged |= ImGui::InputDouble("Longitude", &marker.longitude);
 						markersChanged |= ImGui::InputDouble("Altitude", &marker.altitude);
 						markersChanged |= ImGui::Checkbox("", &marker.enabled);
+						CustomTooltipForPrevious("Show the marker on the map");
 						ImGui::SameLine();
 						if (ImGui::Button("Teleport")) {
 							SimpleVector3<float> location = SimpleVector3<float>(globalState.globe->GetPointScaledDegrees(marker.latitude, marker.longitude, marker.altitude));
 							globalState.EmitEvent("Teleport","", &location);
 						}
+						CustomTooltipForPrevious("Teleport to marker");
 						ImGui::SameLine();
 						// handle deletion where the button must be clicked twice
 						static int deleteId = -1;
@@ -532,6 +640,7 @@ void ImGuiUI::MainUI()
 								deleteTime = now;
 							}
 						}
+						CustomTooltipForPrevious("Delete the marker");
 						if(isSelectedForDeletion){
 							ImGui::PopStyleColor(3);
 						}
@@ -549,10 +658,13 @@ void ImGuiUI::MainUI()
 						globalState.locationMarkers.push_back(newWaypoint);
 						markersChanged = true;
 					}
+					CustomTooltipForPrevious("Create a new marker");
 					if(markersChanged){
 						globalState.EmitEvent("LocationMarkersUpdate");
 					}
 					ImGui::TreePop();
+				}else{
+					CustomTooltipForPrevious("Create your own markers");
 				}
 				ImGui::TreePop();
 			}
@@ -562,52 +674,38 @@ void ImGuiUI::MainUI()
 		
 		if (ImGui::CollapsingHeader("Settings")) {
 			if (ImGui::TreeNodeEx("Display", ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen)) {
+				SetCustomInputTooltip("Maximum number of frames per second to run at");
 				if(CustomFloatInput("Max FPS", 20, 120, &globalState.maxFPS, &globalState.defaults->maxFPS)){
 					globalState.EmitEvent("UpdateEngineSettings");
 				}
 				if(ImGui::Checkbox("VSync", &globalState.vsync)){
 					globalState.EmitEvent("UpdateEngineSettings");
 				}
+				CustomTooltipForPrevious("Sync framerate to monitor to prevent screen tearing");
 				
 				ImGuiComboFlags flags = 0;
-				const char* qualityNames[] =  { "Custom", "GPU Melter", "Very High", "High", "Normal", "Low", "Very Low", "Potato" };
-				const float qualityValues[] = { 10,       3,            2,           1,      0,        -1,    -2,         -10      };
-				int qualityCurrentIndex = 0; 
-				for (int n = 0; n < IM_ARRAYSIZE(qualityNames); n++){
-					if(globalState.quality == qualityValues[n]){
-						qualityCurrentIndex = n;
-						break;
-					}
-				}
-				const char* comboPreviewValue = qualityNames[qualityCurrentIndex];  // Pass in the preview value visible before opening the combo (it could be anything)
-				if (ImGui::BeginCombo("Quality", comboPreviewValue, flags)){
-					for (int n = 0; n < IM_ARRAYSIZE(qualityNames); n++){
-						const bool isSelected = (qualityCurrentIndex == n);
-						if (ImGui::Selectable(qualityNames[n], isSelected)){
-							//qualityCurrentIndex = n;
-							if(globalState.quality != qualityValues[n]){
-								globalState.quality = qualityValues[n];
-								globalState.EmitEvent("UpdateVolumeParameters");
-								globalState.testFloat = globalState.quality;
-							}
-						}
-						// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-						if (isSelected){
-							ImGui::SetItemDefaultFocus();
-						}
-					}
-					ImGui::EndCombo();
-				}
-				
-				if(globalState.quality == 10 && CustomFloatInput("Step Size", 0.1f, 20.0f, &globalState.qualityCustomStepSize, &globalState.defaults->qualityCustomStepSize)){
+				char* qualityNames[] =  { "Custom", "GPU Melter", "Very High", "High", "Normal", "Low", "Very Low", "Potato" };
+				float qualityValues[] = { 10,       3,            2,           1,      0,        -1,    -2,         -10      };
+				if(EnumCombo("Quality", &globalState.quality, qualityNames, qualityValues, sizeof(qualityNames)/sizeof(qualityNames[0]))){
 					globalState.EmitEvent("UpdateVolumeParameters");
 				}
+				CustomTooltipForPrevious("Higher quality levels will decrease graininess at expense of performance");
+				
+				if(globalState.quality == 10){
+					if(CustomFloatInput("Step Size", 0.1f, 20.0f, &globalState.qualityCustomStepSize, &globalState.defaults->qualityCustomStepSize)){
+						globalState.EmitEvent("UpdateVolumeParameters");
+					}
+					CustomTooltipForPrevious("Custom step size for ray marching, lower values decrease graininess at expense of performance");
+				}
+				
 				
 				if(ImGui::Checkbox("Enable Fuzz", &globalState.enableFuzz)){
 					globalState.EmitEvent("UpdateVolumeParameters");
 				}
+				CustomTooltipForPrevious("Add noise to prevent artifacts");
 				
 				ImGui::Checkbox("Enable TAA", &globalState.temporalAntiAliasing);
+				CustomTooltipForPrevious("TAA decreases graininess but can hide smaller details");
 				
 				if (ImGui::Button("External Settings Window")) {
 					if(imGuiController->uiWindow != NULL && !globalState.vrMode){
@@ -616,6 +714,7 @@ void ImGuiUI::MainUI()
 						imGuiController->ExternalWindow();
 					}
 				}
+				CustomTooltipForPrevious("Move this panel into its own window");
 				ImGui::SameLine();
 				if (ToggleButton("VR " ICON_FA_VR_CARDBOARD, globalState.vrMode)) {
 					globalState.vrMode = !globalState.vrMode;
@@ -628,11 +727,13 @@ void ImGuiUI::MainUI()
 					//ImGui::SetWindowCollapsed(true);
 					imGuiController->ExternalWindow();
 				}
+				CustomTooltipForPrevious("Enable virtual reality mode if a headset is connected");
 				ImGui::TreePop();
 			}
 			
 			if (ImGui::TreeNodeEx("Integration", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				ImGui::Checkbox("Discord presence", &globalState.discordPresence);
+				CustomTooltipForPrevious("Show OpenStorm on discord");
 				ImGui::TreePop();
 			}
 			
@@ -640,6 +741,7 @@ void ImGuiUI::MainUI()
 				if(ImGui::Button("Reset Basic Settings")) {
 					globalState.EmitEvent("ResetBasicSettings");
 				}
+				CustomTooltipForPrevious("Resets basic view settings, mainly in the radar dropdown");
 				{
 					// button must be clicked twice
 					static bool selectedForDeletion = false;
@@ -662,6 +764,7 @@ void ImGuiUI::MainUI()
 							deleteTime = now;
 						}
 					}
+					CustomTooltipForPrevious("Resets all settings to defaults");
 					if(applyRedStyle){
 						ImGui::PopStyleColor(3);
 					}

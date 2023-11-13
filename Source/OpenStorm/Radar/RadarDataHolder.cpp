@@ -6,6 +6,7 @@
 #include "Products/RadarProduct.h"
 
 #include <algorithm>
+#include <ctime>
 
 // asynchronously loads radar data on a separate thread
 // this thing is like the Daytona 500, there are no locks to be found
