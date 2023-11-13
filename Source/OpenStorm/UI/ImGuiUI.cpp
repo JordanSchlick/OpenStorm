@@ -164,10 +164,7 @@ bool CustomTextInput(const char* label, std::string* value, std::string* default
 		}
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
-		if(ImGui::Button(ICON_FA_DELETE_LEFT ,ImVec2(frameHeight, frameHeight))){
-			*value = *defaultValue;
-			changed = true;
-		}
+		ResetButton(value, defaultValue);
 	}else{
 		ImGui::PushItemWidth(itemWidth);
 		changed |= ImGui::InputText("##text", value);
@@ -342,7 +339,7 @@ void ImGuiUI::MainUI()
 				
 				SetCustomInputTooltip("Limits the minimum value that will be displayed in the radar volume");
 				CustomFloatInput("Cutoff", 0, 1, &globalState.cutoff, &globalState.defaults->cutoff, CustomInput_SliderOnly);
-				SetCustomInputTooltip("How transparent the radar volume is with larger volumes being more opaque");
+				SetCustomInputTooltip("How transparent the radar volume is with larger values being more opaque");
 				CustomFloatInput("Opacity", 0.2, 4, &globalState.opacityMultiplier, &globalState.defaults->opacityMultiplier);
 				SetCustomInputTooltip("Multiplies the height of the radar volume");
 				CustomFloatInput("Height Exaggeration", 1, 4, &globalState.verticalScale, &globalState.defaults->verticalScale);
@@ -389,13 +386,13 @@ void ImGuiUI::MainUI()
 					ImGui::PushItemWidth(15 * fontSize);
 					ImGui::SliderInt("Slice Mode", (int*)&globalState.sliceMode, 0, 2, sliceModes[std::clamp(globalState.sliceMode + 1, 0, 4)]);
 					ImGui::PopItemWidth();
-					CustomTooltipForPrevious("Select how the radar volume is sliced");
+					CustomTooltipForPrevious("Select how the radar volume is sliced by dragging");
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_CONSTANT_ALTITUDE){
 						SetCustomInputTooltip("The altitude of the slice in meters");
 						CustomFloatInput("Slice Altitude (meters)", 0, 25000, &globalState.sliceAltitude, &globalState.defaults->sliceAltitude);
 					}
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_SWEEP_ANGLE){
-						SetCustomInputTooltip("The angle of the slice in meters");
+						SetCustomInputTooltip("The angle of the slice in degrees");
 						CustomFloatInput("Slice Angle (degrees)", 0.5, 19.5, &globalState.sliceAngle, &globalState.defaults->sliceAngle);
 					}
 					if(globalState.sliceMode == GlobalState::SLICE_MODE_VERTICAL){
@@ -431,12 +428,20 @@ void ImGuiUI::MainUI()
 				GlobalState::LoopMode comboValues[] = {GlobalState::LOOP_MODE_DEFAULT, GlobalState::LOOP_MODE_CACHE, GlobalState::LOOP_MODE_ALL, GlobalState::LOOP_MODE_BOUNCE, GlobalState::LOOP_MODE_CACHE_BOUNCE, GlobalState::LOOP_MODE_NONE};
 				ImGui::PushItemWidth(12 * fontSize);
 				EnumCombo("Loop Mode", &globalState.animateLoopMode, comboNames, comboValues, sizeof(comboNames)/sizeof(comboNames[0]));
-				CustomTooltipForPrevious("Changes how it behaves when the end of the data is reached while animating");
+				CustomTooltipForPrevious(
+					"Changes how it behaves when the end of the data is reached while animating\n"
+					"Default: go until end and then repeat loaded data at the end\n"
+					"Loop Loaded: repeat loaded data around the currently selected volume\n"
+					"Loop All: go to other side of data when the end is reached\n"
+					"Bounce: reverse direction when reaching the end\n"
+					"Bounce Loaded: bounce through loaded data around the currently selected volume\n"
+					"None: stop when reaching the end\n"
+				);
 				ImGui::PopItemWidth();
 				SetCustomInputTooltip("How many volumes per second to play through");
 				CustomFloatInput("Time Animation Speed", 1, 20, &globalState.animateSpeed, &globalState.defaults->animateSpeed);
 				ImGui::Checkbox("Cuttoff", &globalState.animateCutoff);
-				CustomTooltipForPrevious("Will animate between a cutoff of zero and the value currently set for cutoff");
+				CustomTooltipForPrevious("Will animate between a cutoff of zero and the value currently set for cutoff\nThe cutoff must be more than zero for this to work");
 				SetCustomInputTooltip("How fast to animate the cutoff value");
 				CustomFloatInput("Cutoff Animation Speed", 0.1, 2, &globalState.animateCutoffSpeed, &globalState.defaults->animateCutoffSpeed);
 				ImGui::TreePop();
@@ -482,7 +487,7 @@ void ImGuiUI::MainUI()
 					SetCustomInputTooltip("How often to check for updated radar files on the internet");
 					CustomFloatInput("Download interval (seconds)", 30, 300, &globalState.downloadPollInterval, &globalState.defaults->downloadPollInterval, CustomInput_SliderOnly | CustomInput_Short);
 					
-					ImGui::PushItemWidth(10 * fontSize + ImGui::GetStyle().ItemSpacing.x);
+					ImGui::PushItemWidth(11 * fontSize - ImGui::GetStyle().ItemSpacing.x * 1.5f);
 					ImGui::Text("Download Previous File Count");
 					CustomTooltipForPrevious("Number of files before the current one to download off the internet");
 					ImGui::InputInt("##previousFileCount", &globalState.downloadPreviousCount);
