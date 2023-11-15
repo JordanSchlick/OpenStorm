@@ -139,6 +139,7 @@ void AImGuiController::Tick(float deltaTime)
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, 100.0f), maxSize);
 	
 	imGuiUI->MainUI();
+	imGuiUI->Tick(deltaTime);
 	
 	
 	if(!io.WantCaptureMouse || isLeftClicking){
@@ -162,17 +163,6 @@ void AImGuiController::Tick(float deltaTime)
 		uiWindow->Tick();
 	}
 	
-	if(fileChooser != NULL){
-		// check if user has taken action on file dialog
-		if(fileChooser->ready()){
-			std::vector<std::string> files = fileChooser->result();
-			if(files.size() > 0){
-				globalState.EmitEvent("LoadDirectory", files[0], NULL);
-			}
-			delete fileChooser;
-			fileChooser = NULL;
-		}
-	}
 	
 }
 

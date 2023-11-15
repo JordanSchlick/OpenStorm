@@ -136,8 +136,11 @@ public:
 		while(!done){
 			if(*canceled){
 				httpRequest->CancelRequest();
-				// dont exit until the request is completely done to prevent external code from freeing this object before the request callbacks finish
+				httpRequest->OnHeaderReceived().Unbind();
+				httpRequest->OnRequestProgress().Unbind();
+				httpRequest->OnProcessRequestComplete().Unbind();
 				SystemAPI::Sleep(0.02);
+				break;
 			}else{
 				SystemAPI::Sleep(0.1);
 			}

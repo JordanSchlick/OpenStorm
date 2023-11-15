@@ -99,9 +99,9 @@ public:
 		// benchTime = SystemAPI::CurrentTime();
 		double now = SystemAPI::CurrentTime();
 		//fprintf(stderr, "now: %f\n", now);
-		size_t lastFileIndex = files.size() - 1;
+		int64_t lastFileIndex = files.size() - 1;
 		size_t finalFileIndex = 0;
-		for (size_t fileIndex = 0; fileIndex <= lastFileIndex; fileIndex++) {
+		for (int64_t fileIndex = 0; fileIndex <= lastFileIndex; fileIndex++) {
 			SystemAPI::FileStats file = files[fileIndex];
 			std::string filename = file.name;
 			//fprintf(stderr, "%s\n", (filePath + filename).c_str());

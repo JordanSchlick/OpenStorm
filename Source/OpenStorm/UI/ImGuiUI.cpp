@@ -979,3 +979,19 @@ void ImGuiUI::ChooseFiles() {
 		fileChooser = new pfd::public_open_file("Open Radar Files", "", { "All Files", "*" }, pfd::opt::multiselect);
 	}
 }
+
+void ImGuiUI::Tick(float deltaTime){
+	GlobalState &globalState = *imGuiController->GetGlobalState();
+	if(fileChooser != NULL){
+		// check if user has taken action on file dialog
+		if(fileChooser->ready()){
+			std::vector<std::string> files = fileChooser->result();
+			if(files.size() > 0){
+				globalState.downloadData = false;
+				globalState.EmitEvent("LoadDirectory", files[0], NULL);
+			}
+			delete fileChooser;
+			fileChooser = NULL;
+		}
+	}
+}

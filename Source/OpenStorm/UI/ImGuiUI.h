@@ -31,6 +31,8 @@ public:
 public:
 	// main settings UI
 	void MainUI();
+	
+	void Tick(float deltaTime);
 
 	void ligma(bool Value);
 };
