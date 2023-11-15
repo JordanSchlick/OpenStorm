@@ -34,7 +34,7 @@ enum CustomInputFlags_{
 };
 
 // display a tooltip for the previous element
-void CustomTooltipForPrevious(char* tooltipText){
+void CustomTooltipForPrevious(const char* tooltipText){
 	static double hoverStart = 0;
 	static ImGuiID lastId = 0;
 	static ImVec2 lastMousePos;
@@ -48,7 +48,14 @@ void CustomTooltipForPrevious(char* tooltipText){
 			lastId = itemId;
 		}
 		if(now - hoverStart > 0.5){
+			#ifdef __clang__
+			#pragma clang diagnostic push
+			#pragma clang diagnostic ignored "-Wformat-security"
+			#endif
 			ImGui::SetTooltip(tooltipText);
+			#ifdef __clang__
+			#pragma clang diagnostic pop
+			#endif
 		}
 	}
 	ImVec2 mousePos = ImGui::GetMousePos();
@@ -69,10 +76,10 @@ bool ResetButton(T* value, T* defaultValue = NULL){
 	return false;
 }
 
-static char* customInputToolTipText = NULL;
+static const char* customInputToolTipText = NULL;
 
 // set the tooltip text for the next custom input
-void SetCustomInputTooltip(char* tooltipText){
+void SetCustomInputTooltip(const char* tooltipText){
 	customInputToolTipText = tooltipText;
 }
 
@@ -218,8 +225,8 @@ bool EnumSelectable(const char* label, T* setting, const T value){
  * count is the length of valueLabels and values
 */
 template <typename T>
-bool EnumCombo(char* label, T* setting, char** valueLabels, T* values, int count){
-	char* comboPreviewValue = "Invalid";
+bool EnumCombo(const char* label, T* setting, const char** valueLabels, T* values, int count){
+	const char* comboPreviewValue = "Invalid";
 	bool changed = false;
 	for(int i = 0; i < count; i++){
 		if(values[i] == *setting){
@@ -424,7 +431,7 @@ void ImGuiUI::MainUI()
 			if (ImGui::TreeNodeEx("Animation", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 				ImGui::Checkbox("Time", &globalState.animate);
 				CustomTooltipForPrevious("Will play through volumes when checked, same as play button");
-				char* comboNames[] = {"Default", "Loop Loaded", "Loop All", "Bounce", "Bounce Loaded", "None"};
+				const char* comboNames[] = {"Default", "Loop Loaded", "Loop All", "Bounce", "Bounce Loaded", "None"};
 				GlobalState::LoopMode comboValues[] = {GlobalState::LOOP_MODE_DEFAULT, GlobalState::LOOP_MODE_CACHE, GlobalState::LOOP_MODE_ALL, GlobalState::LOOP_MODE_BOUNCE, GlobalState::LOOP_MODE_CACHE_BOUNCE, GlobalState::LOOP_MODE_NONE};
 				ImGui::PushItemWidth(12 * fontSize);
 				EnumCombo("Loop Mode", &globalState.animateLoopMode, comboNames, comboValues, sizeof(comboNames)/sizeof(comboNames[0]));
@@ -500,8 +507,8 @@ void ImGuiUI::MainUI()
 					// delete dropdown
 					static float downloadDeleteAfterLocal = globalState.downloadDeleteAfter;
 					static bool deletePopupOpen = false;
-					char* comboNames[] =  {"Never", "2 Hours", "6 Hours", "12 Hours", "1 Day",  "2 Days",  "7 Days",  "30 Days",  "100 Days",  "1 Year"};
-					float comboValues[] = {0,       2*3600,     6*3600,    12*3600,    24*3600, 2*24*3600, 7*24*3600, 30*24*3600, 100*24*3600, 365*24*3600};
+					const char* comboNames[] = {"Never", "2 Hours", "6 Hours", "12 Hours", "1 Day",  "2 Days",  "7 Days",  "30 Days",  "100 Days",  "1 Year"};
+					float comboValues[] =        {0,       2*3600,     6*3600,    12*3600,    24*3600, 2*24*3600, 7*24*3600, 30*24*3600, 100*24*3600, 365*24*3600};
 					ImGui::Text("Delete files after");
 					ImGui::PushItemWidth(12 * fontSize);
 					EnumCombo("##deleteFilesAfter", &downloadDeleteAfterLocal, comboNames, comboValues, sizeof(comboNames)/sizeof(comboNames[0]));
@@ -515,7 +522,7 @@ void ImGuiUI::MainUI()
 						// already enabled and increasing time so just set the new value
 						globalState.downloadDeleteAfter = downloadDeleteAfterLocal;
 					}
-					if (ImGui::BeginPopup("Confirm Delete", NULL)){
+					if (ImGui::BeginPopup("Confirm Delete")){
 						ImGui::Text("Enabling this will delete downloaded radar files older than the selected time.");
 						ImGui::Separator();
 						ImGui::Text("Are you sure?");
@@ -546,7 +553,7 @@ void ImGuiUI::MainUI()
 					}
 					CustomTooltipForPrevious("Select the site to download radar data for");
 					
-					if (ImGui::BeginPopup("Select Site", NULL)){
+					if (ImGui::BeginPopup("Select Site")){
 						ImGui::Text("Select a site to download from. \nAlternatively you can select a site by left clicking on the site name in the world.\n\n");
 						ImGui::Separator();
 						ImGui::InputText("Custom Site ID", &siteIdSelection);
@@ -693,8 +700,8 @@ void ImGuiUI::MainUI()
 				CustomTooltipForPrevious("Sync framerate to monitor to prevent screen tearing");
 				
 				ImGuiComboFlags flags = 0;
-				char* qualityNames[] =  { "Custom", "GPU Melter", "Very High", "High", "Normal", "Low", "Very Low", "Potato" };
-				float qualityValues[] = { 10,       3,            2,           1,      0,        -1,    -2,         -10      };
+				const char* qualityNames[] = { "Custom", "GPU Melter", "Very High", "High", "Normal", "Low", "Very Low", "Potato" };
+				float qualityValues[] =      { 10,       3,            2,           1,      0,        -1,    -2,         -10      };
 				if(EnumCombo("Quality", &globalState.quality, qualityNames, qualityValues, sizeof(qualityNames)/sizeof(qualityNames[0]))){
 					globalState.EmitEvent("UpdateVolumeParameters");
 				}

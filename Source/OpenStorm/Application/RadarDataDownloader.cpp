@@ -268,7 +268,7 @@ public:
 				}
 				
 				int errorCount = 0;
-				for(int64_t i = files.size() - 1; i >= std::max(0i64, (int64_t)files.size() - 1 - (int64_t)maxPerviousFilesToDownload); i--){
+				for(int64_t i = files.size() - 1; i >= std::max((int64_t)0, (int64_t)files.size() - 1 - (int64_t)maxPerviousFilesToDownload); i--){
 					FileSizePair* file = &files[i];
 					std::string filePath = outputPathLocal + file->filename;
 					size_t existingSize = SystemAPI::GetFileStats(filePath).size;
