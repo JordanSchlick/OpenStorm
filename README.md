@@ -32,7 +32,8 @@ Discord server invite [https://discord.gg/K3aU2hEYvJ](https://discord.gg/K3aU2hE
 ## Getting data
 NEXRAD and European ODIM H5 radar data are currently supported.  
 You can get NEXRAD data from
-* https://github.com/JordanSchlick/radar-data to download data in real time.
+* Click on or select a radar and hit the start button under download in OpenStorm.
+* https://github.com/JordanSchlick/radar-data to download data in real time outside OpenStorm.
 * https://s3.amazonaws.com/noaa-nexrad-level2/index.html for historical data.
 
 
