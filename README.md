@@ -27,6 +27,8 @@ Discord server invite [https://discord.gg/K3aU2hEYvJ](https://discord.gg/K3aU2hE
 * NEXRAD and ODIM H5 radar data support
 * VR headset viewing
 * 3D globe map with elevation
+* GIS boundaries and roads
+* Real-time data downloading
 
 
 ## Getting data
