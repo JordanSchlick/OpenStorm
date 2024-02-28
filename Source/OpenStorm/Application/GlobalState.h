@@ -18,6 +18,7 @@ public:
 		int colorR = 255;
 		int colorG = 255;
 		int colorB = 255;
+		float size = 1;
 		std::string name;
 		bool enabled = true;
 	};

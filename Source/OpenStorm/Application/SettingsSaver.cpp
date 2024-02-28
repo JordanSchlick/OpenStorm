@@ -420,6 +420,7 @@ void ASettingsSaver::LoadLocationMarkers() {
 				markerObject->TryGetNumberField(TEXT("colorR"), waypoint.colorR);
 				markerObject->TryGetNumberField(TEXT("colorG"), waypoint.colorG);
 				markerObject->TryGetNumberField(TEXT("colorB"), waypoint.colorB);
+				markerObject->TryGetNumberField(TEXT("size"), waypoint.size);
 				markerObject->TryGetBoolField(TEXT("enabled"), waypoint.enabled);
 				if (id < globalState->locationMarkers.size()) {
 					// overite existing entry
@@ -454,6 +455,7 @@ void ASettingsSaver::SaveLocationMarkers() {
 			markerObject->SetNumberField(TEXT("colorR"), waypoint.colorR);
 			markerObject->SetNumberField(TEXT("colorG"), waypoint.colorG);
 			markerObject->SetNumberField(TEXT("colorB"), waypoint.colorB);
+			markerObject->SetNumberField(TEXT("size"), waypoint.size);
 			markerObject->SetBoolField(TEXT("enabled"), waypoint.enabled);
 			if (id < markers.Num()) {
 				// overite existing entry

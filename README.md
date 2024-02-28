@@ -29,6 +29,7 @@ Discord server invite [https://discord.gg/K3aU2hEYvJ](https://discord.gg/K3aU2hE
 * 3D globe map with elevation
 * GIS boundaries and roads
 * Real-time data downloading
+* 2D slices of 3D data
 
 
 ## Getting data
