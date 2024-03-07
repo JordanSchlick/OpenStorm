@@ -19,10 +19,10 @@ public:
 	};
 	
 	
-	// the type of volume that this product is
+	// the type of volume that this product is ex: reflectivity, velocity, etc
 	RadarData::VolumeType volumeType = RadarData::VOLUME_UNKNOWN;
 	
-	// the type of product that this product is
+	// the class of product that this product is ex: base or derived
 	ProductType productType = PRODUCT_DERIVED_VOLUME;
 	
 	// if the product is for development and should not be shown by default

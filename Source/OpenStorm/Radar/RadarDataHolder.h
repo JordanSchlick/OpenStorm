@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <atomic>
 
 class RadarCollection;
 class RadarProduct;
@@ -75,7 +76,7 @@ public:
 		void Delete();
 		
 		// do not set directly, reference counter if the data is currently being used to determine if it is safe to free
-		int inUse = 0;
+		std::atomic<int> inUse = 0;
 		// should StopUsing free this product when inUse reaches 0
 		bool shouldFree = false;
 	private:

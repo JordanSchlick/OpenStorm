@@ -30,9 +30,20 @@ public:
 		
 		//radarData->ReadNexrad(path.c_str());
 		
+		std::vector<RadarDataHolder::ProductHolder *> productsList;
+		lock.lock();
+		if(!canceled){
+			// make a copy of the array and increment the reference counters to prevent deletion during use
+			productsList = radarHolder->products;
+			for(RadarDataHolder::ProductHolder* productHolder : productsList){
+				productHolder->StartUsing();
+			}
+		}
+		lock.unlock();
+		
 		
 		int baseProductToLoadCount = 0;
-		for(RadarDataHolder::ProductHolder* productHolder : radarHolder->products){
+		for(RadarDataHolder::ProductHolder* productHolder : productsList){
 			if(productHolder->product->productType == RadarProduct::PRODUCT_BASE && productHolder->isLoaded == false){
 				baseProductToLoadCount++;
 			}
@@ -47,7 +58,7 @@ public:
 			}
 			if(!canceled && success){
 				// load base products
-				for(RadarDataHolder::ProductHolder* productHolder : radarHolder->products){
+				for(RadarDataHolder::ProductHolder* productHolder : productsList){
 					if(productHolder->product->productType == RadarProduct::PRODUCT_BASE && productHolder->isLoaded == false && !canceled){
 						RadarData* radarData = new RadarData();
 						radarData->doCompress = !productHolder->isDependency;
@@ -82,11 +93,14 @@ public:
 		if(!canceled && initialUid == radarHolder->uid){
 			// calculate derived products
 			bool deriveProducts = true;
+			// continue to derive products until no more can be derived
+			// this loop is needed for when derived products depend on other derived products
 			while(deriveProducts && !canceled && initialUid == radarHolder->uid){
 				deriveProducts = false;
-				int productCount = radarHolder->products.size();
+				int productCount = productsList.size();
+				// loop through all products and check if they can be derived
 				for(int i = 0; i < productCount && !canceled; i++){
-					auto productHolder = radarHolder->products[i];
+					auto productHolder = productsList[i];
 					if(!productHolder->isLoaded && productHolder->product->productType == RadarProduct::PRODUCT_DERIVED_VOLUME){
 						bool dependenciesMet = true;
 						std::map<RadarData::VolumeType, RadarData*> dependencyData = {};
@@ -96,14 +110,29 @@ public:
 							/*if(radarHolder->productsMap.find(type) != radarHolder->productsMap.end()){
 								addDependencies = true;
 							}*/
-							auto dependency = radarHolder->GetProduct(type);
-							if(dependency->isLoaded){
-								dependencyData[dependency->volumeType] = dependency->radarData;
-								dependencyDataHolders.push_back(dependency);
-							}else{
-								dependenciesMet = false;
-								break;
+							lock.lock();
+							if(!canceled){
+								auto dependency = radarHolder->GetProduct(type);
+								// check if dependency is in local productsList array and add it if not
+								bool isDependencyNew = true;
+								for(RadarDataHolder::ProductHolder* existingProductHolder : productsList){
+									if(existingProductHolder->product->volumeType == dependency->product->volumeType){
+										isDependencyNew = false;
+									}
+								}
+								if(isDependencyNew){
+									dependency->StartUsing();
+									productsList.push_back(dependency);
+								}
+								if(dependency->isLoaded){
+									dependencyData[dependency->volumeType] = dependency->radarData;
+									dependencyDataHolders.push_back(dependency);
+								}else{
+									dependenciesMet = false;
+									break;
+								}
 							}
+							lock.unlock();
 						}
 						if(dependenciesMet){
 							for(auto &dependencyHolder : dependencyDataHolders){
@@ -145,23 +174,28 @@ public:
 			}), end(radarHolder->products));*/
 			std::vector<RadarDataHolder::ProductHolder*> productHoldersToKeep = {};
 			std::vector<RadarDataHolder::ProductHolder*> productHoldersToDestroy = {};
-			int productCount = radarHolder->products.size();
+			int productCount = productsList.size();
 			for(int i = 0; i < productCount && !canceled; i++){
-				auto productHolder = radarHolder->products[i];
-				bool doRemove = productHolder->isDependency && !productHolder->isFinal && productHolder->inUse <= 0;
+				auto productHolder = productsList[i];
+				bool doRemove = productHolder->isDependency && !productHolder->isFinal;
 				if(doRemove){
 					productHoldersToDestroy.push_back(productHolder);
 				}else{
 					productHoldersToKeep.push_back(productHolder);
 				}
 			}
+			lock.lock();
 			if(!canceled){
 				radarHolder->products = productHoldersToKeep;
+				productsList = productHoldersToKeep;
 				for(auto productHolder : productHoldersToDestroy){
 					radarHolder->productsMap.erase(productHolder->volumeType);
+					productHolder->StopUsing();
 					productHolder->Delete();
 				}
+				
 			}
+			lock.unlock();
 		}
 		
 		// compress all products to save memory
@@ -184,6 +218,7 @@ public:
 		// }
 		
 		// check if main one is loaded and output
+		lock.lock();
 		if(!canceled && initialUid == radarHolder->uid){
 			if(radarHolder->productsMap.find(radarSettings.volumeType) != radarHolder->productsMap.end()){
 				auto productHolder = radarHolder->productsMap[radarSettings.volumeType];
@@ -201,7 +236,12 @@ public:
 				radarHolder->state = RadarDataHolder::State::DataStateFailed;
 			}
 		}
+		// allow holders to be freed again
+		for(RadarDataHolder::ProductHolder* productHolder : productsList){
+			productHolder->StopUsing();
+		}
 		radarHolder->loader = NULL;
+		lock.unlock();
 	}
 };
 

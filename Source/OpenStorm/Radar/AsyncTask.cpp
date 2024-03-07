@@ -56,14 +56,17 @@ std::vector<std::future<void>> pendingFutures;
 
 
 void AsyncTaskRunner::Start(bool autoDeleteTask) {
+	lock.lock();
 	if(running){
 		fprintf(stderr, "Error: tried to start AsyncTaskRunner multiple times\n");
+		lock.unlock();
 		return;
 	}
 	running = true;
 	finished = false;
 	canceled = false;
 	this->autoDelete = autoDeleteTask;
+	lock.unlock();
 	if(0){
 		std::future<void> future = std::async(std::launch::async, [this] {
 			InternalTask();
@@ -84,22 +87,31 @@ void AsyncTaskRunner::Start() {
 }
 
 void AsyncTaskRunner::Cancel() {
+	lock.lock();
 	canceled = true;
+	lock.unlock();
 }
 
 void AsyncTaskRunner::Delete() {
 	Cancel();
+	lock.lock();
 	if(finished){
 		clearedForDeletion = true;
+		lock.unlock();
 		delete this;
 	}else{
 		autoDelete = true;
+		lock.unlock();
 	}
 }
 
 void AsyncTaskRunner::InternalTask() {
+	lock.lock();
 	if(!canceled){
+		lock.unlock();
 		Task();
+	}else{
+		lock.unlock();
 	}
 	
 	#ifdef UE_GAME
@@ -124,13 +136,15 @@ void AsyncTaskRunner::InternalTask() {
 	
 	
 	
-	
+	lock.lock();
 	if (autoDelete) {
 		clearedForDeletion = true;
+		lock.unlock();
 		delete this;
 	}else{
 		finished = true;
 		running = false;
+		lock.unlock();
 	}
 }
 
