@@ -567,6 +567,9 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 			interpolationMaterialInstance->SetScalarParameterValue(TEXT("Minimum"), radarColorResult.lower);
 		}
 		
+		radarMaterialInstance->SetScalarParameterValue(TEXT("FrameIndex"), frameIndex);
+		frameIndex = (frameIndex + 1) % 64;
+		
 		radarMaterialInstance->SetScalarParameterValue(TEXT("SliceMode"), (globalState->viewMode == GlobalState::VIEW_MODE_SLICE && !globalState->sliceVolumetric) ? 1 : 0);
 		
 		// swap to second buffer to prevent overwiting before the asynchronous texture upload is complete.

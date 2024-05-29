@@ -1,4 +1,5 @@
-
+#define GOLDEN_RATIO 1.618033988749894848204586834365638
+#define SQRT2 1.4142135623730950488016887242096
 
 struct F
 {
@@ -156,6 +157,26 @@ if(fuzz >= 1 && !sliceMode){
 	// add random noise to starting position to prevent patterns from appearing
 	//startingDistance += frac(sin(dot(rayOrigin, float3(12.9898, 78.233, 29.4382)) + animationTime) * 43758.5453) * stepSize;
 	
+	// float noise = frac(
+	// 	sin(
+	// 		dot(screenPosition / 2048.0f, float2(12.9898, 78.2337)) * 
+	// 		dot(screenPosition / 2048.0f, float2(51.5372, 97.1857)) + 
+	// 		animationTime * 5 + 
+	// 		cos(animationTime)
+	// 	) * 43758.5453f 
+	// );
+	
+	// float noise = frac((screenPosition.x * GOLDEN_RATIO) + (screenPosition.y * SQRT2) + animationTime * 20);
+	
+	// float val = blueNoise[uint2(screenPosition.x / 5, (int)(screenPosition.y / 5) * 128)].r;
+	// return float4(val,val,val,1) ;
+	
+	float noise = blueNoise[uint2(screenPosition.x % 128, screenPosition.y % 128 + animationTime * 128)].r;
+	
+	startingDistance += noise * stepSize;
+}else if(!sliceMode){
+	// this will be removed soon
+	// compare with white noise
 	float noise = frac(
 		sin(
 			dot(screenPosition / 2048.0f, float2(12.9898, 78.2337)) * 
@@ -164,15 +185,7 @@ if(fuzz >= 1 && !sliceMode){
 			cos(animationTime)
 		) * 43758.5453f 
 	);
-	// float noise = frac(
-	// 	abs((fmod(
-	// 		dot(screenPosition / 2048.0f, float2(12.9898f, 78.2337f)) * 
-	// 		dot(screenPosition / 2048.0f, float2(51.5372f, 97.1857f)) + 
-	// 		animationTime * 5.0f /*+ 
-	// 		cos(animationTime)*/
-	// 	, 6.0f) - 3.0f) - 1.5f) / 1.5f * 43758.5453f 
-	// );
-	//return noise;
+	
 	startingDistance += noise * stepSize;
 }
 

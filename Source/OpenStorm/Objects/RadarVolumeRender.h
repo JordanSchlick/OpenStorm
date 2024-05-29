@@ -56,6 +56,9 @@ public:
 	double interpolationStartTime = 0;
 	double interpolationEndTime = 0;
 	
+	// index used for choosing noise. wraps at 64
+	int frameIndex = 0;
+	
 	// write to volume 1 if true and write to volume 2 if false
 	bool usePrimaryTexture = true;
 	UPROPERTY(VisibleAnywhere)

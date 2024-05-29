@@ -16,7 +16,7 @@ public:
 	// main lock for changing state of the task
 	// acquire this lock when doing anything inside the task that relies on the task not being canceled
 	// can be used in the task for general synchronization
-	std::mutex lock = std::mutex();
+	std::mutex lock;
 	
 	// this function must be overriden and will be run on a separate thread
 	virtual void Task() = 0;

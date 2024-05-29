@@ -116,7 +116,7 @@ bool CustomFloatInput(const char* label, float minSlider, float maxSlider, float
 			CustomTooltipForPrevious(customInputToolTipText);
 		}
 		ImGui::SameLine();
-		ResetButton(value, defaultValue);
+		changed |= ResetButton(value, defaultValue);
 	}else{
 		ImGui::PushItemWidth(sliderWidth);
 		changed |= ImGui::SliderFloat("##floatSlider", value, minSlider, maxSlider);
@@ -171,7 +171,7 @@ bool CustomTextInput(const char* label, std::string* value, std::string* default
 		}
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
-		ResetButton(value, defaultValue);
+		changed |= ResetButton(value, defaultValue);
 	}else{
 		ImGui::PushItemWidth(itemWidth);
 		changed |= ImGui::InputText("##text", value);
