@@ -10,6 +10,8 @@
 
 // asynchronously loads radar data on a separate thread
 // this thing is like the Daytona 500, there are no locks to be found
+// I was the looser of the race. I spent months trying to catch an elusive crash before finding it here.
+// It now has locks
 class RadarLoader : public AsyncTaskRunner{
 public:
 	std::string path;
@@ -129,6 +131,7 @@ public:
 									dependencyDataHolders.push_back(dependency);
 								}else{
 									dependenciesMet = false;
+									lock.unlock();
 									break;
 								}
 							}
