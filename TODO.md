@@ -11,7 +11,7 @@
 - [X] Fix ImGui input state
 - [X] Initial public release
 - [ ] Add Support for filtering or modifying Color/Opacity in radar data 
-- [ ] Find and order by radar dates
+- [X] Find and order by radar dates
 - [X] Allow multiple products
 - [X] Allow computed products
 - [X] Pull data from http server
@@ -32,3 +32,7 @@
 - [ ] Combining radar data from multiple  stations
 - [ ] Change radar decoder to one that is more performant and uses less memory
 - [ ] Display real time lightning
+
+
+## Small:
+- [ ] Configurable inputs
