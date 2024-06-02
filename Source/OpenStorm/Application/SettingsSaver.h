@@ -50,5 +50,6 @@ public:
 	FString settingsFile;
 	FString locationMarkersFile;
 	double saveLocationMarkersCountdown = -1;
+	bool ignoreUpdateLocationMarkers = false;
 	std::vector<uint64_t> callbackIds = {};
 };

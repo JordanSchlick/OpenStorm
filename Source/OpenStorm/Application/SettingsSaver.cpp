@@ -26,7 +26,9 @@ void ASettingsSaver::BeginPlay(){
 	if (ARadarGameStateBase* gameState = GetWorld()->GetGameState<ARadarGameStateBase>()) {
 		GlobalState* globalState = &gameState->globalState;
 		callbackIds.push_back(globalState->RegisterEvent("LocationMarkersUpdate", [this](std::string stringData, void* extraData) {
-			saveLocationMarkersCountdown = 5;
+			if(!ignoreUpdateLocationMarkers){
+				saveLocationMarkersCountdown = 5;
+			}
 		}));
 		callbackIds.push_back(globalState->RegisterEvent("ResetBasicSettings", [this](std::string stringData, void* extraData) {
 			ResetBasicSettings();
@@ -176,6 +178,7 @@ void ASettingsSaver::LoadSettings() {
 		LOAD_MACRO_BOOL(discordPresence);
 		
 		globalState->EmitEvent("UpdateVolumeParameters");
+		globalState->EmitEvent("UpdateEngineSettings");
 	}
 }
 
@@ -431,6 +434,9 @@ void ASettingsSaver::LoadLocationMarkers() {
 				}
 			}
 		}
+		ignoreUpdateLocationMarkers = true;
+		globalState->EmitEvent("LocationMarkersUpdate");
+		ignoreUpdateLocationMarkers = false;
 	}
 }
 
