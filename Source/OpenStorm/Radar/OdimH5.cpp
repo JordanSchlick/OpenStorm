@@ -129,26 +129,26 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 	#ifdef HDF5
 	double benchTime = SystemAPI::CurrentTime();
 	radarData->stats = RadarData::Stats();
-	std::string dataType = "";
+	std::vector<std::string> dataType = {};
 	switch (volumeType){
 		case RadarData::VOLUME_REFLECTIVITY:
-			dataType = "DBZH";
+			dataType = {"DBZH", "DBZV"};
 			break;
 		case RadarData::VOLUME_VELOCITY:
-			dataType = "VRADH";
+			dataType = {"VRADH"};
 			radarData->stats.noDataValue = 0;
 			break;
 		case RadarData::VOLUME_SPECTRUM_WIDTH:
-			dataType = "WRADH";
+			dataType = {"WRADH"};
 			break;
 		case RadarData::VOLUME_CORELATION_COEFFICIENT:
-			dataType = "RHOHV";
+			dataType = {"RHOHV"};
 			break;
 		case RadarData::VOLUME_DIFFERENTIAL_REFLECTIVITY:
-			dataType = "ZDR";
+			dataType = {"ZDR"};
 			break;
 		case RadarData::VOLUME_DIFFERENTIAL_PHASE_SHIFT:
-			dataType = "PHIDP";
+			dataType = {"PHIDP"};
 			break;
 		default:
 			return false;
@@ -159,6 +159,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		int maxRadius = 0;
 		int maxTheta = 0;
 		float minPixelSize = INFINITY;
+		bool missingHowLog = true;
 		std::vector<SweepData> sweeps;
 		
 		{
@@ -185,19 +186,13 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					fprintf(stderr, "Warning: sweep is missing what group\n");
 					continue;
 				}
-				if(!sweepGroup.exist("how") || sweepGroup.getObjectType("how") != HighFive::ObjectType::Group){
-					fprintf(stderr, "Warning: sweep is missing how group\n");
-					continue;
-				}
 				if(!sweepGroup.exist("where") || sweepGroup.getObjectType("where") != HighFive::ObjectType::Group){
 					fprintf(stderr, "Warning: sweep is missing where group\n");
 					continue;
 				}
 				HighFive::Group sweepWhat = sweepGroup.getGroup("what");
 				HighFive::Group sweepWhere = sweepGroup.getGroup("where");
-				HighFive::Group sweepHow = sweepGroup.getGroup("how");
 				bool sweepHasAttributes = true;
-				bool sweepHasPerRayAngleAttributes = true;
 				// sweepHasAttributes &= sweepWhat.hasAttribute("startdate");
 				// sweepHasAttributes &= sweepWhat.hasAttribute("starttime");
 				sweepHasAttributes &= sweepWhere.hasAttribute("nbins");
@@ -205,12 +200,11 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 				sweepHasAttributes &= sweepWhere.hasAttribute("rscale");
 				sweepHasAttributes &= sweepWhere.hasAttribute("rstart");
 				sweepHasAttributes &= sweepWhere.hasAttribute("elangle");
-				sweepHasPerRayAngleAttributes &= sweepHow.hasAttribute("startazA");
-				sweepHasPerRayAngleAttributes &= sweepHow.hasAttribute("stopazA");
 				if(!sweepHasAttributes){
 					fprintf(stderr, "Warning: sweep is missing attributes\n");
 					continue;
 				}
+				int minDataTypeIndex = 1000;
 				for(std::string key2 : sweepGroup.listObjectNames(HighFive::IndexType::NAME)){
 					if(key2.substr(0,4) != "data" || sweepGroup.getObjectType(key2) != HighFive::ObjectType::Group){
 						// fprintf(stderr, "%s\n", key2.c_str());
@@ -225,10 +219,24 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					if(!what.hasAttribute("gain") || !what.hasAttribute("offset") || !what.hasAttribute("quantity")){
 						fprintf(stderr, "Warning: data section is missing what attributes\n");
 					}
+					
 					// check if quantity is the volume type
-					if(getStringAttribute(what, "quantity") != dataType){
+					int foundIndex = -1;
+					std::string quantityType = getStringAttribute(what, "quantity");
+					for(int i = 0; i < dataType.size(); i++){
+						if(quantityType == dataType[i]){
+							foundIndex = i;
+							break;
+						}
+					}
+					if(foundIndex == -1 || foundIndex >= minDataTypeIndex){
 						continue;
 					}
+					minDataTypeIndex = foundIndex;
+					// if(std::find(dataType.begin(), dataType.end(), getStringAttribute(what, "quantity")) == dataType.end()){
+					// 	continue;
+					// }
+					
 					// begin extracting data
 					float elevationAngle = getDoubleAttribute(sweepWhere, "elangle");
 					sweepsMap[elevationAngle] = SweepData();
@@ -247,23 +255,41 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 					sweepData->multiplier = getDoubleAttribute(what, "gain");
 					sweepData->offset = getDoubleAttribute(what, "offset");
 					sweepData->id = id;
-					if(sweepHasPerRayAngleAttributes){
-						std::vector<double> startAngles;
-						std::vector<double> stopAngles;
-						sweepHow.getAttribute("startazA").read(startAngles);
-						sweepHow.getAttribute("stopazA").read(stopAngles);
-						for(size_t i = 0; i < startAngles.size(); i++){
-							sweepData->rayAngles.push_back((startAngles[i] + stopAngles[i]) / 2.0);
+					
+					float startAngle = 0;
+					bool stillNeedsRayAngles = true;
+					if(!sweepGroup.exist("how") || sweepGroup.getObjectType("how") != HighFive::ObjectType::Group){
+						if(missingHowLog){
+							fprintf(stderr, "Warning: sweep is missing how group\n");
+							missingHowLog = false;
 						}
+						//continue;
 					}else{
-						float startAngle = 0;
-						if(sweepHow.hasAttribute("astart")){
-							startAngle = getDoubleAttribute(sweepHow, "astart");
+						HighFive::Group sweepHow = sweepGroup.getGroup("how");
+						bool sweepHasPerRayAngleAttributes = true;
+						sweepHasPerRayAngleAttributes &= sweepHow.hasAttribute("startazA");
+						sweepHasPerRayAngleAttributes &= sweepHow.hasAttribute("stopazA");
+						if(sweepHasPerRayAngleAttributes){
+							std::vector<double> startAngles;
+							std::vector<double> stopAngles;
+							sweepHow.getAttribute("startazA").read(startAngles);
+							sweepHow.getAttribute("stopazA").read(stopAngles);
+							for(size_t i = 0; i < startAngles.size(); i++){
+								sweepData->rayAngles.push_back((startAngles[i] + stopAngles[i]) / 2.0);
+							}
+							stillNeedsRayAngles = false;
+						}else{
+							if(sweepHow.hasAttribute("astart")){
+								startAngle = getDoubleAttribute(sweepHow, "astart");
+							}
 						}
+					}
+					if(stillNeedsRayAngles){
 						for(size_t i = 0; i < sweepData->rayCount; i++){
 							sweepData->rayAngles.push_back(startAngle + ((float)i / (float)sweepData->rayCount) * 360.0f);
 						}
 					}
+					
 					if(what.hasAttribute("nodata")){
 						sweepData->sourceNoDataValue = getDoubleAttribute(what, "nodata");
 					}

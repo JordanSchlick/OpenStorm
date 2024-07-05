@@ -16,7 +16,7 @@ inline bool hasEnding (std::string const &fullString, std::string const &ending)
 RadarReader* RadarReader::GetLoaderForFile(const std::string filename){
 	std::string filenameLower = filename + "";
 	std::transform(filenameLower.begin(), filenameLower.end(), filenameLower.begin(), [](unsigned char c){ return std::tolower(c); });
-	if(hasEnding(filenameLower, ".h5")){
+	if(hasEnding(filenameLower, ".h5") || hasEnding(filenameLower, ".hdf5") || hasEnding(filenameLower, ".hdf")){
 		return new OdimH5RadarReader();
 	}
 	if(hasEnding(filenameLower, ".gz") || hasEnding(filenameLower, ".bz2")){
