@@ -6,6 +6,7 @@
 #include "../Radar/Globe.h"
 #include "../Radar/NexradSites/NexradSites.h"
 #include "../Application/GlobalState.h"
+#include <cmath>
 
 ALocationMarkerManager::ALocationMarkerManager() {
 	
@@ -85,7 +86,7 @@ void ALocationMarkerManager::UpdateWaypointMarkers() {
 	GlobalState* globalState = &GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	// loop over map and remove waypoints
 	for (auto iterator = locationMarkerObjects.cbegin(); iterator != locationMarkerObjects.cend();){
-		if(iterator->second->markerType == ALocationMarker::MarkerTypeWaypoint){
+		if(iterator->second->markerType == ALocationMarker::MarkerTypeWaypoint || ALocationMarker::MarkerTypeRadarSite){
 			iterator->second->Destroy();
 			locationMarkerObjects.erase(iterator++);
 		}else{
@@ -104,8 +105,13 @@ void ALocationMarkerManager::UpdateWaypointMarkers() {
 			auto vector = globalState->globe->GetPointScaledDegrees(marker->latitude, marker->longitude, marker->altitude);
 			marker->SetActorLocation(FVector(vector.x, vector.y, vector.z));
 			marker->SetText(waypoint->name);
+			// set color while converting to linear color space
+			marker->SetColor(FVector(std::pow(waypoint->colorR / 255.0f, 2.2f), std::pow(waypoint->colorG / 255.0f, 2.2f), std::pow(waypoint->colorB / 255.0f, 2.2f)));
 			locationMarkerObjects["waypoint-" + std::to_string(i)] = marker;
 		}
+	}
+	if(globalState->enableSiteMarkers){
+		AddSiteMarkers();
 	}
 }
 
@@ -131,6 +137,7 @@ void ALocationMarkerManager::AddSiteMarkers() {
 				marker->altitude = site->altitude;
 				marker->SetActorLocation(vectorF);
 				marker->SetText(site->name);
+				marker->SetColor(FVector(std::pow(globalState->siteMarkerColorR / 255.0f, 2.2f), std::pow(globalState->siteMarkerColorG / 255.0f, 2.2f), std::pow(globalState->siteMarkerColorB / 255.0f, 2.2f)));
 				marker->EnableCollision();
 				locationMarkerObjects[name] = marker;
 			}

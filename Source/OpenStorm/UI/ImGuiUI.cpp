@@ -605,6 +605,17 @@ void ImGuiUI::MainUI()
 				CustomFloatInput("GIS Brightness", 0.01, 1.5, &globalState.mapBrightnessGIS, &globalState.defaults->mapBrightnessGIS);
 				ImGui::Checkbox("Show Radar Sites", &globalState.enableSiteMarkers);
 				CustomTooltipForPrevious("Show the clickable radar site markers");
+				float siteColor[4] = {globalState.siteMarkerColorR / 255.0f, globalState.siteMarkerColorG / 255.0f, globalState.siteMarkerColorB / 255.0f, globalState.siteMarkerColorA / 255.0f};
+				bool siteColorChanged = ImGui::ColorEdit4("Radar Site Color", siteColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_Uint8);
+				CustomTooltipForPrevious("Change color of radar site markers");
+				if(siteColorChanged){
+					globalState.siteMarkerColorR = (int)(siteColor[0] * 255);
+					globalState.siteMarkerColorG = (int)(siteColor[1] * 255);
+					globalState.siteMarkerColorB = (int)(siteColor[2] * 255);
+					globalState.siteMarkerColorA = (int)(siteColor[3] * 255);
+					globalState.EmitEvent("LocationMarkersUpdate");
+				}
+				
 				if (ImGui::TreeNodeEx("Waypoints", ImGuiTreeNodeFlags_SpanAvailWidth)) {
 					CustomTooltipForPrevious("Create your own markers");
 					char idChr[3] = {};
@@ -627,6 +638,16 @@ void ImGuiUI::MainUI()
 						CustomTooltipForPrevious("Altitude of the marker in meters");
 						markersChanged |= ImGui::Checkbox("", &marker.enabled);
 						CustomTooltipForPrevious("Show the marker on the map");
+						ImGui::SameLine();
+						float markerColor[4] = {marker.colorR / 255.0f, marker.colorG / 255.0f, marker.colorB / 255.0f, marker.colorA / 255.0f};
+						bool markerColorChanged = ImGui::ColorEdit4("Color", markerColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_Uint8);
+						if(markerColorChanged){
+							marker.colorR = (int)(markerColor[0] * 255);
+							marker.colorG = (int)(markerColor[1] * 255);
+							marker.colorB = (int)(markerColor[2] * 255);
+							marker.colorA = (int)(markerColor[3] * 255);
+							markersChanged = true;
+						}
 						ImGui::SameLine();
 						if (ImGui::Button("Teleport")) {
 							SimpleVector3<float> location = SimpleVector3<float>(globalState.globe->GetPointScaledDegrees(marker.latitude, marker.longitude, marker.altitude));

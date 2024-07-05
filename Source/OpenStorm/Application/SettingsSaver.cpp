@@ -168,6 +168,10 @@ void ASettingsSaver::LoadSettings() {
 		LOAD_MACRO_FLOAT(mapBrightness);
 		LOAD_MACRO_FLOAT(mapBrightnessGIS);
 		LOAD_MACRO_BOOL(enableSiteMarkers);
+		LOAD_MACRO_FLOAT(siteMarkerColorR);
+		LOAD_MACRO_FLOAT(siteMarkerColorG);
+		LOAD_MACRO_FLOAT(siteMarkerColorB);
+		LOAD_MACRO_FLOAT(siteMarkerColorA);
 		// Settings
 		LOAD_MACRO_FLOAT(maxFPS);
 		LOAD_MACRO_BOOL(vsync);
@@ -252,6 +256,10 @@ void ASettingsSaver::SaveSettings() {
 		SAVE_MACRO_FLOAT(mapBrightness);
 		SAVE_MACRO_FLOAT(mapBrightnessGIS);
 		SAVE_MACRO_BOOL(enableSiteMarkers);
+		SAVE_MACRO_FLOAT(siteMarkerColorR);
+		SAVE_MACRO_FLOAT(siteMarkerColorG);
+		SAVE_MACRO_FLOAT(siteMarkerColorB);
+		SAVE_MACRO_FLOAT(siteMarkerColorA);
 		// Settings
 		SAVE_MACRO_FLOAT(maxFPS);
 		SAVE_MACRO_BOOL(vsync);
@@ -377,6 +385,10 @@ void ASettingsSaver::ResetAllSettings() {
 		RESET_MACRO(mapBrightness);
 		RESET_MACRO(mapBrightnessGIS);
 		RESET_MACRO(enableSiteMarkers);
+		RESET_MACRO(siteMarkerColorR);
+		RESET_MACRO(siteMarkerColorG);
+		RESET_MACRO(siteMarkerColorB);
+		RESET_MACRO(siteMarkerColorA);
 		// Settings
 		RESET_MACRO(maxFPS);
 		RESET_MACRO(vsync);
@@ -423,6 +435,7 @@ void ASettingsSaver::LoadLocationMarkers() {
 				markerObject->TryGetNumberField(TEXT("colorR"), waypoint.colorR);
 				markerObject->TryGetNumberField(TEXT("colorG"), waypoint.colorG);
 				markerObject->TryGetNumberField(TEXT("colorB"), waypoint.colorB);
+				markerObject->TryGetNumberField(TEXT("colorA"), waypoint.colorA);
 				markerObject->TryGetNumberField(TEXT("size"), waypoint.size);
 				markerObject->TryGetBoolField(TEXT("enabled"), waypoint.enabled);
 				if (id < globalState->locationMarkers.size()) {
@@ -461,6 +474,7 @@ void ASettingsSaver::SaveLocationMarkers() {
 			markerObject->SetNumberField(TEXT("colorR"), waypoint.colorR);
 			markerObject->SetNumberField(TEXT("colorG"), waypoint.colorG);
 			markerObject->SetNumberField(TEXT("colorB"), waypoint.colorB);
+			markerObject->SetNumberField(TEXT("colorA"), waypoint.colorA);
 			markerObject->SetNumberField(TEXT("size"), waypoint.size);
 			markerObject->SetBoolField(TEXT("enabled"), waypoint.enabled);
 			if (id < markers.Num()) {

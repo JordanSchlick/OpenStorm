@@ -294,7 +294,7 @@ void AImGuiController::UpdateEngineSettings() {
 	GlobalState& globalState = GetWorld()->GetGameState<ARadarGameStateBase>()->globalState;
 	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("r.VSync %i"), globalState.vsync && !globalState.vrMode));
 	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("r.VSyncEditor %i"), globalState.vsync && !globalState.vrMode));
-	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("t.MaxFPS %f"), (globalState.maxFPS == 0 || globalState.vrMode) ? 0 : std::max(1.0f,globalState.maxFPS)));
+	GEngine->Exec(GetWorld(), *FString::Printf(TEXT("t.MaxFPS %f"), (globalState.maxFPS == 0 || globalState.vrMode) ? 0 : std::max(5.0f,globalState.maxFPS)));
 }
 
 GlobalState* AImGuiController::GetGlobalState(){

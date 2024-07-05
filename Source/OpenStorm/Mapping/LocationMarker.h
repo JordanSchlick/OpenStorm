@@ -11,6 +11,8 @@
 #include "LocationMarker.generated.h"
 
 class UTextRenderComponent;
+class UMaterial;
+class UMaterialInstanceDynamic;
 
 UCLASS()
 class ALocationMarker : public AActor, public IClickableInterface{
@@ -48,7 +50,17 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	
 	void SetText(std::string text);
+	void SetColor(FVector color);
 	void EnableCollision();
 	
 	virtual void OnClick() override;
+private:
+	UPROPERTY(EditAnywhere);
+	UMaterial* meshMaterial = NULL;
+	UPROPERTY(EditAnywhere);
+	UMaterialInstanceDynamic* meshMaterialInstance = NULL;
+	UPROPERTY(EditAnywhere);
+	UMaterial* textMaterial = NULL;
+	UPROPERTY(EditAnywhere);
+	UMaterialInstanceDynamic* textMaterialInstance = NULL;
 };

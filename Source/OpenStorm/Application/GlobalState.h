@@ -15,9 +15,10 @@ public:
 		double latitude = 0;
 		double longitude = 0;
 		double altitude = 0;
-		int colorR = 255;
-		int colorG = 255;
-		int colorB = 255;
+		float colorR = 255;
+		float colorG = 255;
+		float colorB = 255;
+		float colorA = 255;
 		float size = 1;
 		std::string name;
 		bool enabled = true;
@@ -80,6 +81,10 @@ public:
 	float mapBrightness = 0.2f; // brightness of map texture
 	float mapBrightnessGIS = 0.5f; // GIS brightness relative to map brightness
 	bool enableSiteMarkers = true; // if the markers for radar sites should be shown
+	float siteMarkerColorR = 255; // red component of site marker color
+	float siteMarkerColorG = 255; // green component of site marker color
+	float siteMarkerColorB = 255; // blue component of site marker color
+	float siteMarkerColorA = 255; // alpha component of site marker color
 	
 	int volumeType = 1; // type of radar product RadarData::VolumeType, defaults to 1 which is reflectivity
 	

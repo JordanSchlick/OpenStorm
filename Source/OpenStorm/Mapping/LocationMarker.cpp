@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Camera/CameraComponent.h"
@@ -19,14 +20,14 @@ ALocationMarker::ALocationMarker()
 	
 	meshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Sphere"));
 	UStaticMesh* mesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'")).Object;
-	UMaterial* material = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/TestImageMaterial.TestImageMaterial'")).Object;
-
+	meshMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/UnlitColor.UnlitColor'")).Object;
 	meshComponent->SetStaticMesh(mesh);
-	meshComponent->SetMaterial(0, material);
+	meshComponent->SetMaterial(0, meshMaterial);
 	meshComponent->SetRelativeScale3D(FVector(0.05, 0.05, 0.05));
 	
 	textComponent = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Text"));
-	textComponent->SetTextMaterial(ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Engine/EditorResources/FieldNodes/_Resources/DefaultTextMaterialOpaque.DefaultTextMaterialOpaque'")).Object);
+	textMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/Game/Materials/UnlitColorText.UnlitColorText'")).Object;
+	textComponent->SetTextMaterial(textMaterial);
 	textComponent->SetHorizontalAlignment(EHTA_Center);
 	textComponent->SetWorldSize(20);
 	textComponent->SetRelativeRotation(FRotator(0, 180, 0));
@@ -41,13 +42,13 @@ ALocationMarker::ALocationMarker()
 	meshComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	collisionComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 
-	
 }
 
 
 void ALocationMarker::BeginPlay() {
 	PrimaryActorTick.bCanEverTick = false;
 	Super::BeginPlay();
+	//SetColor(FVector(0,1.0f,0));
 }
 
 void ALocationMarker::Tick(float DeltaTime) {
@@ -65,6 +66,21 @@ void ALocationMarker::Tick(float DeltaTime) {
 void ALocationMarker::SetText(std::string text) {
 	textComponent->SetText(FText::FromString(StringUtils::STDStringToFString(text)));
 }
+
+void ALocationMarker::SetColor(FVector color) {
+	// initialize material instances if not already done and the color is not white
+	if(meshMaterialInstance == NULL && (color.X != 1 || color.Y != 1 || color.Z != 1)){
+		meshMaterialInstance = UMaterialInstanceDynamic::Create(meshMaterial, this);
+		textMaterialInstance = UMaterialInstanceDynamic::Create(textMaterial, this);
+		meshComponent->SetMaterial(0, meshMaterialInstance);
+		textComponent->SetTextMaterial(textMaterialInstance);
+	}
+	if(meshMaterialInstance != NULL){
+		meshMaterialInstance->SetVectorParameterValue("Color", color);
+		textMaterialInstance->SetVectorParameterValue("Color", color);
+	}
+}
+
 void ALocationMarker::EnableCollision() {
 	FBoxSphereBounds textBounds = textComponent->GetLocalBounds();
 	collisionComponent->SetBoxExtent(textBounds.BoxExtent + 20);
