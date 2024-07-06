@@ -80,6 +80,8 @@ public:
 							productHolder->radarData = radarData;
 						}else{
 							delete radarData;
+						}
+						if(canceled || initialUid != radarHolder->uid){
 							break;
 						}
 					}
