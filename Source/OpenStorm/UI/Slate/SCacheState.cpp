@@ -39,6 +39,23 @@ void SCacheState::UpdateState() {
 		RadarCollection* radarCollection = USlateUIResources::Instance->globalState->refRadarCollection;
 		std::vector<RadarDataHolder::State> stateVector = radarCollection->StateVector();
 		
+		
+		width = stateVector.size() <= 300 ? 400 : 1000;
+		if(stateVector.size() >= 1000){
+			// expand to parent
+			TSharedPtr<SWidget> parent = this->GetParentWidget();
+			// if(parent != NULL){
+			// 	parent = parent->GetParentWidget();
+			// }
+			if(parent != NULL){
+				float parentWidth = parent->GetTickSpaceGeometry().GetLocalSize().X;
+				if(width != parentWidth){
+					width = parentWidth;
+					// force an update
+					cellCount = 0;
+				}
+			}
+		}
 		if(stateVector.size() != cellCount){
 			cellCount = stateVector.size();
 			ClearChildren();
@@ -63,7 +80,7 @@ void SCacheState::UpdateState() {
 			// background->SetImage(backgroundBrush);
 		}
 		
-		selector->SetRenderTransform(FVector2D(width / (float)cellCount * ((float)radarCollection->GetCurrentPosition() + 0.5f),0));
+		selector->SetRenderTransform(FVector2D(width / (float)cellCount * ((float)radarCollection->GetCurrentCachePosition() + 0.5f),0));
 		if(fileName.IsValid()){
 			//int lastSlash = std::max(std::max((int)path.find_last_of('/'), (int)path.find_last_of('\\')), 0);
 			//filePath = path.substr(0, lastSlash + 1);
@@ -95,5 +112,6 @@ void SCacheState::UpdateState() {
 				break;
 			}
 		}
+		
 	}
 }

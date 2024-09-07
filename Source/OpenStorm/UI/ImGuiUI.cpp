@@ -744,6 +744,13 @@ void ImGuiUI::MainUI()
 				ImGui::Checkbox("Enable TAA", &globalState.temporalAntiAliasing);
 				CustomTooltipForPrevious("TAA decreases graininess but can hide smaller details");
 				
+				ImGui::PushItemWidth(11 * fontSize - ImGui::GetStyle().ItemSpacing.x * 1.5f);
+				if(ImGui::InputInt("Radar Cache Size", &globalState.radarCacheSize)){
+					globalState.radarCacheSize = std::clamp(globalState.radarCacheSize, 0, 4000);
+				}
+				CustomTooltipForPrevious("The number of radar volumes to load into RAM. The cache is shown on the bottom right.");
+				ImGui::PopItemWidth();
+					
 				if (ImGui::Button("External Settings Window")) {
 					if(imGuiController->uiWindow != NULL && !globalState.vrMode){
 						imGuiController->InternalWindow();

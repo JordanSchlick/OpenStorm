@@ -201,7 +201,7 @@ void ARadarVolumeRender::BeginPlay()
 		HandleRadarDataEvent(event);
 	});
 
-	radarCollection->Allocate(75);
+	// radarCollection->Allocate(75);
 	
 	
 	FString radarDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("../files/dir/"));
@@ -507,7 +507,17 @@ void ARadarVolumeRender::Tick(float DeltaTime)
 		doTimeInterpolation = globalState->temporalInterpolation;
 		InitializeTextures();
 	}
-
+	
+	int roundedCacheSize = (globalState->radarCacheSize + 1) & ~1;
+	roundedCacheSize = std::max(roundedCacheSize, 4);
+	roundedCacheSize = std::min(roundedCacheSize, 20000);
+	if(globalState->isStateLoaded && radarCollection->GetCacheSize() != roundedCacheSize){
+		int dataIndex = radarCollection->GetCurrentIndex();
+		radarCollection->Free();
+		fprintf(stderr, "Radar cache size changed from %d to %d while at index %i\n", radarCollection->GetCacheSize(), roundedCacheSize, dataIndex);
+		radarCollection->Allocate(roundedCacheSize);
+		// radarCollection->Jump(dataIndex);
+	}
 	radarCollection->EventLoop();
 	
 	

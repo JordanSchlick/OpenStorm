@@ -226,7 +226,7 @@ std::string ws2s(const std::wstring& wstr)
 	return converterX.to_bytes(wstr);
 }
 
-std::vector<SystemAPI::FileStats> SystemAPI::ReadDirectory(std::string path) {
+std::vector<SystemAPI::FileStats> SystemAPI::ReadDirectory(std::string path, bool* canceled) {
 	std::vector<FileStats> files;
 #ifdef _WIN32
 	// WIN32_FIND_DATAW findFileData;
@@ -262,7 +262,7 @@ std::vector<SystemAPI::FileStats> SystemAPI::ReadDirectory(std::string path) {
 			// stats.mtime = ((double)*(long long*)&findFileData.ftLastWriteTime) / (double)TICKS_PER_SECOND - (double)EPOCH_DIFFERENCE;
 			stats.isDirectory = (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 			files.push_back(stats);
-		} while (FindNextFileW(hFind, &findFileData));
+		} while (FindNextFileW(hFind, &findFileData) && (canceled == NULL || !*canceled));
 		FindClose(hFind);
 	}else{
 		fprintf(stderr, "Directory not found\n");
@@ -275,7 +275,7 @@ std::vector<SystemAPI::FileStats> SystemAPI::ReadDirectory(std::string path) {
 		return files;
 	}
 	// should probably be optimized like https://stackoverflow.com/questions/58889085/faster-way-to-get-the-total-space-taken-by-the-directory-containing-5-million-fi
-	while ((entry = readdir(dirFd)) != NULL) {
+	while ((entry = readdir(dirFd)) != NULL && (canceled == NULL || !*canceled)) {
 		// fprintf(stderr, "%s\n", entry->d_name);
 		FileStats stats = {};
 		stats.exists = true;

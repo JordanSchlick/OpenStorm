@@ -112,8 +112,14 @@ public:
 	// return the state of the cache
 	std::vector<RadarDataHolder::State> StateVector();
 	
-	// gets current position buffer
-	int GetCurrentPosition();
+	// return size of the cache
+	int GetCacheSize();
+	
+	// gets current position in the cache buffer
+	int GetCurrentCachePosition();
+	
+	// gets current index in the data folder
+	int GetCurrentIndex();
 	
 	// visually describe the state of the cache in the console
 	void LogState();
@@ -127,7 +133,7 @@ private:
 	
 	// file to initially start on when loading directory
 	std::string defaultFileName = "";
-
+	
 	// true if allocate has been called
 	bool allocated = false;
 

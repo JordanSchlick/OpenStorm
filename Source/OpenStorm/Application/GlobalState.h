@@ -43,7 +43,8 @@ public:
 		LOOP_MODE_CACHE_BOUNCE = 4, // bounce over loaded cache only
 		LOOP_MODE_NONE = 5, // stop at end of data
 	};
-
+	
+	bool isStateLoaded = false; // if persistent settings have been loaded from disk
 	bool animate = false; // animate the scene
 	bool animateCutoff = false; // animate the cutoff
 	LoopMode animateLoopMode = LOOP_MODE_DEFAULT; // how to loop when reaching end of data
@@ -106,6 +107,7 @@ public:
 	float downloadDeleteAfter = 0; // if more than zero then files older than this many seconds will be deleted
 	
 	bool discordPresence = true; // if discord presence is enabled
+	int radarCacheSize = 75; // number of volumes that can 
 	
 	// user defined waypoints for the globe
 	std::vector<Waypoint> locationMarkers = {};

@@ -86,9 +86,13 @@ public:
 		radarFilesNew.clear();
 		// double benchTime;
 		// benchTime = SystemAPI::CurrentTime();
-		auto files = SystemAPI::ReadDirectory(filePath);
+		auto files = SystemAPI::ReadDirectory(filePath, &canceled);
 		// benchTime = SystemAPI::CurrentTime() - benchTime;
 		// fprintf(stderr, "dir list time %lf\n", benchTime);
+		
+		if(canceled){
+			return;
+		}
 		
 		// benchTime = SystemAPI::CurrentTime();
 		std::sort(files.begin(), files.end());
@@ -205,11 +209,12 @@ RadarCollection::~RadarCollection()
 
 void RadarCollection::Allocate(int newCacheSize) {
 	if(allocated){
-		fprintf(stderr,"Can not reallocate\n");
+		//fprintf(stderr,"Can not reallocate\n");
+		Free();
 		return;
 	}
 	// make it to a multiple of 2 and minimum of 4
-	cacheSize = newCacheSize & ~1;
+	cacheSize = (newCacheSize + 1) & ~1;
 	cacheSize = std::max(cacheSize, 4);
 	cacheSizeSide = cacheSize / 2 - 1;
 	reservedCacheSize = cacheSizeSide / 2;
@@ -225,10 +230,19 @@ void RadarCollection::Allocate(int newCacheSize) {
 		cache[i]->collection = this;
 	}
 	allocated = true;
+	PollFiles();
 }
 
 void RadarCollection::Free() {
+	if(allocated){
+		// save name so that reallocations start out at the same spot
+		std::string lastName = GetCurrentRadarData()->fileInfo.name;
+		if(lastName != ""){
+			defaultFileName = lastName;
+		}
+	}
 	allocated = false;
+	cacheSize = 0;
 	Clear();
 	if(cache != NULL){
 		delete[] cache;
@@ -544,7 +558,12 @@ void RadarCollection::RegisterListener(std::function<void(RadarUpdateEvent)> cal
 	listeners.push_back(callback);
 }
 
+static RadarDataHolder tmpBlankHolder;
+
 RadarDataHolder* RadarCollection::GetCurrentRadarData() {
+	if(cacheSize == 0){
+		return &tmpBlankHolder;
+	}
 	return cache[currentPosition];
 }
 
@@ -945,8 +964,15 @@ void RadarCollection::Emit(RadarDataHolder* holder) {
 
 std::string RadarCollection::StateString(){
 	std::string state = "Radar Cache: [";
+	size_t dataSize = 0;
 	for(int i = 0; i < cacheSize; i++){
-		switch(cache[i]->state){
+		RadarDataHolder* holder = cache[i];
+		for (auto product : holder->products) {
+			if(product->radarData != NULL){
+				dataSize += product->radarData->MemoryUsage();
+			}
+		}
+		switch(holder->state){
 			case RadarDataHolder::State::DataStateUnloaded:
 				if(i == currentPosition){
 					state += ",";
@@ -970,7 +996,8 @@ std::string RadarCollection::StateString(){
 				break;
 		}
 	}
-	state += "]";
+	state += "]\n";
+	state += "Data Size: " + std::to_string(dataSize / 1000000000.0) + " GB";
 	return state;
 }
 
@@ -983,9 +1010,17 @@ std::vector<RadarDataHolder::State> RadarCollection::StateVector() {
 	return stateVector;
 }
 
+int RadarCollection::GetCacheSize(){
+	return cacheSize;
+}
 
-int RadarCollection::GetCurrentPosition() {
+
+int RadarCollection::GetCurrentCachePosition() {
 	return currentPosition;
+}
+
+int RadarCollection::GetCurrentIndex() {
+	return firstItemIndex + cachedBefore;
 }
 
 void RadarCollection::LogState() {

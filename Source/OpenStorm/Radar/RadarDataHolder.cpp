@@ -245,7 +245,9 @@ public:
 		for(RadarDataHolder::ProductHolder* productHolder : productsList){
 			productHolder->StopUsing();
 		}
-		radarHolder->loader = NULL;
+		if(!canceled){
+			radarHolder->loader = NULL;
+		}
 		lock.unlock();
 	}
 };
