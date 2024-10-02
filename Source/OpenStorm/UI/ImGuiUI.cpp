@@ -23,6 +23,11 @@
 
 #if WITH_EDITOR
 //#include "Toolkits/AssetEditorManager.h"
+// #include "Engine/Engine.h"
+// #include "EngineGlobals.h"
+// #include "Editor/EditorEngine.h"
+#include "Editor.h"
+#include "Subsystems/AssetEditorSubsystem.h"
 #endif
 
 static bool inlineLabel = false;

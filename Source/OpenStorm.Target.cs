@@ -9,7 +9,7 @@ public class OpenStormTarget : TargetRules
 	{
 		Name = "OpenStorm";
 		Type = TargetType.Game;
-		DefaultBuildSettings = BuildSettingsVersion.V2;
+		DefaultBuildSettings = BuildSettingsVersion.Latest;
 		ExtraModuleNames.AddRange( new string[] { "OpenStorm" } );
 		
 		bUseUnityBuild = false;
