@@ -24,7 +24,7 @@ public class OpenStormEditorTarget : TargetRules
 	{
 		Name = "OpenStormEditor";
 		Type = TargetType.Editor;
-		DefaultBuildSettings = BuildSettingsVersion.V2;
+		DefaultBuildSettings = BuildSettingsVersion.Latest;
 		ExtraModuleNames.AddRange( new string[] { "OpenStorm" } );
 		
 		bUseUnityBuild = false;

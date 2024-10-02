@@ -12,17 +12,19 @@
 				// make a simlink to the engine beside this repository
 				// windows example: mklink /D UnrealEngine C:\files\Epic\UE_5.2\Engine
 				// linux example: ln -s /path/to/Engine UnrealEngine
-				"${workspaceFolder}/../UnrealEngine/Plugins/Runtime/**",
-				"${workspaceFolder}/../UnrealEngine/Source/Runtime/**",
-				"${workspaceFolder}/../UnrealEngine/Source/Editor/**",
-				"${workspaceFolder}/../UnrealEngine/Source/Developer/**",
-				"${workspaceFolder}/../UnrealEngine/Source/",
-				"${workspaceFolder}/../UnrealEngine/Plugins/Runtime/**",
-				"${workspaceFolder}/../UnrealEngine/Shaders/Shared",
-				"${workspaceFolder}/../UnrealEngine/Intermediate/Build/Win64/UnrealEditor/Inc/**"
+				"${workspaceFolder}/../UnrealEngine/Engine/Plugins/Runtime/**",
+				"${workspaceFolder}/../UnrealEngine/Engine/Source/Runtime/**",
+				"${workspaceFolder}/../UnrealEngine/Engine/Source/Editor/**",
+				"${workspaceFolder}/../UnrealEngine/Engine/Source/Developer/**",
+				"${workspaceFolder}/../UnrealEngine/Engine/Source/",
+				"${workspaceFolder}/../UnrealEngine/Engine/Plugins/Runtime/**",
+				"${workspaceFolder}/../UnrealEngine/Engine/Shaders/Shared",
+				"${workspaceFolder}/../UnrealEngine/Engine/Intermediate/Build/Win64/UnrealEditor/Inc/**",
+				"${workspaceFolder}/../UnrealEngine/Engine/Intermediate/Build/Linux/UnrealEditor/Inc/**"
 			],
 			"forcedInclude": [
-				"${workspaceFolder}/Intermediate/Build/Win64/x64/UnrealEditor/Development/OpenStorm/Definitions.OpenStorm.h"
+				"${workspaceFolder}/Intermediate/Build/Win64/x64/UnrealEditor/Development/OpenStorm/Definitions.OpenStorm.h",
+				"${workspaceFolder}/Intermediate/Build/Linux/x64/UnrealEditor/Development/OpenStorm/Definitions.OpenStorm.h"
 			],
 			"defines": [
 				"_DEBUG",

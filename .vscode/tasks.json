@@ -7,8 +7,11 @@
 			// Assign output file name with VSCode inner variables like ${fileBasename}
 			//"command": "C:/files/Epic/UE_5.2/Engine/Build/BatchFiles/Build.bat OpenStormEditor Win64 Development -Project=\"${workspaceFolder}/OpenStorm.uproject\"",
 			//"command": "${workspaceFolder}/../UnrealEngine/Build/BatchFiles/Build.bat OpenStormEditor Win64 Development -Project=\"${workspaceFolder}/OpenStorm.uproject\"",
-			"command": "${workspaceFolder}/.vscode/build.bat OpenStormEditor Win64 Development -Project=\"${workspaceFolder}/OpenStorm.uproject\"",
-			"options": {
+			"windows":{ 
+				"command": "${workspaceFolder}/.vscode/build.bat OpenStormEditor Win64 Development -Project=\"${workspaceFolder}/OpenStorm.uproject\""
+			},
+			"linux":{
+				"command": "${workspaceFolder}/../UnrealEngine/Engine/Build/BatchFiles/Linux/Build.sh OpenStormEditor Linux Development -Project=\"${workspaceFolder}/OpenStorm.uproject\""
 			},
 			"group": {
 				"kind": "build",
