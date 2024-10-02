@@ -1,4 +1,5 @@
 #include "MaterialRenderTarget.h"
+#include "Engine/CanvasRenderTarget2D.h"
 #include "Engine/Canvas.h"
 
 UMaterialRenderTarget* UMaterialRenderTarget::Create(int width, int height, EPixelFormat pixelFormat, UMaterialInterface* material, UObject* parent, const char* name){
@@ -9,22 +10,27 @@ UMaterialRenderTarget* UMaterialRenderTarget::Create(int width, int height, EPix
 }
 
 UMaterialRenderTarget::UMaterialRenderTarget(){
-	OnCanvasRenderTargetUpdate.AddDynamic(this, &UMaterialRenderTarget::DrawMaterial);
 }
 
 void UMaterialRenderTarget::Initialize(int width, int height, EPixelFormat pixelFormat){
+	if(canvasRenderTarget == nullptr){
+		canvasRenderTarget = NewObject<UCanvasRenderTarget2D>();
+		canvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &UMaterialRenderTarget::DrawMaterial);
+	}
+	
 	//InitCustomFormat(width, height, pixelFormat, true);
 	
 	// overide without arbitrary pixel format restrictions
-	OverrideFormat = pixelFormat;
-	bForceLinearGamma = true;
-	InitAutoFormat(width, height);
-	UpdateResource();
+	canvasRenderTarget->OverrideFormat = pixelFormat;
+	canvasRenderTarget->bForceLinearGamma = true;
+	canvasRenderTarget->InitAutoFormat(width, height);
+	canvasRenderTarget->UpdateResource();
 }
 
 void UMaterialRenderTarget::Update(){
 	//fprintf(stderr,"Update2 %i\n",OnCanvasRenderTargetUpdate.IsBound());
-	RepaintCanvas();
+	//canvasRenderTarget->RepaintCanvas();
+	canvasRenderTarget->UpdateResource();
 	//UpdateResource();
 	//ReceiveUpdate(NULL,1,1);
 }
@@ -33,6 +39,9 @@ void UMaterialRenderTarget::Update(){
 	//DrawMaterial(canvas, width, height);
 //}
 
+UTexture* UMaterialRenderTarget::GetTexture(){
+	return (UTexture*)canvasRenderTarget;
+}
 
 void UMaterialRenderTarget::DrawMaterial(UCanvas* canvas, int32 width, int32 height){
 	//fprintf(stderr,"Update %p %i %i\n",canvas, width, height);

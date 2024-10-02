@@ -8,5 +8,5 @@ for /f "tokens=2 delims=[]" %%H in  ('dir /al ..\ ^| findstr /i /c:"UnrealEngine
     set UNREAL_PATH=%%H
 )
 echo Using engine at %UNREAL_PATH%
-%UNREAL_PATH%/Build/BatchFiles/Build.bat %*
+%UNREAL_PATH%/Engine/Build/BatchFiles/Build.bat %*
 

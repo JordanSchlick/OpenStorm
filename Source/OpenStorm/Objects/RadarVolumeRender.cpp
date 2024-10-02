@@ -422,7 +422,7 @@ void ARadarVolumeRender::InitializeTextures() {
 		interpolationMaterialInstance->SetScalarParameterValue(TEXT("SweepCount"), radarData->sweepBufferCount);
 		interpolationMaterialInstance->SetTextureParameterValue(TEXT("Texture1"), volumeTexture);
 		interpolationMaterialInstance->SetTextureParameterValue(TEXT("Texture2"), volumeTexture2);
-		radarMaterialInstance->SetTextureParameterValue(TEXT("Volume"), volumeMaterialRenderTarget);
+		radarMaterialInstance->SetTextureParameterValue(TEXT("Volume"), volumeMaterialRenderTarget->GetTexture());
 	}else{
 		volumeMaterialRenderTarget = NULL;
 		volumeTexture2 = NULL;
