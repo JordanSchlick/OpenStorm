@@ -6,6 +6,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Engine/StaticMesh.h" 
+#include "Engine/World.h"
+#include "Engine/Engine.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "../Radar/SimpleVector3.h"

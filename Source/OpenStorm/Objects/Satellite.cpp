@@ -6,6 +6,7 @@
 #include "UObject/Object.h"
 #include "Materials/Material.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"

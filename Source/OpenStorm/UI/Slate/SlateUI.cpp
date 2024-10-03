@@ -4,6 +4,7 @@
 #include "../../Objects/RadarGameStateBase.h"
 
 #include "UObject/UObjectGlobals.h"
+#include "Engine/World.h"
 #include "Engine/GameViewportClient.h"
 #include "Widgets/SOverlay.h"
 #include "Widgets/SWindow.h"
