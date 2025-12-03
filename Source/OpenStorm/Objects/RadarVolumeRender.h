@@ -21,6 +21,7 @@
 
 
 class UMaterialRenderTarget;
+class FRenderTarget;
 
 UCLASS()
 class OPENSTORM_API ARadarVolumeRender : public AActor

@@ -23,6 +23,8 @@
 
 #include "UObject/Object.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Engine/World.h"
+#include "TextureResource.h"
 #include "Math/UnrealMathUtility.h"
 #include "HAL/FileManager.h"
 #include "Materials/MaterialInstanceDynamic.h"

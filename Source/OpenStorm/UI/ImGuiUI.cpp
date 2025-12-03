@@ -21,6 +21,8 @@
 
 #include "HAL/FileManager.h"
 
+#include "Engine/Engine.h"
+#include "UObject/Package.h"
 #if WITH_EDITOR
 //#include "Toolkits/AssetEditorManager.h"
 // #include "Engine/Engine.h"
@@ -901,7 +903,7 @@ void ImGuiUI::MainUI()
 				globalState.EmitEvent("JumpToIndex", "", &fileIndexValue);
 			}
 			
-			#if WITH_EDITOR
+			#if WITH_EDITOR && !UE_BUILD_SHIPPING
 			static std::string assetName = "/Engine/Transient.VolumeTexture1";
 			ImGui::InputText("Asset", &assetName);
 			if (ImGui::Button("Open Asset")) {
