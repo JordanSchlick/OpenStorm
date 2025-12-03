@@ -304,7 +304,7 @@ int read_wsr88d_ray_m31(Wsr88d_file *wf, int msg_size,
 
     if (little_endian()) wsr88d_swap_m31_ray_hdr(&wsr88d_ray->ray_hdr);
 	
-	if(wsr88d_ray->ray_hdr.azm < 0 || wsr88d_ray->ray_hdr.azm > 360 || wsr88d_ray->ray_hdr.radial_const > sizeof(wsr88d_ray->data) || wsr88d_ray->ray_hdr.elev_const > sizeof(wsr88d_ray->data) || wsr88d_ray->ray_hdr.vol_const > sizeof(wsr88d_ray->data)){
+	if(wsr88d_ray->ray_hdr.azm < -360 || wsr88d_ray->ray_hdr.azm > 360 || wsr88d_ray->ray_hdr.radial_const > sizeof(wsr88d_ray->data) || wsr88d_ray->ray_hdr.elev_const > sizeof(wsr88d_ray->data) || wsr88d_ray->ray_hdr.vol_const > sizeof(wsr88d_ray->data)){
 		fprintf(stderr,"read_wsr88d_ray_m31: detected corruption %f %i %i %i\n", wsr88d_ray->ray_hdr.azm, wsr88d_ray->ray_hdr.radial_const, wsr88d_ray->ray_hdr.elev_const, wsr88d_ray->ray_hdr.vol_const);
 		return 0;
 	}
@@ -383,7 +383,7 @@ int wsr88d_get_vol_index(char* dataname)
 }
 
 #define MAXRAYS_M31 800
-#define MAXSWEEPS 30
+#define MAXSWEEPS 128
 
 void wsr88d_load_ray_into_radar(Wsr88d_ray_m31 *wsr88d_ray, int isweep,
 	Radar *radar, VCP_data* vcp_data)

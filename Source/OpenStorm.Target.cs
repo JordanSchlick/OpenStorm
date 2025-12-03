@@ -15,6 +15,7 @@ public class OpenStormTarget : TargetRules
 		bUseUnityBuild = false;
 		bUsePCHFiles = false;
 		
+		bUseLoggingInShipping = true;
 		
 		//SourceFileWorkingSet.Provider = "None";
 		//SourceFileWorkingSet.RepositoryPath = "";

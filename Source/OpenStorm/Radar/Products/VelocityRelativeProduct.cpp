@@ -95,26 +95,6 @@ RadarData* RadarProductStormRelativeVelocity::deriveVolume(std::map<RadarData::V
 	delete[] bins;
 	
 	
-	// float valueRange = radarData->stats.maxValue - radarData->stats.minValue;
-	// float threshold = valueRange * 0.2f;
-	
-	// DealiasingAlgorithm algo = {};
-	// algo.threashold = threshold;
-	// algo.range = valueRange;
-	// algo.vol = radarData;
-	// algo.src = inputProducts[RadarData::VOLUME_VELOCITY];
-	// algo.src->Decompress();
-	// algo.used = new bool[radarData->fullBufferSize];
-	// std::fill(algo.used, algo.used + radarData->fullBufferSize, false);
-	// algo.groupId = 20;
-
-	// algo.FindAllGroups();
-	
-	// radarData->stats.minValue = 0;
-	// radarData->stats.maxValue = algo.groupId + 1;
-	// radarData->stats.volumeType = RadarData::VOLUME_UNKNOWN;
-	// delete algo.used;
-	
 	radarData->Interpolate();
 	return radarData;
 };

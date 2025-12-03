@@ -43,6 +43,7 @@ public:
 	int datasetSize = 0;
 	HighFive::DataTypeClass datasetTypeClass;
 	double elevation = 0;
+	double nyquistVelocity = 0;
 	int rayCount = 0;
 	int binCount = 0;
 	float pixelSize = 0;
@@ -283,6 +284,9 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 								startAngle = getDoubleAttribute(sweepHow, "astart");
 							}
 						}
+						if(sweepHow.hasAttribute("NI")){
+							sweepData->nyquistVelocity = getDoubleAttribute(sweepHow, "NI");
+						}
 					}
 					if(stillNeedsRayAngles){
 						for(size_t i = 0; i < sweepData->rayCount; i++){
@@ -395,6 +399,7 @@ bool OdimH5RadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 			const SweepData* sweep = &sweeps[index];
 			radarData->sweepInfo[sweepIndex].actualRayCount = sweep->rayCount;
 			radarData->sweepInfo[sweepIndex].elevationAngle = sweep->elevation;
+			radarData->sweepInfo[sweepIndex].nyquistVelocity = sweep->nyquistVelocity;
 			radarData->sweepInfo[sweepIndex].id = sweep->id;
 			radarData->sweepInfo[sweepIndex].index = sweepIndex;
 			// fprintf(stderr, "%f %i %i %f %f\n", radarData->sweepInfo[sweepIndex].elevationAngle, sweep->rayCount, sweep->binCount, sweep->multiplier, sweep->offset);

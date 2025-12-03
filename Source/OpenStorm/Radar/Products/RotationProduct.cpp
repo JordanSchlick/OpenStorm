@@ -8,7 +8,7 @@ RadarProductRotation::RadarProductRotation(){
 	shortName = "ROT";
 	dependencies = {RadarData::VOLUME_VELOCITY_DEALIASED,  RadarData::VOLUME_SPECTRUM_WIDTH};
 	// this currently does not work very well so it is hidden by default
-	// development = true;
+	development = true;
 }
 
 

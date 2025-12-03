@@ -136,6 +136,8 @@ public:
 		int index = -1;
 		// number of not interpolated rays in sweep
 		int actualRayCount = 0;
+		// absolute velocities above this value will be folded
+		float nyquistVelocity = 0;
 	};
 
 	// array of info about sweeps

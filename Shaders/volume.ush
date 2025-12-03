@@ -258,8 +258,12 @@ for(int step = 0; step <= maxSteps && alpha < 0.90; step++){
 	if(intMode == 0){
 		// get pixel value
 		
+		uint dataLine = thetaInt + (sweepInt) * thetaSize2;
+		uint actualDataLine = dataLine / raysPerLine;
+		uint dataLineOffset = dataLine % raysPerLine;
+		dataLineOffset *= radiusSize;
 		
-		float localValue = volume[uint2(radiusInt, thetaInt + (sweepInt) * thetaSize2)].r;
+		float localValue = volume[uint2(radiusInt + dataLineOffset, actualDataLine)].r;
 		
 		
 		

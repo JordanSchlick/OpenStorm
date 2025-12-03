@@ -37,7 +37,7 @@ NEXRAD and European ODIM H5 radar data are currently supported.
 You can get NEXRAD data from
 * Click on or select a radar and hit the start button under download in OpenStorm.
 * https://github.com/JordanSchlick/radar-data to download data in real time outside OpenStorm.
-* https://s3.amazonaws.com/noaa-nexrad-level2/index.html for historical data.
+* https://s3.amazonaws.com/unidata-nexrad-level2/index.html for historical data.
 
 
 ## Building
@@ -78,4 +78,4 @@ In general just try to be consistent with existing code. The following guideline
 
 
 ## Supporters
-![WXFanatics](https://avatars.githubusercontent.com/u/96398274?s=48)
+[![WXFanatics](https://avatars.githubusercontent.com/u/96398274?s=48)](https://github.com/WXFanatics "WXFanatics")

@@ -98,10 +98,10 @@ public:
 	RadarData* vol = NULL;
 	// source velocity data
 	RadarData* src = NULL;
-	// threashold for determining group boundary
-	float threashold = 0;
+	// threshold for determining group boundary as a multiple of the nyquist velocity
+	float threshold = 0;
 	// range velocity values from lowest to highest possible in raw data
-	float range = 0;
+	// float range = 0;
 	
 	float groupId = 0;
 	std::vector<DealiasingGroup> groups = {};
@@ -225,6 +225,15 @@ public:
 	NeighborInfo* neighborInfo;
 	std::map<int,bool> isNeighborMap;
 	
+	float GetNyquistVelocity(int sweep){
+		float nyquist = 0;
+		nyquist = src->sweepInfo[sweep].nyquistVelocity;
+		if(nyquist == 0){
+			nyquist = (src->stats.maxValue - src->stats.minValue) / 2.0f;
+		}
+		return nyquist;
+	}
+	
 	// merge groups into their surrounding groups
 	void MergeGroups(){
 		neighborInfo = new NeighborInfo[(int)groupId + 1]{};
@@ -288,7 +297,7 @@ public:
 			for(auto id2 : isNeighborMap){
 				int id = id2.first;
 				float count = neighborInfo[id].count;
-				float offset = neighborInfo[id].offset / (count * range);
+				float offset = neighborInfo[id].offset / (count * GetNyquistVelocity(group->centroidSweep) * 2.0f);
 				DealiasingGroup* largestGroup = groupsMap[id];
 				bool invalid = false;
 				// recurse through parents to make sure of no recursive dependencies
@@ -399,7 +408,7 @@ public:
 					return;*/
 				}
 				group->offset = offset;
-				group->offsetUnits = offset * range;
+				group->offsetUnits = offset * GetNyquistVelocity(group->centroidSweep) * 2.0f; // in m/s
 			}
 		}
 	}
@@ -501,7 +510,8 @@ private:
 		int location = sweep * vol->sweepBufferSize + (theta + 1) * vol->thetaBufferSize + radius;
 		// value of current location
 		float velocityValue = src->buffer[location];
-		if(vol->buffer[location] != 0.0f || velocityValue == 0.0f || isnan(velocityValue) || (fromValue > 0) != (velocityValue > 0) || abs(velocityValue - fromValue) > threashold){
+		float absoluteThreshold = GetNyquistVelocity(sweep) * threshold;
+		if(vol->buffer[location] != 0.0f || velocityValue == 0.0f || isnan(velocityValue) || (fromValue > 0) != (velocityValue > 0) || abs(velocityValue - fromValue) > absoluteThreshold){
 			//if(group->id != vol->buffer[location]){
 			//	fprintf(stderr, "%f", vol->buffer[location]);
 			//}
@@ -588,13 +598,13 @@ RadarData* RadarProductVelocityDealiased::deriveVolume(std::map<RadarData::Volum
 	radarData->CopyFrom(inputProducts[RadarData::VOLUME_VELOCITY]);
 	std::fill(radarData->buffer, radarData->buffer + radarData->usedBufferSize, 0.0f);
 	
-	float valueRange = radarData->stats.maxValue - radarData->stats.minValue;
-	float threshold = valueRange * 0.2f;
+	// float valueRange = radarData->stats.maxValue - radarData->stats.minValue;
+	// float threshold = valueRange * 0.2f;
 	
 	DealiasingAlgorithm algo = {};
 	algo.verbose = verbose;
-	algo.threashold = threshold;
-	algo.range = valueRange;
+	algo.threshold = 0.3f;
+	// algo.range = valueRange;
 	algo.vol = radarData;
 	algo.src = inputProducts[RadarData::VOLUME_VELOCITY];
 	algo.src->Decompress();
@@ -682,12 +692,12 @@ RadarData* RadarProductVelocityDealiasedGroupTest::deriveVolume(std::map<RadarDa
 	radarData->CopyFrom(inputProducts[RadarData::VOLUME_VELOCITY]);
 	std::fill(radarData->buffer, radarData->buffer + radarData->usedBufferSize, 0.0f);
 	
-	float valueRange = radarData->stats.maxValue - radarData->stats.minValue;
-	float threshold = valueRange * 0.2f;
+	// float valueRange = radarData->stats.maxValue - radarData->stats.minValue;
+	// float threshold = valueRange * 0.2f;
 	
 	DealiasingAlgorithm algo = {};
-	algo.threashold = threshold;
-	algo.range = valueRange;
+	algo.threshold = 0.3f;
+	// algo.range = valueRange;
 	algo.vol = radarData;
 	algo.src = inputProducts[RadarData::VOLUME_VELOCITY];
 	algo.src->Decompress();

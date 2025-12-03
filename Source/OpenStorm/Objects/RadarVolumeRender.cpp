@@ -375,6 +375,17 @@ void ARadarVolumeRender::InitializeTextures() {
 		textureWidth = 16;
 		textureHeight = 16;
 	}
+	// if the texture size is above the maximum texture size, store multiple rays in each line
+	if(textureHeight > 16384){
+		int raysPerLine = (int)std::ceil(textureHeight / 16384.0f);
+		textureWidth *= raysPerLine;
+		textureHeight = (int)std::ceil(textureHeight / raysPerLine);
+		radarMaterialInstance->SetScalarParameterValue(TEXT("RaysPerLine"), raysPerLine);
+		interpolationMaterialInstance->SetScalarParameterValue(TEXT("RaysPerLine"), raysPerLine);
+	}else{
+		radarMaterialInstance->SetScalarParameterValue(TEXT("RaysPerLine"), 1);
+		interpolationMaterialInstance->SetScalarParameterValue(TEXT("RaysPerLine"), 1);
+	}
 	if (volumeTexture != NULL && textureWidth == volumeTexture->GetSizeX() && textureHeight == volumeTexture->GetSizeY() && (volumeMaterialRenderTarget != NULL) == doTimeInterpolation) {
 		// nothing changed so no need to reallocate
 		return;

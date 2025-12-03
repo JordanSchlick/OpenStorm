@@ -1,6 +1,7 @@
 #include "RadarProduct.h"
 #include "VelocityDealiasProduct.h"
 #include "VelocityRelativeProduct.h"
+#include "NormalizedRotationProduct.h"
 #include "RotationProduct.h"
 
 std::vector<RadarProduct*> RadarProduct::products = {
@@ -12,7 +13,8 @@ std::vector<RadarProduct*> RadarProduct::products = {
 	new RadarProductBase(RadarData::VOLUME_DIFFERENTIAL_PHASE_SHIFT, "Differential Phase Shift","DPS"),
 	new RadarProductVelocityDealiased(),
 	new RadarProductStormRelativeVelocity(),
-	new RadarProductRotation(),
+	new RadarProductNormalizedRotation(),
+	// new RadarProductRotation(),
 	new RadarProductVelocityDealiasedGroupTest(RadarProduct::CreateDynamicVolumeType()),
 };
 

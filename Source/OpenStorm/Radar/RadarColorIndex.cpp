@@ -248,6 +248,7 @@ RadarColorIndex* RadarColorIndex::GetDefaultColorIndexForData(RadarData* radarDa
 		case RadarData::VOLUME_VELOCITY:
 		case RadarData::VOLUME_VELOCITY_DEALIASED:
 		case RadarData::VOLUME_STORM_RELATIVE_VELOCITY:
+		case RadarData::VOLUME_ROTATION:
 			return &RadarColorIndexVelocity::defaultInstance;
 			break;
 		

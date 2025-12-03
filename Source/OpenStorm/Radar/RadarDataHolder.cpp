@@ -54,6 +54,7 @@ public:
 			// read in radar file
 			// void* nexradData = RadarData::ReadNexradData(path.c_str());
 			RadarReader* radarFile = RadarReader::GetLoaderForFile(path);
+			// radarFile->verbose = true;
 			bool success = radarFile->LoadFile(path);
 			if(!success){
 				fprintf(stderr, "RadarDataHolder.cpp(RadarLoader::Task) Failed to load file %s\n", path.c_str());

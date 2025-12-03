@@ -78,7 +78,7 @@ public:
 			}
 			//fprintf(stderr, "OnRequestProgress %i\n", BytesReceived);
 		});
-		httpRequest->OnProcessRequestComplete().BindLambda([this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess){
+		httpRequest->OnProcessRequestComplete().BindLambda([this, httpRequest](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess){
 			fprintf(stderr, "OnProcessRequestComplete %i\n", bSuccess);
 			if (bSuccess && Response.IsValid()){
 				httpResponsePtr = Response;
@@ -126,7 +126,30 @@ public:
 					success = true;
 				}
 			}else{
-				error = "request failed";
+				EHttpRequestStatus::Type status = httpRequest->GetStatus();
+				std::string statusString = "";
+				switch(status){
+					case EHttpRequestStatus::NotStarted:
+						statusString = "NotStarted";
+						break;
+					case EHttpRequestStatus::Processing:
+						statusString = "Processing";
+						break;
+					case EHttpRequestStatus::Failed:
+						statusString = "Failed";
+						break;
+					case EHttpRequestStatus::Failed_ConnectionError:
+						statusString = "Failed_ConnectionError";
+						break;
+					case EHttpRequestStatus::Succeeded:
+						statusString = "Succeeded";
+						break;
+					default:
+						statusString = "unknown ";
+						statusString += std::to_string((int)status);
+						break;
+				}
+				error = "request failed " + statusString;
 			}
 			
 			done = true;

@@ -211,26 +211,31 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 				fprintf(stderr, "Ray is missing!\n");
 				continue;
 			}
-			/*fprintf(stderr, "======== %i\n", sweepIndex);
-			fprintf(stderr, "sweep elev %f\n", sweep->h.elev);
-			fprintf(stderr, "sweep sweep_num %i\n", sweep->h.sweep_num);
-			fprintf(stderr, "sweep nrays %i\n", sweep->h.nrays);
-			if (sweep->ray[0]) {
-				fprintf(stderr, "sweep nbins %i\n", sweep->ray[0]->h.nbins);
+			if(sweep->h.elev > 180){
+				sweep->h.elev -= 360;
 			}
-			fprintf(stderr, "sweep azimuth %f\n", sweep->h.azimuth);
-			fprintf(stderr, "sweep beam_width %f\n", sweep->h.beam_width);
-			fprintf(stderr, "sweep horz_half_bw %f\n", sweep->h.horz_half_bw);
-			fprintf(stderr, "sweep vert_half_bw %f\n", sweep->h.vert_half_bw);
-			if (sweep->ray[0]) {
-				fprintf(stderr, "sweep bin 0 data %i\n", sweep->ray[0]->range[0]);
-				fprintf(stderr, "sweep ray pixel length %i meters\n", sweep->ray[0]->h.gate_size);
-				fprintf(stderr, "sweep ray estimated length %i meters\n", sweep->ray[0]->h.gate_size * sweep->ray[0]->h.nbins + sweep->ray[0]->h.range_bin1);
-				fprintf(stderr, "sweep ray unam_rng %f meters\n", sweep->ray[0]->h.unam_rng);
-				fprintf(stderr, "sweep ray lat %f lon %f\n", sweep->ray[1]->h.lat, sweep->ray[1]->h.lon);
+			
+			if(verbose){
+				fprintf(stderr, "======== %i\n", sweepIndex);
+				fprintf(stderr, "sweep elev %f\n", sweep->h.elev);
+				fprintf(stderr, "sweep sweep_num %i\n", sweep->h.sweep_num);
+				fprintf(stderr, "sweep nrays %i\n", sweep->h.nrays);
+				if (sweep->ray[0]) {
+					fprintf(stderr, "sweep nbins %i\n", sweep->ray[0]->h.nbins);
+				}
+				fprintf(stderr, "sweep azimuth %f\n", sweep->h.azimuth);
+				fprintf(stderr, "sweep beam_width %f\n", sweep->h.beam_width);
+				fprintf(stderr, "sweep horz_half_bw %f\n", sweep->h.horz_half_bw);
+				fprintf(stderr, "sweep vert_half_bw %f\n", sweep->h.vert_half_bw);
+				if (sweep->ray[0]) {
+					fprintf(stderr, "sweep bin 0 data %i\n", sweep->ray[0]->range[0]);
+					fprintf(stderr, "sweep ray pixel length %i meters\n", sweep->ray[0]->h.gate_size);
+					fprintf(stderr, "sweep ray estimated length %i meters\n", sweep->ray[0]->h.gate_size * sweep->ray[0]->h.nbins + sweep->ray[0]->h.range_bin1);
+					fprintf(stderr, "sweep ray unam_rng %f meters\n", sweep->ray[0]->h.unam_rng);
+					fprintf(stderr, "sweep ray lat %f lon %f\n", sweep->ray[1]->h.lat, sweep->ray[1]->h.lon);
+				}
+				fprintf(stderr, "%i-%i-%i %i:%i:%f\n", sweep->ray[0]->h.year, sweep->ray[0]->h.month, sweep->ray[0]->h.day, sweep->ray[0]->h.hour, sweep->ray[0]->h.minute, sweep->ray[0]->h.sec);
 			}
-			fprintf(stderr, "%i-%i-%i %i:%i:%f\n", sweep->ray[0]->h.year, sweep->ray[0]->h.month, sweep->ray[0]->h.day, sweep->ray[0]->h.hour, sweep->ray[0]->h.minute, sweep->ray[0]->h.sec);
-			*/
 			
 			
 			// add sweeps but skip duplicates
@@ -240,8 +245,6 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 			}
 		}
 	}
-
-
 
 	
 	if (radarData->sweepBufferCount == 0) {
@@ -281,6 +284,13 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 		int thetaSize = sweep->h.nrays;
 		maxTheta = std::max(maxTheta, thetaSize);
 		
+		if(thetaSize == 0){
+			continue;
+		}
+		
+		float minNyquistVelocity = sweep->ray[0]->h.nyq_vel;
+		float maxNyquistVelocity = sweep->ray[0]->h.nyq_vel;
+
 		for (int theta = 0; theta < thetaSize; theta++) {
 			Ray* ray = sweep->ray[theta];
 			if(ray){
@@ -308,8 +318,17 @@ bool NexradRadarReader::LoadVolume(RadarData *radarData, RadarData::VolumeType v
 				}
 				
 				maxRadius = std::max(maxRadius, ray->h.nbins);
+				minNyquistVelocity = std::min(minNyquistVelocity, ray->h.nyq_vel);
+				maxNyquistVelocity = std::max(maxNyquistVelocity, ray->h.nyq_vel);
 			}
 		}
+		
+		// if(verbose){
+		// 	fprintf(stderr, "minNyquistVelocity %f maxNyquistVelocity %f\n", minNyquistVelocity, maxNyquistVelocity);
+		// }
+		
+		// I haven't seen a volume where they vary per ray
+		radarData->sweepInfo[sweepId].nyquistVelocity = maxNyquistVelocity;
 		
 		sweepId++;
 	}

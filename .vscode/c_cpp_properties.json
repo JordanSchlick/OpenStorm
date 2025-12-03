@@ -19,12 +19,10 @@
 				"${workspaceFolder}/../UnrealEngine/Engine/Source/",
 				"${workspaceFolder}/../UnrealEngine/Engine/Plugins/Runtime/**",
 				"${workspaceFolder}/../UnrealEngine/Engine/Shaders/Shared",
-				"${workspaceFolder}/../UnrealEngine/Engine/Intermediate/Build/Win64/UnrealEditor/Inc/**",
-				"${workspaceFolder}/../UnrealEngine/Engine/Intermediate/Build/Linux/UnrealEditor/Inc/**"
+				"${workspaceFolder}/../UnrealEngine/Engine/Intermediate/Build/Win64/UnrealEditor/Inc/**"
 			],
 			"forcedInclude": [
-				"${workspaceFolder}/Intermediate/Build/Win64/x64/UnrealEditor/Development/OpenStorm/Definitions.OpenStorm.h",
-				"${workspaceFolder}/Intermediate/Build/Linux/x64/UnrealEditor/Development/OpenStorm/Definitions.OpenStorm.h"
+				"${workspaceFolder}/Intermediate/Build/Win64/x64/UnrealEditor/Development/OpenStorm/Definitions.OpenStorm.h"
 			],
 			"defines": [
 				"_DEBUG",
@@ -37,6 +35,37 @@
 			"cStandard": "c17",
 			"cppStandard": "c++17",
 			"intelliSenseMode": "windows-msvc-x64"
+		},
+		{
+			"name": "Linux",
+			"includePath": [
+				"${workspaceFolder}/Source/**",
+				"${workspaceFolder}/Plugins/**",
+				"${workspaceFolder}/Intermediate/**",
+				"${default}",
+				//"${workspaceFolder}/Plugins/UnrealHDF5/Source/UnrealHDF5/hdf5",
+				
+				// make a simlink to the engine beside this repository
+				// windows example: mklink /D UnrealEngine C:\files\Epic\UE_5.2\Engine
+				// linux example: ln -s /path/to/Engine UnrealEngine
+				"${workspaceFolder}/../UnrealEngine/Engine/Plugins/Runtime/**",
+				"${workspaceFolder}/../UnrealEngine/Engine/Source/Runtime/**",
+				"${workspaceFolder}/../UnrealEngine/Engine/Source/Editor/**",
+				"${workspaceFolder}/../UnrealEngine/Engine/Source/Developer/**",
+				"${workspaceFolder}/../UnrealEngine/Engine/Source/",
+				"${workspaceFolder}/../UnrealEngine/Engine/Plugins/Runtime/**",
+				"${workspaceFolder}/../UnrealEngine/Engine/Shaders/Shared",
+				"${workspaceFolder}/../UnrealEngine/Engine/Intermediate/Build/Linux/UnrealEditor/Inc/**"
+			],
+			"forcedInclude": [
+				"${workspaceFolder}/Intermediate/Build/Linux/x64/UnrealEditor/Development/OpenStorm/Definitions.OpenStorm.h"
+			],
+			"defines": [
+				"_DEBUG",
+				"UNICODE",
+				"_UNICODE",
+				"HDF5"
+			]
 		}
 	],
 	"version": 4
