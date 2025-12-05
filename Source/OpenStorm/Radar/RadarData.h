@@ -178,7 +178,7 @@ public:
 	bool LoadNexradVolume(void* nexradData, VolumeType volumeType);
 	
 	// copies data from another and decompresses it if needed
-	void CopyFrom(RadarData* data);
+	void CopyFrom(RadarData* data, bool metadataOnly = false);
 
 	// returns a float array of the sweeps for elevations to be used with the shader
 	// buffer must be freed with delete[]

@@ -68,7 +68,7 @@ bool RadarData::LoadNexradVolume(void* nexradData, VolumeType volumeType) {
 	}
 }
 
-void RadarData::CopyFrom(RadarData* data) {
+void RadarData::CopyFrom(RadarData* data, bool metadataOnly) {
 	if(buffer == NULL || thetaBufferCount != data->thetaBufferCount || sweepBufferCount != data->sweepBufferCount || radiusBufferCount != data->radiusBufferCount){
 		//if (radiusBufferCount == 0) {
 		radiusBufferCount = data->radiusBufferCount;
@@ -96,28 +96,31 @@ void RadarData::CopyFrom(RadarData* data) {
 		sweepBufferSize = (thetaBufferCount + 2) * thetaBufferSize;
 		fullBufferSize = sweepBufferCount * sweepBufferSize;
 		
-		
-		// allocate buffer
 		if(buffer != NULL){
 			delete buffer;
 		}
-		buffer = new float[fullBufferSize];
-		//std::fill(buffer, buffer+fullBufferSize, data->stats.noDataValue);
-		if(data->buffer != buffer){
-			// only set buffer used size when not copying from self
-			usedBufferSize = 0;
+		if(!metadataOnly){
+			// allocate buffer
+			buffer = new float[fullBufferSize];
+			//std::fill(buffer, buffer+fullBufferSize, data->stats.noDataValue);
+			if(data->buffer != buffer){
+				// only set buffer used size when not copying from self
+				usedBufferSize = 0;
+			}
 		}
 	}
-	// copy data
-	if(data->buffer != NULL && data->buffer != buffer){
-		memcpy(buffer, data->buffer, std::min(fullBufferSize, data->usedBufferSize) * sizeof(float));
-	}else if(data->bufferCompressed != NULL){
-		SparseCompress::decompressToBuffer(buffer, data->bufferCompressed, fullBufferSize);
-	}
-	// take used buffer size into account
-	if(data->usedBufferSize < usedBufferSize){
-		// fill newly unused space
-		std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, data->stats.noDataValue);
+	if(!metadataOnly){
+		// copy data
+		if(data->buffer != NULL && data->buffer != buffer){
+			memcpy(buffer, data->buffer, std::min(fullBufferSize, data->usedBufferSize) * sizeof(float));
+		}else if(data->bufferCompressed != NULL){
+			SparseCompress::decompressToBuffer(buffer, data->bufferCompressed, fullBufferSize);
+		}
+		// take used buffer size into account
+		if(data->usedBufferSize < usedBufferSize){
+			// fill newly unused space
+			std::fill(buffer + data->usedBufferSize, buffer + usedBufferSize, data->stats.noDataValue);
+		}
 	}
 	usedBufferSize = data->usedBufferSize;
 	stats = data->stats;

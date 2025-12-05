@@ -19,8 +19,10 @@ inline float moduloDistance(float distance, float n){
 
 RadarData* RadarProductNormalizedRotation::deriveVolume(std::map<RadarData::VolumeType, RadarData *> inputProducts){
 	RadarData* radarData = new RadarData();
-	radarData->CopyFrom(inputProducts[RadarData::VOLUME_VELOCITY_DEALIASED]);
-	std::fill(radarData->buffer, radarData->buffer + radarData->usedBufferSize, 0.0f);
+	radarData->CopyFrom(inputProducts[RadarData::VOLUME_VELOCITY_DEALIASED], true);
+	radarData->buffer = new float[radarData->fullBufferSize];
+	std::fill(radarData->buffer, radarData->buffer + radarData->fullBufferSize, 0.0f);
+	
 	float maxValue = 0;
 	float minValue = 0;
 	RadarData* vol = radarData;
@@ -45,6 +47,8 @@ RadarData* RadarProductNormalizedRotation::deriveVolume(std::map<RadarData::Volu
 				
 				for(int radius = 0; radius < vol->radiusBufferCount - 1; radius++){
 					float distance = (src->stats.innerDistance + radius) * src->stats.pixelSize;
+					// avoid significantly boosting values close to the radar
+					distance = std::max(distance, 50000.0f);
 					float value = raySrc[radius];
 					if(value == 0 || std::isnan(value)){
 						continue;
@@ -77,6 +81,9 @@ RadarData* RadarProductNormalizedRotation::deriveVolume(std::map<RadarData::Volu
 	}
 	radarData->stats.minValue = minValue;
 	radarData->stats.maxValue = std::max(maxValue, 0.0001f);
+	if(inputProducts[RadarData::VOLUME_VELOCITY_DEALIASED]->verbose || true){
+		printf("Normalized Rotation: Min %f, Max %f\n", minValue, maxValue);
+	}
 	radarData->stats.volumeType = volumeType;
 	radarData->Interpolate();
 	return radarData;

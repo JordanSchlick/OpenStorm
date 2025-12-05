@@ -20,8 +20,9 @@ RadarData* RadarProductStormRelativeVelocity::deriveVolume(std::map<RadarData::V
 	RadarData* radarData = new RadarData();
 	RadarData* radarDataSrc = inputProducts[RadarData::VOLUME_VELOCITY_DEALIASED];
 	radarDataSrc->Decompress();
-	radarData->CopyFrom(radarDataSrc);
-	std::fill(radarData->buffer, radarData->buffer + radarData->usedBufferSize, 0.0f);
+	radarData->CopyFrom(radarDataSrc, true);
+	radarData->buffer = new float[radarData->fullBufferSize];
+	std::fill(radarData->buffer, radarData->buffer + radarData->fullBufferSize, 0.0f);
 	
 	// number of sections to divide like a pie chart for bins
 	int thetaSections = 12;

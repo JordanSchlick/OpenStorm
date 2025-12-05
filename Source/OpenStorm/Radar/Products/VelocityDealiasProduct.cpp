@@ -8,6 +8,7 @@
 
 
 #define PIF 3.14159265358979323846f
+#define GOLDEN_RATIO 1.61803398874989484820f
 
 // modulo that always returns positive
 inline int modulo(int i, int n) {
@@ -28,6 +29,11 @@ inline int moduloDistance(int distace, int n) {
 // Finally once all groups have been joined the true offset of each group can be found by adding its offset to the group it joined.
 class DealiasingAlgorithm {
 public:
+	// info about neighboring groups used for merging groups
+	struct NeighborInfo{
+		float count = 0;
+		float offset = 0;
+	};
 	// class that holds info about an entire group
 	class DealiasingGroup{
 	public:
@@ -70,10 +76,14 @@ public:
 		// unoptimized bounds of group
 		int boundSweepLower = 1000000;
 		int boundSweepUpper = -1;
+		// these theta bounds may encompass most of the volume if the group wraps around.
 		int boundThetaLower = 1000000;
 		int boundThetaUpper = -1;
 		int boundRadiusLower = 1000000;
 		int boundRadiusUpper = -1;
+		
+		// info about neighboring groups
+		std::map<int, NeighborInfo> neighbors = {};
 		
 		void PrintInfo(){
 			fprintf(stderr, "Group count:%i ittr:%i depthreach:%i queueSize:%i Bounds:s%i-%i,t%i-%i,r%i-%i \n", this->count, this->iterations, this->depthReachCount, this->maxQueueSize, this->boundSweepLower , this->boundSweepUpper , this->boundThetaLower , this->boundThetaUpper , this->boundRadiusLower, this->boundRadiusUpper);
@@ -87,11 +97,7 @@ public:
 		int depth;
 		float fromValue;
 	};
-	// info about neighboring groups used for merging groups
-	struct NeighborInfo{
-		float count;
-		float offset;
-	};
+	
 	bool verbose = true;
 	// the group of each data point is stored in this volume
 	// in the end the groups are combined with the source data to create the final output
@@ -158,9 +164,17 @@ public:
 		group->totalCount = group->count;
 		
 		// clear set used bools
-		for(int sweepClear = group->boundSweepLower; sweepClear <= group->boundSweepUpper; sweepClear++){
-			for(int thetaClear = group->boundThetaLower; thetaClear <= group->boundThetaUpper; thetaClear++){
-				for(int radiusClear = group->boundRadiusLower; radiusClear <= group->boundRadiusUpper; radiusClear++){
+		// for(int sweepClear = group->boundSweepLower; sweepClear <= group->boundSweepUpper; sweepClear++){
+		// 	for(int thetaClear = group->boundThetaLower; thetaClear <= group->boundThetaUpper; thetaClear++){
+		// 		for(int radiusClear = group->boundRadiusLower; radiusClear <= group->boundRadiusUpper; radiusClear++){
+		// 			int location = sweepClear * vol->sweepBufferSize + (thetaClear + 1) * vol->thetaBufferSize + radiusClear;
+		// 			used[location] = false;
+		// 		}
+		// 	}
+		// }
+		for(int sweepClear = std::max(group->boundSweepLower - 1, 0); sweepClear <= std::min(group->boundSweepUpper + 1, vol->sweepBufferCount - 1); sweepClear++){
+			for(int thetaClear = std::max(group->boundThetaLower - 1, 0); thetaClear <= std::min(group->boundThetaUpper + 1, vol->thetaBufferCount - 1); thetaClear++){
+				for(int radiusClear = std::max(group->boundRadiusLower - 1, 0); radiusClear <= std::min(group->boundRadiusUpper + 1, vol->radiusBufferCount - 1); radiusClear++){
 					int location = sweepClear * vol->sweepBufferSize + (thetaClear + 1) * vol->thetaBufferSize + radiusClear;
 					used[location] = false;
 				}
@@ -208,40 +222,38 @@ public:
 		}
 	}
 	
-	// sort groups by size and create a map that points to the elements of the vector
+	// sort groups by ascending size so that larger groups can have precedence over smaller ones in merging
+	// this function will also create a map that points to the elements of the vector
 	// as such do not modify the vector after running this function
 	void SortGroups(){
 		std::sort(groups.begin(), groups.end(), [](DealiasingGroup g1, DealiasingGroup g2){
 			// sort by sweep and size
 			return /*g1.centroidSweep > g2.centroidSweep ||*/ g1.count < g2.count;
 		});
-		//groups[groups.size()-1].PrintInfo();
+		// groups[0].PrintInfo();
+		// groups[groups.size()-1].PrintInfo();
 		groupsMap.clear();
 		for(auto &group : groups){
 			groupsMap[group.id] = &group;
 		}
 	}
 	
-	NeighborInfo* neighborInfo;
-	std::map<int,bool> isNeighborMap;
+	// NeighborInfo* neighborInfo;
+	// std::map<int,bool> isNeighborMap;
 	
-	float GetNyquistVelocity(int sweep){
-		float nyquist = 0;
-		nyquist = src->sweepInfo[sweep].nyquistVelocity;
-		if(nyquist == 0){
-			nyquist = (src->stats.maxValue - src->stats.minValue) / 2.0f;
-		}
-		return nyquist;
-	}
 	
 	// merge groups into their surrounding groups
 	void MergeGroups(){
-		neighborInfo = new NeighborInfo[(int)groupId + 1]{};
+		// neighborInfo = new NeighborInfo[(int)groupId + 1]{};
 		int mergedGroups = 0;
 		// merge groups group smallest to largest
 		//for(int i = 0; i < groups.size() - 1; i++){
+		// start at second group because the first is the largest
+		
 		for(int i = groups.size() - 2; i >= 0; i--){
 			DealiasingGroup* group = &groups[i];
+			auto neighbors = &group->neighbors;
+			neighbors->clear();
 			if(group->parentId > 0){
 				// already merged
 				continue;
@@ -249,6 +261,8 @@ public:
 			currentGroup = group;
 			float currentGroupId = group->id;
 			float sweepWeight = 0.01;//sqrtf((float)group->count) / (float)group->count * 2.0f;
+			
+			// clear set used bools
 			for(int sweep = group->boundSweepLower; sweep <= group->boundSweepUpper; sweep++){
 				for(int theta = group->boundThetaLower; theta <= group->boundThetaUpper; theta++){
 					int rayLocation = sweep * (vol->thetaBufferCount + 2) + (theta + 1);
@@ -259,120 +273,130 @@ public:
 								float velocityValue = src->buffer[location];
 								if(radius + 1 < vol->radiusBufferCount){
 									//out
-									NeighborCheck(sweep, theta, radius + 1, velocityValue, 1.0f);
+									NeighborCheck(neighbors, sweep, theta, radius + 1, velocityValue, 1.0f);
 								}
 								int nextTheta = vol->rayInfo[rayLocation].nextTheta;
 								if(moduloDistance(nextTheta, vol->thetaBufferCount) < 10){
 									//right/clockwise
-									NeighborCheck(sweep, theta + nextTheta, radius, velocityValue, 1.0f);
+									NeighborCheck(neighbors, sweep, theta + nextTheta, radius, velocityValue, 1.0f);
 								}
 								if(sweep + 1 < vol->sweepBufferCount){
 									//up
-									NeighborCheck(sweep + 1, theta, radius, velocityValue, sweepWeight);
+									NeighborCheck(neighbors, sweep + 1, theta, radius, velocityValue, sweepWeight);
 								}
 								int previousTheta = vol->rayInfo[rayLocation].previousTheta;
 								if(moduloDistance(previousTheta, vol->thetaBufferCount) < 10){
 									//left/counterclockwise
-									NeighborCheck(sweep, theta + previousTheta, radius, velocityValue, 1.0f);
+									NeighborCheck(neighbors, sweep, theta + previousTheta, radius, velocityValue, 1.0f);
 								}
 								if(radius > 0){
 									//in
-									NeighborCheck(sweep, theta, radius - 1, velocityValue, 1.0f);
+									NeighborCheck(neighbors, sweep, theta, radius - 1, velocityValue, 1.0f);
 								}
 								if(sweep > 0){
 									//down
-									NeighborCheck(sweep - 1, theta, radius, velocityValue, sweepWeight);
+									NeighborCheck(neighbors, sweep - 1, theta, radius, velocityValue, sweepWeight);
 								}
 							}
 						}
 					}
 				}
 			}
-			
-			// find largest group
-			// this may not be completely optimal because it does not treat joined groups as the same group when picking the largest group
-			float largestGroupId = -1;
-			float largestGroupOffset = 0;
-			float largestGroupSize = 0;
-			for(auto id2 : isNeighborMap){
-				int id = id2.first;
-				float count = neighborInfo[id].count;
-				float offset = neighborInfo[id].offset / (count * GetNyquistVelocity(group->centroidSweep) * 2.0f);
-				DealiasingGroup* largestGroup = groupsMap[id];
-				bool invalid = false;
-				// recurse through parents to make sure of no recursive dependencies
-				int maxLoops = 10000;
-				while(largestGroup->parentId > 0 && maxLoops > 0){
-					largestGroup = groupsMap[largestGroup->parentId];
-					if(largestGroup->id == group->id){
-						invalid = true;
-					}
-					maxLoops--;
-				}
-				if(maxLoops == 0){
-					fprintf(stderr, "You fool! You have made the loop run to long.\n");
-				}
-				float score = count * sqrt(sqrt(largestGroup->totalCount)) * (abs(offset) < 0.2 ? 1.5 : 1) * (abs(offset) < 0.1 ? 1.5 : 1);
-				if(score > largestGroupSize){
-					// dont join significantly smaller groups
-					if(largestGroup->totalCount < group->totalCount * 0.5f){
-						invalid = true;
-					}
-					if(!invalid){
-						largestGroupOffset = offset;
-						largestGroupId = id;
-						largestGroupSize = score;
-					}
-				}
-			}
-			
-			// join group
-			if(largestGroupId > 0){
-				DealiasingGroup* largestGroup = groupsMap[largestGroupId];
-				largestGroup->children.push_back(group->id);
-				largestGroup->totalCount += group->totalCount;
-				group->parentId = largestGroupId;
-				mergedGroups++;
-				// determine offset from parent group from offset of values between groups
-				group->parentOffset = 0;
-				if(largestGroupOffset > 0.5f){
-					group->parentOffset = 1;
-				}
-				if(largestGroupOffset < -0.5f){
-					group->parentOffset = -1;
-				}
-				// add to total count of all parent groups
-				int maxLoops = 10000;
-				while(largestGroup->parentId > 0){
-					largestGroup = groupsMap[largestGroup->parentId];
-					largestGroup->totalCount += group->totalCount;
-					maxLoops--;
-				}
-				if(maxLoops == 0){
-					fprintf(stderr, "You fool! You have made the loop run to long.\n");
-				}
-			}
-			
-			
-			// clear neighbors info for next run
-			for(auto id2 : isNeighborMap){
-				int id = id2.first;
-				neighborInfo[id].count = 0;
-				neighborInfo[id].offset = 0;
-			}
-			isNeighborMap.clear();
-			
 			// clear set used bools
-			for(int sweepClear = group->boundSweepLower; sweepClear <= group->boundSweepUpper; sweepClear++){
-				for(int thetaClear = group->boundThetaLower; thetaClear <= group->boundThetaUpper; thetaClear++){
-					for(int radiusClear = group->boundRadiusLower; radiusClear <= group->boundRadiusUpper; radiusClear++){
+			for(int sweepClear = std::max(group->boundSweepLower - 1, 0); sweepClear <= std::min(group->boundSweepUpper + 1, vol->sweepBufferCount - 1); sweepClear++){
+				for(int thetaClear = std::max(group->boundThetaLower - 1, 0); thetaClear <= std::min(group->boundThetaUpper + 1, vol->thetaBufferCount - 1); thetaClear++){
+					for(int radiusClear = std::max(group->boundRadiusLower - 1, 0); radiusClear <= std::min(group->boundRadiusUpper + 1, vol->radiusBufferCount - 1); radiusClear++){
 						int location = sweepClear * vol->sweepBufferSize + (thetaClear + 1) * vol->thetaBufferSize + radiusClear;
 						used[location] = false;
 					}
 				}
 			}
 		}
-		delete[] neighborInfo;
+		
+		for(int iteration = 0; iteration < 1; iteration++){
+			for(int i = groups.size() - 2; i >= 0; i--){
+				DealiasingGroup* group = &groups[i];
+				if(group->parentId > 0){
+					// already merged
+					continue;
+				}
+				// find largest group
+				// this may not be completely optimal because it does not treat joined groups as the same group when picking the largest group
+				float largestGroupId = -1;
+				float largestGroupOffset = 0;
+				float largestGroupSize = 0;
+				for(auto neighbor : group->neighbors){
+					int id = neighbor.first;
+					float count = neighbor.second.count;
+					float offset = neighbor.second.offset / (count * GetNyquistVelocity(group->centroidSweep) * 2.0f);
+					DealiasingGroup* largestGroup = groupsMap[id];
+					bool invalid = false;
+					// recurse through parents to make sure of no recursive dependencies
+					int maxLoops = 10000;
+					while(largestGroup->parentId > 0 && maxLoops > 0){
+						largestGroup = groupsMap[largestGroup->parentId];
+						if(largestGroup->id == group->id){
+							invalid = true;
+						}
+						maxLoops--;
+					}
+					if(maxLoops == 0){
+						fprintf(stderr, "You fool! You have made the loop run to long.\n");
+					}
+					float score = count * sqrt(sqrt(largestGroup->totalCount)) * (abs(offset) < 0.2 ? 1.5 : 1) * (abs(offset) < 0.1 ? 1.5 : 1);
+					if(score > largestGroupSize){
+						// dont join significantly smaller groups
+						if(largestGroup->totalCount < group->totalCount * 0.5f){
+							invalid = true;
+						}
+						if(!invalid){
+							largestGroupOffset = offset;
+							largestGroupId = id;
+							largestGroupSize = score;
+						}
+					}
+				}
+				
+				// join group
+				if(largestGroupId > 0){
+					DealiasingGroup* largestGroup = groupsMap[largestGroupId];
+					largestGroup->children.push_back(group->id);
+					largestGroup->totalCount += group->totalCount;
+					group->parentId = largestGroupId;
+					mergedGroups++;
+					// determine offset from parent group from offset of values between groups
+					group->parentOffset = 0;
+					if(largestGroupOffset > 0.5f){
+						group->parentOffset = 1;
+					}
+					if(largestGroupOffset < -0.5f){
+						group->parentOffset = -1;
+					}
+					// add to total count of all parent groups
+					int maxLoops = 10000;
+					while(largestGroup->parentId > 0){
+						largestGroup = groupsMap[largestGroup->parentId];
+						largestGroup->totalCount += group->totalCount;
+						maxLoops--;
+					}
+					if(maxLoops == 0){
+						fprintf(stderr, "You fool! You have made the loop run to long.\n");
+					}
+				}
+				
+				
+				// clear neighbors info for next run
+				// for(auto id2 : isNeighborMap){
+				// 	int id = id2.first;
+				// 	neighborInfo[id].count = 0;
+				// 	neighborInfo[id].offset = 0;
+				// }
+				// isNeighborMap.clear();
+				
+				
+			}
+		}
+		// delete[] neighborInfo;
 		if(verbose){
 			fprintf(stderr, "%i out of %i groups merged\n", mergedGroups, (int)groups.size());
 		}
@@ -420,7 +444,7 @@ public:
 				float* ray = vol->buffer + (vol->thetaBufferSize * (theta + 1) + vol->sweepBufferSize * sweep);
 				float* raySRC = src->buffer + (vol->thetaBufferSize * (theta + 1) + vol->sweepBufferSize * sweep);
 				if(!vol->rayInfo[sweep * (vol->thetaBufferCount + 2) + theta + 1].interpolated){
-					for(int radius = 1; radius < vol->radiusBufferCount; radius++){
+					for(int radius = 0; radius < vol->radiusBufferCount; radius++){
 						if (ray[radius] > 0) {
 							DealiasingGroup* group = groupsMap[ray[radius]];
 							ray[radius] = raySRC[radius] + group->offsetUnits;
@@ -435,7 +459,7 @@ public:
 	
 private:
 	// check neighbors of group to determine how to merge
-	void NeighborCheck(const int sweep, const int theta, const int radius, const float fromValue, float weight){
+	void NeighborCheck(std::map<int, NeighborInfo>* neighbors, const int sweep, const int theta, const int radius, const float fromValue, float weight){
 		int location = sweep * vol->sweepBufferSize + (theta + 1) * vol->thetaBufferSize + radius;
 		float groupValue = vol->buffer[location];
 		if(groupValue != currentGroup->id && groupValue > 0 && !used[location]){
@@ -446,9 +470,12 @@ private:
 				fprintf(stderr, "float does not match int");
 			}
 			float velocityValue = src->buffer[location];
-			neighborInfo[groupValueInt].count += weight;
-			neighborInfo[groupValueInt].offset += (velocityValue - fromValue) * weight;
-			isNeighborMap[groupValueInt] = true;
+			// neighborInfo[groupValueInt].count += weight;
+			// neighborInfo[groupValueInt].offset += (velocityValue - fromValue) * weight;
+			// isNeighborMap[groupValueInt] = true;
+			NeighborInfo* neighbor = &(*neighbors)[groupValueInt];
+			neighbor->count += weight;
+			neighbor->offset += (velocityValue - fromValue) * weight;
 		}
 	}
 	// add task to taskQueue if it has not already been done for breadth fist search
@@ -580,6 +607,15 @@ private:
 			QueueFindGroup(sweep, theta, radius - 2, depth, velocityValue);
 		}
 	}
+	// helper function to get the nyquist velocity for a sweep or guess it if it is not set
+	float GetNyquistVelocity(int sweep){
+		float nyquist = 0;
+		nyquist = src->sweepInfo[sweep].nyquistVelocity;
+		if(nyquist == 0){
+			nyquist = (src->stats.maxValue - src->stats.minValue) / 2.0f;
+		}
+		return nyquist;
+	}
 };
 
 bool RadarProductVelocityDealiased::verbose = false;
@@ -592,18 +628,21 @@ RadarProductVelocityDealiased::RadarProductVelocityDealiased(){
 	dependencies = {RadarData::VOLUME_VELOCITY};
 }
 
+// 0.3 = 30% of nyquist velocity
+#define SEGMENTATION_THRESHOLD 0.3f
 
 RadarData* RadarProductVelocityDealiased::deriveVolume(std::map<RadarData::VolumeType, RadarData *> inputProducts){
 	RadarData* radarData = new RadarData();
-	radarData->CopyFrom(inputProducts[RadarData::VOLUME_VELOCITY]);
-	std::fill(radarData->buffer, radarData->buffer + radarData->usedBufferSize, 0.0f);
+	radarData->CopyFrom(inputProducts[RadarData::VOLUME_VELOCITY], true);
+	radarData->buffer = new float[radarData->fullBufferSize];
+	std::fill(radarData->buffer, radarData->buffer + radarData->fullBufferSize, 0.0f);
 	
 	// float valueRange = radarData->stats.maxValue - radarData->stats.minValue;
 	// float threshold = valueRange * 0.2f;
 	
 	DealiasingAlgorithm algo = {};
 	algo.verbose = verbose;
-	algo.threshold = 0.3f;
+	algo.threshold = SEGMENTATION_THRESHOLD;
 	// algo.range = valueRange;
 	algo.vol = radarData;
 	algo.src = inputProducts[RadarData::VOLUME_VELOCITY];
@@ -624,15 +663,15 @@ RadarData* RadarProductVelocityDealiased::deriveVolume(std::map<RadarData::Volum
 	algo.SortGroups();
 	
 	algo.MergeGroups();
-	algo.MergeGroups();
-	algo.MergeGroups();
+	// algo.MergeGroups();
+	// algo.MergeGroups();
 	
 	algo.CalculateGroupOffsets();
 	
 	algo.ApplyGroupOffsets();
-	
-	radarData->stats.minValue = 0;
-	radarData->stats.maxValue = algo.groupId + 1;
+	// TODO: calculate min/max values
+	// radarData->stats.minValue = 0;
+	// radarData->stats.maxValue = algo.groupId + 1;
 	radarData->stats.volumeType = RadarData::VOLUME_VELOCITY_DEALIASED;
 	//radarData->stats.volumeType = RadarData::VOLUME_UNKNOWN;
 	delete algo.used;
@@ -689,14 +728,15 @@ RadarProductVelocityDealiasedGroupTest::RadarProductVelocityDealiasedGroupTest(R
 };
 RadarData* RadarProductVelocityDealiasedGroupTest::deriveVolume(std::map<RadarData::VolumeType, RadarData*> inputProducts){
 	RadarData* radarData = new RadarData();
-	radarData->CopyFrom(inputProducts[RadarData::VOLUME_VELOCITY]);
-	std::fill(radarData->buffer, radarData->buffer + radarData->usedBufferSize, 0.0f);
+	radarData->CopyFrom(inputProducts[RadarData::VOLUME_VELOCITY], true);
+	radarData->buffer = new float[radarData->fullBufferSize];
+	std::fill(radarData->buffer, radarData->buffer + radarData->fullBufferSize, 0.0f);
 	
 	// float valueRange = radarData->stats.maxValue - radarData->stats.minValue;
 	// float threshold = valueRange * 0.2f;
 	
 	DealiasingAlgorithm algo = {};
-	algo.threshold = 0.3f;
+	algo.threshold = SEGMENTATION_THRESHOLD;
 	// algo.range = valueRange;
 	algo.vol = radarData;
 	algo.src = inputProducts[RadarData::VOLUME_VELOCITY];
@@ -708,9 +748,16 @@ RadarData* RadarProductVelocityDealiasedGroupTest::deriveVolume(std::map<RadarDa
 	algo.FindAllGroups();
 	
 	radarData->stats.minValue = 0;
-	radarData->stats.maxValue = algo.groupId + 1;
+	// radarData->stats.maxValue = algo.groupId + 1;
+	radarData->stats.maxValue = 1;
 	radarData->stats.volumeType = RadarData::VOLUME_UNKNOWN;
 	delete algo.used;
+	
+	for(int i = 0; i < radarData->usedBufferSize; i++){
+		float number = 0;
+		float frac = std::modf(radarData->buffer[i] * GOLDEN_RATIO, &number);
+		radarData->buffer[i] = frac;
+	}
 	
 	return radarData;
 };
