@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <queue>
 #include <map>
+#include "../PolyFillUtils.h"
 
 
 
@@ -31,8 +32,12 @@ class DealiasingAlgorithm {
 public:
 	// info about neighboring groups used for merging groups
 	struct NeighborInfo{
+		// number of neighboring pixels
 		float count = 0;
+		// total offset of all neighbors from the closest pixel in the group
 		float offset = 0;
+		// total spectrum width of all neighbors
+		float spectrumWidth = 0;
 	};
 	// class that holds info about an entire group
 	class DealiasingGroup{
@@ -96,6 +101,7 @@ public:
 		int radius;
 		int depth;
 		float fromValue;
+		float fromSpectrumValue;
 	};
 	
 	bool verbose = true;
@@ -104,8 +110,14 @@ public:
 	RadarData* vol = NULL;
 	// source velocity data
 	RadarData* src = NULL;
-	// threshold for determining group boundary as a multiple of the nyquist velocity
+	// spectrum width data
+	RadarData* spectrum = NULL;
+	
+	// threshold for determining group boundaries as a multiple of the nyquist velocity
 	float threshold = 0;
+	// threshold for determining group boundaries based on the spectrum width changes
+	float thresholdSpectrumChange = 5;
+	float thresholdSpectrumMax = 15;
 	// range velocity values from lowest to highest possible in raw data
 	// float range = 0;
 	
@@ -121,7 +133,7 @@ public:
 	std::queue<DealiasingTask> taskQueue = {};
 	
 	// run a breadth first search to find all elements of the group
-	void FindGroupExecute(const int sweep, const int theta, const int radius, const float fromValue, DealiasingGroup* group){
+	void FindGroupExecute(const int sweep, const int theta, const int radius, const float fromValue, const float fromSpectrumValue, DealiasingGroup* group){
 		
 		group->startSweep = sweep;
 		group->startTheta = theta;
@@ -129,13 +141,18 @@ public:
 		
 		currentGroup = group;
 		
-		QueueFindGroup(sweep, theta, radius, 0, fromValue);
+		QueueFindGroup(sweep, theta, radius, 0, fromValue, fromSpectrumValue);
+		DealiasingTask firstTask = taskQueue.front();
+		taskQueue.pop();
+		RunFindGroup(firstTask.sweep, firstTask.theta, firstTask.radius, firstTask.depth, firstTask.fromValue, firstTask.fromSpectrumValue, true);
 		
+		
+		bool first = true;
 		while(!taskQueue.empty()){
 			group->maxQueueSize = std::max(group->maxQueueSize, (int)taskQueue.size());
 			DealiasingTask nextTask = taskQueue.front();
 			taskQueue.pop();
-			RunFindGroup(nextTask.sweep, nextTask.theta, nextTask.radius, nextTask.depth, nextTask.fromValue);
+			RunFindGroup(nextTask.sweep, nextTask.theta, nextTask.radius, nextTask.depth, nextTask.fromValue, nextTask.fromSpectrumValue);
 		}
 		
 		currentGroup = NULL;
@@ -187,6 +204,10 @@ public:
 			for(int theta = 0; theta < vol->thetaBufferCount; theta++){
 				float* ray = vol->buffer + (vol->thetaBufferSize * (theta + 1) + vol->sweepBufferSize * sweep);
 				float* raySRC = src->buffer + (vol->thetaBufferSize * (theta + 1) + vol->sweepBufferSize * sweep);
+				float* raySpectrum = NULL;
+				if(spectrum != NULL){
+					raySpectrum = spectrum->buffer + (vol->thetaBufferSize * (theta + 1) + vol->sweepBufferSize * sweep);
+				}
 				if(!vol->rayInfo[sweep * (vol->thetaBufferCount + 2) + theta + 1].interpolated){
 					for(int radius = 1; radius < vol->radiusBufferCount; radius++){
 						float srcValue = raySRC[radius];
@@ -194,16 +215,23 @@ public:
 							// mark no data spots with -1 in group array
 							ray[radius] = -1;
 						}
-						if(isnan(raySRC[radius])){
+						if(isnan(srcValue)){
 							// mark invalid spots with -2 in group array
 							ray[radius] = -2;
+						}
+						float spectrumValue = 0;
+						if(raySpectrum != NULL){
+							spectrumValue = raySpectrum[radius];
+							if(isnan(spectrumValue)){
+								spectrumValue = 0;
+							}
 						}
 						if (ray[radius] == 0) {
 							// not part of a group and has data so create a new group
 							DealiasingGroup group = {};
 							groupId++;
 							group.id = groupId;
-							FindGroupExecute(sweep, theta, radius, raySRC[radius], &group);
+							FindGroupExecute(sweep, theta, radius, srcValue, spectrumValue, &group);
 							//if(group.count > 100){
 							//	group.PrintInfo()
 							//}
@@ -228,8 +256,41 @@ public:
 	void SortGroups(){
 		std::sort(groups.begin(), groups.end(), [](DealiasingGroup g1, DealiasingGroup g2){
 			// sort by sweep and size
-			return /*g1.centroidSweep > g2.centroidSweep ||*/ g1.count < g2.count;
+			// if(g1.centroidSweep != g2.centroidSweep){
+			// 	return g1.centroidSweep > g2.centroidSweep;
+			// }
+			return  g1.count < g2.count;
 		});
+		
+		// // sort largest groups of each sweep by distance from center
+		// int currentSweep = -1;
+		// int currentSweepStart = 0;
+		// for(int i = 0; i < groups.size(); i++){
+		// 	if(groups[i].centroidSweep != currentSweep || i == groups.size() - 1){
+		// 		if(currentSweep != -1){
+		// 			int endIndex = std::max(i - 1, currentSweepStart);
+		// 			// int beginIndex = std::max(i - 8, currentSweepStart);
+		// 			int endCount = groups[endIndex].count;
+		// 			int beginIndex = endIndex;
+		// 			for(int j = beginIndex; j >= currentSweepStart; j--){
+		// 				int count = groups[j].count;
+		// 				// find all sweeps with 10% of the size of the main one
+		// 				if(count >= endCount * 0.2f){
+		// 					beginIndex = j;
+		// 				}
+		// 			}
+		// 			// fprintf(stderr, "sorting sweep %i from %i to %i\n", currentSweep, beginIndex, endIndex);
+		// 			// groups[beginIndex].PrintInfo();
+		// 			// groups[endIndex].PrintInfo();
+		// 			std::sort(groups.begin() + beginIndex, groups.begin() + endIndex, [](DealiasingGroup g1, DealiasingGroup g2){
+		// 				// sort by distance from center with closest coming last
+		// 				return g1.boundRadiusLower > g2.boundRadiusLower;
+		// 			});
+		// 		}
+		// 		currentSweep = groups[i].centroidSweep;
+		// 		currentSweepStart = i;
+		// 	}
+		// }
 		// groups[0].PrintInfo();
 		// groups[groups.size()-1].PrintInfo();
 		groupsMap.clear();
@@ -271,31 +332,35 @@ public:
 							int location = sweep * vol->sweepBufferSize + (theta + 1) * vol->thetaBufferSize + radius;
 							if(vol->buffer[location] == currentGroupId){
 								float velocityValue = src->buffer[location];
+								float spectrumValue = 0;
+								if(spectrum != NULL){
+									spectrumValue = spectrum->buffer[location];
+								}
 								if(radius + 1 < vol->radiusBufferCount){
 									//out
-									NeighborCheck(neighbors, sweep, theta, radius + 1, velocityValue, 1.0f);
+									NeighborCheck(neighbors, sweep, theta, radius + 1, velocityValue, spectrumValue, 1.0f);
 								}
 								int nextTheta = vol->rayInfo[rayLocation].nextTheta;
 								if(moduloDistance(nextTheta, vol->thetaBufferCount) < 10){
 									//right/clockwise
-									NeighborCheck(neighbors, sweep, theta + nextTheta, radius, velocityValue, 1.0f);
+									NeighborCheck(neighbors, sweep, theta + nextTheta, radius, velocityValue, spectrumValue, 1.0f);
 								}
 								if(sweep + 1 < vol->sweepBufferCount){
 									//up
-									NeighborCheck(neighbors, sweep + 1, theta, radius, velocityValue, sweepWeight);
+									NeighborCheck(neighbors, sweep + 1, theta, radius, velocityValue, spectrumValue, sweepWeight);
 								}
 								int previousTheta = vol->rayInfo[rayLocation].previousTheta;
 								if(moduloDistance(previousTheta, vol->thetaBufferCount) < 10){
 									//left/counterclockwise
-									NeighborCheck(neighbors, sweep, theta + previousTheta, radius, velocityValue, 1.0f);
+									NeighborCheck(neighbors, sweep, theta + previousTheta, radius, velocityValue, spectrumValue, 1.0f);
 								}
 								if(radius > 0){
 									//in
-									NeighborCheck(neighbors, sweep, theta, radius - 1, velocityValue, 1.0f);
+									NeighborCheck(neighbors, sweep, theta, radius - 1, velocityValue, spectrumValue, 1.0f);
 								}
 								if(sweep > 0){
 									//down
-									NeighborCheck(neighbors, sweep - 1, theta, radius, velocityValue, sweepWeight);
+									NeighborCheck(neighbors, sweep - 1, theta, radius, velocityValue, spectrumValue, sweepWeight);
 								}
 							}
 						}
@@ -313,8 +378,9 @@ public:
 			}
 		}
 		
-		for(int iteration = 0; iteration < 1; iteration++){
-			for(int i = groups.size() - 2; i >= 0; i--){
+		for(int iteration = 0; iteration < 3; iteration++){
+			// for(int i = groups.size() - 2; i >= 0; i--){
+			for(int i = 0; i < groups.size() - 1; i++){
 				DealiasingGroup* group = &groups[i];
 				if(group->parentId > 0){
 					// already merged
@@ -329,6 +395,7 @@ public:
 					int id = neighbor.first;
 					float count = neighbor.second.count;
 					float offset = neighbor.second.offset / (count * GetNyquistVelocity(group->centroidSweep) * 2.0f);
+					float spectrumWidth = neighbor.second.spectrumWidth / count;
 					DealiasingGroup* largestGroup = groupsMap[id];
 					bool invalid = false;
 					// recurse through parents to make sure of no recursive dependencies
@@ -343,12 +410,24 @@ public:
 					if(maxLoops == 0){
 						fprintf(stderr, "You fool! You have made the loop run to long.\n");
 					}
-					float score = count * sqrt(sqrt(largestGroup->totalCount)) * (abs(offset) < 0.2 ? 1.5 : 1) * (abs(offset) < 0.1 ? 1.5 : 1);
+					// prefer large groups
+					float score = count;// * sqrt(sqrt(largestGroup->totalCount));
+					// prefer groups with low offset
+					score *= (abs(offset) < 0.2 ? 1.5 : 1); // * (abs(offset) < 0.1 ? 1.5 : 1);
+					// prefer groups that have low spectrum width along the boundary
+					score *= 1.0f - std::clamp(spectrumWidth / 15.0f, 0.0f, 0.7f);
 					if(score > largestGroupSize){
 						// dont join significantly smaller groups
 						if(largestGroup->totalCount < group->totalCount * 0.5f){
 							invalid = true;
 						}
+						// // on fist iteration, only join groups with a larger index
+						// if(iteration == 0){
+						// 	int groupIndex = ((char*)largestGroup - (char*)&groups[0]) / sizeof(DealiasingGroup);
+						// 	if(groupIndex > i){
+						// 		invalid = true;
+						// 	}
+						// }
 						if(!invalid){
 							largestGroupOffset = offset;
 							largestGroupId = id;
@@ -459,7 +538,7 @@ public:
 	
 private:
 	// check neighbors of group to determine how to merge
-	void NeighborCheck(std::map<int, NeighborInfo>* neighbors, const int sweep, const int theta, const int radius, const float fromValue, float weight){
+	void NeighborCheck(std::map<int, NeighborInfo>* neighbors, const int sweep, const int theta, const int radius, const float fromValue, const float fromSpectrumValue, float weight){
 		int location = sweep * vol->sweepBufferSize + (theta + 1) * vol->thetaBufferSize + radius;
 		float groupValue = vol->buffer[location];
 		if(groupValue != currentGroup->id && groupValue > 0 && !used[location]){
@@ -470,16 +549,21 @@ private:
 				fprintf(stderr, "float does not match int");
 			}
 			float velocityValue = src->buffer[location];
+			float spectrumWidth = 0;
+			if(spectrum != NULL){
+				spectrumWidth = std::max(fromSpectrumValue, spectrum->buffer[location]);
+			}
 			// neighborInfo[groupValueInt].count += weight;
 			// neighborInfo[groupValueInt].offset += (velocityValue - fromValue) * weight;
 			// isNeighborMap[groupValueInt] = true;
 			NeighborInfo* neighbor = &(*neighbors)[groupValueInt];
 			neighbor->count += weight;
 			neighbor->offset += (velocityValue - fromValue) * weight;
+			neighbor->spectrumWidth += spectrumWidth * weight;
 		}
 	}
 	// add task to taskQueue if it has not already been done for breadth fist search
-	void QueueFindGroup(const int sweep, int thetaOrig, const int radius, int depth, const float fromValue){
+	void QueueFindGroup(const int sweep, int thetaOrig, const int radius, int depth, const float fromValue, const float fromSpectrumValue){
 		
 		// move to an actual ray
 		int theta = thetaOrig;
@@ -495,7 +579,7 @@ private:
 		if(!used[location]){
 			used[location] = true;
 			#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
-			taskQueue.emplace() = {sweep, theta, radius, depth, fromValue};
+			taskQueue.emplace() = {sweep, theta, radius, depth, fromValue, fromSpectrumValue};
 			#else
 			DealiasingTask task;
 			task.sweep = sweep;
@@ -503,6 +587,7 @@ private:
 			task.radius = radius;
 			task.depth = depth;
 			task.fromValue = fromValue;
+			task.fromSpectrumValue = fromSpectrumValue;
 			taskQueue.push(task);
 			#endif
 			DealiasingGroup* group = currentGroup;
@@ -516,7 +601,7 @@ private:
 	}
 	
 	// try to add a value to a group for breadth fist search
-	void RunFindGroup(const int sweep, int theta, const int radius, int depth, const float fromValue){
+	void RunFindGroup(const int sweep, int theta, const int radius, int depth, const float fromValue, const float fromSpectrumValue, const bool first = false){
 		DealiasingGroup* group = currentGroup;
 		depth++;
 		group->iterations++;
@@ -547,6 +632,15 @@ private:
 			// or the difference from the previous iteration is too high to join the group
 			return;
 		}
+		float spectrumValue = 0;
+		if(spectrum != NULL){
+			spectrumValue = spectrum->buffer[location];
+			if(!first && (abs(spectrumValue - fromSpectrumValue) > thresholdSpectrumChange || spectrumValue > thresholdSpectrumMax)){
+				// do not join if the spectrum width changes too much
+				return;
+			}
+		}
+			
 		// join the group
 		vol->buffer[location] = group->id;
 		group->count++;
@@ -574,37 +668,37 @@ private:
 		
 		if(radius + 1 < vol->radiusBufferCount){
 			//out
-			QueueFindGroup(sweep, theta, radius + 1, depth, velocityValue);
+			QueueFindGroup(sweep, theta, radius + 1, depth, velocityValue, spectrumValue);
 		}
 		int nextTheta = vol->rayInfo[rayLocation].nextTheta;
 		if(moduloDistance(nextTheta, vol->thetaBufferCount) < 10){
 			//right/clockwise
-			QueueFindGroup(sweep, theta + nextTheta, radius, depth, velocityValue);
+			QueueFindGroup(sweep, theta + nextTheta, radius, depth, velocityValue, spectrumValue);
 		}
 		//if(sweep + 1 < vol->sweepBufferCount){
 			//up
-			//QueueFindGroup(sweep + 1, theta, radius, depth, velocityValue);
+			//QueueFindGroup(sweep + 1, theta, radius, depth, velocityValue, spectrumValue);
 		//}
 		int previousTheta = vol->rayInfo[rayLocation].previousTheta;
 		if(moduloDistance(previousTheta, vol->thetaBufferCount) < 10){
 			//left/counterclockwise
-			QueueFindGroup(sweep, theta + previousTheta, radius, depth, velocityValue);
+			QueueFindGroup(sweep, theta + previousTheta, radius, depth, velocityValue, spectrumValue);
 		}
 		if(radius > 0){
 			//in
-			QueueFindGroup(sweep, theta, radius - 1, depth, velocityValue);
+			QueueFindGroup(sweep, theta, radius - 1, depth, velocityValue, spectrumValue);
 		}
 		//if(sweep > 0){
 			//down
-			//QueueFindGroup(sweep - 1, theta, radius, depth, velocityValue);
+			//QueueFindGroup(sweep - 1, theta, radius, depth, velocityValue, spectrumValue);
 		//}
 		if(radius + 2 < vol->radiusBufferCount){
 			//out farther
-			QueueFindGroup(sweep, theta, radius + 2, depth, velocityValue);
+			QueueFindGroup(sweep, theta, radius + 2, depth, velocityValue, spectrumValue);
 		}
 		if(radius - 1 > 0){
 			//in farther
-			QueueFindGroup(sweep, theta, radius - 2, depth, velocityValue);
+			QueueFindGroup(sweep, theta, radius - 2, depth, velocityValue, spectrumValue);
 		}
 	}
 	// helper function to get the nyquist velocity for a sweep or guess it if it is not set
@@ -625,7 +719,7 @@ RadarProductVelocityDealiased::RadarProductVelocityDealiased(){
 	productType = PRODUCT_DERIVED_VOLUME;
 	name = "Radial Velocity Dealiased";
 	shortName = "RVD";
-	dependencies = {RadarData::VOLUME_VELOCITY};
+	dependencies = {RadarData::VOLUME_VELOCITY, RadarData::VOLUME_SPECTRUM_WIDTH};
 }
 
 // 0.3 = 30% of nyquist velocity
@@ -647,6 +741,10 @@ RadarData* RadarProductVelocityDealiased::deriveVolume(std::map<RadarData::Volum
 	algo.vol = radarData;
 	algo.src = inputProducts[RadarData::VOLUME_VELOCITY];
 	algo.src->Decompress();
+	if(inputProducts.find(RadarData::VOLUME_SPECTRUM_WIDTH) != inputProducts.end()){
+		algo.spectrum = inputProducts[RadarData::VOLUME_SPECTRUM_WIDTH];
+		algo.spectrum->Decompress();
+	}
 	algo.used = new bool[radarData->fullBufferSize];
 	std::fill(algo.used, algo.used + radarData->fullBufferSize, false);
 	
@@ -724,7 +822,7 @@ RadarProductVelocityDealiasedGroupTest::RadarProductVelocityDealiasedGroupTest(R
 	development = true;
 	name = "RVD Group test";
 	shortName = "RVDGT";
-	dependencies = {RadarData::VOLUME_VELOCITY};
+	dependencies = {RadarData::VOLUME_VELOCITY, RadarData::VOLUME_SPECTRUM_WIDTH};
 };
 RadarData* RadarProductVelocityDealiasedGroupTest::deriveVolume(std::map<RadarData::VolumeType, RadarData*> inputProducts){
 	RadarData* radarData = new RadarData();
@@ -741,6 +839,10 @@ RadarData* RadarProductVelocityDealiasedGroupTest::deriveVolume(std::map<RadarDa
 	algo.vol = radarData;
 	algo.src = inputProducts[RadarData::VOLUME_VELOCITY];
 	algo.src->Decompress();
+	if(inputProducts.find(RadarData::VOLUME_SPECTRUM_WIDTH) != inputProducts.end()){
+		algo.spectrum = inputProducts[RadarData::VOLUME_SPECTRUM_WIDTH];
+		algo.spectrum->Decompress();
+	}
 	algo.used = new bool[radarData->fullBufferSize];
 	std::fill(algo.used, algo.used + radarData->fullBufferSize, false);
 	algo.groupId = 20;

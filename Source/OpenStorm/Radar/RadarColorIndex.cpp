@@ -252,6 +252,10 @@ RadarColorIndex* RadarColorIndex::GetDefaultColorIndexForData(RadarData* radarDa
 			return &RadarColorIndexVelocity::defaultInstance;
 			break;
 		
+		case RadarData::VOLUME_SPECTRUM_WIDTH:
+			return &RadarColorIndexSpectrumWidth::defaultInstance;
+			break;
+		
 		case RadarData::VOLUME_CORELATION_COEFFICIENT:
 			return &RadarColorIndexCorrelationCoefficient::defaultInstance;
 			break;
@@ -360,6 +364,35 @@ RadarColorIndex::Result RadarColorIndexCorrelationCoefficient::GenerateColorInde
 	for (int i = 0; i < 16384; i++) {
 		float value = (i / 16383.0f);
 		result.data[i * 4 + 3] = 1;
+	}
+	result.data[3] = 0;
+	return result;
+}
+
+
+RadarColorIndexSpectrumWidth RadarColorIndexSpectrumWidth::defaultInstance = {};
+RadarColorIndex::Result RadarColorIndexSpectrumWidth::GenerateColorIndex(Params params, Result* resultToReuse) {
+	float l = 0;
+	float u = 20;
+	RadarColorIndex::Result result = BasicSetup(l, u, resultToReuse);
+	
+	float mult = 15;
+	// gray
+	colorRangeHSL(result.data, valueToIndex(l,u,0.0*mult), valueToIndex(l,u,0.2*mult),  0.66,0,0.2,  0.66,0,0.5);
+	// gray to blue
+	colorRangeHSL(result.data, valueToIndex(l,u,0.2*mult), valueToIndex(l,u,0.5*mult),  0.66,0,0.5,  0.66,1,0.5);
+	// blue to red
+	colorRangeHSL(result.data, valueToIndex(l,u,0.5*mult), valueToIndex(l,u,0.95*mult),  0.66,1,0.5,  0,1,0.5);
+	// red
+	colorRangeHSL(result.data, valueToIndex(l,u,0.95*mult), valueToIndex(l,u,0.98*mult),  0,1,0.5,  0,1,0.5);
+	// red to magenta
+	colorRangeHSL(result.data, valueToIndex(l,u,0.98*mult), valueToIndex(l,u,1.01*mult),  1,1,0.5,  0.9,1,0.5);
+	// magenta to white
+	colorRangeHSL(result.data, valueToIndex(l,u,1.01*mult), valueToIndex(l,u,u),  0.9,1,0.5,  0.9,1,1);
+	
+	for (int i = 0; i < 16384; i++) {
+		float value = (i / 16383.0f);
+		result.data[i * 4 + 3] = value;
 	}
 	result.data[3] = 0;
 	return result;
